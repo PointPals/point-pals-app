@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useApp } from "@/lib/app-store";
 
 export const Route = createFileRoute("/sign-in")({
   component: SignInPage,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/sign-in")({
 
 function SignInPage() {
   const navigate = useNavigate();
+  const { refreshFromServer } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -24,11 +26,15 @@ function SignInPage() {
     setBusy(true);
     setErr(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       setErr(error.message);
       return;
     }
+    // Wait for the app-store to load the household bundle before navigating,
+    // so the dashboard doesn't render a flash of seeded demo state first.
+    await refreshFromServer();
+    setBusy(false);
     navigate({ to: "/" });
   };
 
