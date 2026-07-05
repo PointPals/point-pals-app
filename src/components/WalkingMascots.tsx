@@ -10,9 +10,11 @@ import brambleAsset from "@/assets/companions/bramble.png.asset.json";
  */
 
 const MASCOTS = [
-  { src: sunnyAsset.url, alt: "Sunny", dur: "24s", delay: "0s", size: 128 },
-  { src: pipAsset.url, alt: "Pip", dur: "28s", delay: "-8s", size: 112 },
-  { src: brambleAsset.url, alt: "Bramble", dur: "32s", delay: "-18s", size: 136 },
+  // One-by-one parade across the top layer. Same duration so they keep the
+  // same pace; big staggered delays so they enter the screen in sequence.
+  { src: sunnyAsset.url, alt: "Sunny", dur: "26s", delay: "0s", size: 148, bottom: "6%" },
+  { src: pipAsset.url, alt: "Pip", dur: "26s", delay: "-9s", size: 132, bottom: "4%" },
+  { src: brambleAsset.url, alt: "Bramble", dur: "26s", delay: "-18s", size: 156, bottom: "5%" },
 ];
 
 const BUBBLE_COLORS = ["#EC4899", "#F59E0B", "#10B981", "#60A5FA", "#A78BFA"];
@@ -50,15 +52,16 @@ export const WalkingMascots = memo(function WalkingMascots({
   }, [paused]);
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden z-40">
       {/* Walking mascots along the ground */}
       {MASCOTS.map((m, i) => (
         <div
           key={i}
-          className="absolute bottom-4 sm:bottom-8"
+          className="absolute"
           style={{
             width: m.size,
             height: m.size,
+            bottom: m.bottom,
             animation: `pp-walk ${m.dur} linear infinite`,
             animationDelay: m.delay,
           }}
@@ -71,7 +74,7 @@ export const WalkingMascots = memo(function WalkingMascots({
               src={m.src}
               alt={m.alt}
               draggable={false}
-              className="w-full h-full object-contain select-none drop-shadow-[0_14px_22px_rgba(236,72,153,0.3)]"
+              className="w-full h-full object-contain select-none drop-shadow-[0_18px_28px_rgba(236,72,153,0.35)]"
             />
           </div>
         </div>
@@ -81,14 +84,14 @@ export const WalkingMascots = memo(function WalkingMascots({
       {bubbles.map((b) => (
         <div
           key={b.id}
-          className="absolute bottom-24 sm:bottom-28"
+          className="absolute bottom-32 sm:bottom-40"
           style={{
             left: `${b.leftPct}%`,
             animation: `pp-float-to-jar ${FLY_MS}ms cubic-bezier(0.25, 0.55, 0.35, 1) forwards`,
           }}
         >
           <div
-            className="rounded-2xl px-3 py-1 font-display text-base sm:text-lg font-extrabold text-white shadow-lg"
+            className="rounded-2xl px-3.5 py-1.5 font-display text-lg sm:text-xl font-extrabold text-white shadow-lg"
             style={{ background: b.color }}
           >
             +{b.value}
