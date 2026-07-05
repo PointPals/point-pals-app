@@ -1,6 +1,25 @@
 import { useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { initMonitoring } from "@/lib/monitoring";
 import { getSettings, setSetting } from "@/lib/settings";
+import { supabase } from "@/integrations/supabase/client";
+
+const PUBLIC_PATHS = new Set([
+  "/welcome",
+  "/sign-in",
+  "/sign-up",
+  "/reset-password",
+  "/about",
+  "/privacy",
+  "/terms",
+  "/refunds",
+]);
+
+function isPublic(pathname: string) {
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  for (const p of PUBLIC_PATHS) if (pathname.startsWith(p + "/")) return true;
+  return false;
+}
 
 // Client-only boot tasks (runs once, after hydration):
 //  - register the service worker for offline/PWA (§8)
@@ -8,6 +27,9 @@ import { getSettings, setSetting } from "@/lib/settings";
 //  - honour the OS "reduce motion" preference the first time we see it
 // Renders nothing.
 export function ClientBoot() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
   useEffect(() => {
     void initMonitoring();
 
@@ -28,6 +50,29 @@ export function ClientBoot() {
       });
     }
   }, []);
+
+  // Auth guard: redirect unauthenticated users to /welcome for private routes.
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      const authed = !!data.session;
+      if (!authed && !isPublic(pathname)) {
+        navigate({ to: "/welcome" });
+      }
+    };
+    void check();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        navigate({ to: "/welcome" });
+      }
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [pathname, navigate]);
 
   return null;
 }
