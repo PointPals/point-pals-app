@@ -25,9 +25,57 @@ export const Route = createFileRoute("/faq")({
         content:
           "Frequently asked questions about PointPals — how the marble jar works, rewards, consequences, pricing, and more.",
       },
+      { property: "og:title", content: "PointPals FAQ — marble jar, rewards & pricing" },
+      {
+        property: "og:description",
+        content:
+          "Answers to the most common questions about PointPals: how the shared marble jar works, ages, rewards, consequences, and pricing.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://pointpals.lovable.app/faq" },
+    ],
+    links: [{ rel: "canonical", href: "https://pointpals.lovable.app/faq" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQ_SCHEMA.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
+        }),
+      },
     ],
   }),
 });
+
+// Plain-text FAQ used for FAQPage structured data. Kept intentionally short —
+// crawlers use these summaries, and the on-page copy stays authoritative.
+const FAQ_SCHEMA: { q: string; a: string }[] = [
+  {
+    q: "What is PointPals?",
+    a: "PointPals is a family habit app that turns chores, kindness, and positive habits into points that fill a shared marble jar. When the jar is full, the family celebrates with a reward you chose together.",
+  },
+  {
+    q: "How does the marble jar work?",
+    a: "Every time a child completes a chore or shows a positive habit, a parent taps to award points. Each point drops a marble into the family's shared jar. When the jar reaches its target, the whole family celebrates with a pre-agreed reward.",
+  },
+  {
+    q: "What ages is PointPals for?",
+    a: "PointPals works best for children aged 3 to 14. Toddlers do simple tasks like tidying toys; tweens and teens help set their own goals and rewards so the system feels respectful rather than babyish.",
+  },
+  {
+    q: "Can I use PointPals with more than one child?",
+    a: "Yes. Each child has their own chores and habits, earns points individually, and contributes to the shared family jar. The shared jar turns chore time from sibling competition into teamwork.",
+  },
+  {
+    q: "Does PointPals cost anything?",
+    a: "PointPals is free to try. A single low-cost family subscription unlocks the full app for every child and every parent in your household.",
+  },
+];
 
 type FaqEntry = { id: string; question: string; content: ReactNode };
 type FaqSection = { heading: string; items: FaqEntry[] };
