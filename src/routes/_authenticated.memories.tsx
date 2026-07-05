@@ -13,6 +13,8 @@ import {
   Check,
   Video,
   Play,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
@@ -25,7 +27,7 @@ import {
   fetchPostFeedback,
   transcribeAudio,
 } from "@/lib/memories";
-import type { MemoryCommentEntry } from "@/lib/memories";
+import type { MemoryCommentEntry, MemoryMedia } from "@/lib/memories";
 import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { trackParent } from "@/lib/analytics";
@@ -45,6 +47,8 @@ export const Route = createFileRoute("/_authenticated/memories")({
 
 // v2: quick child narration, not a voice memo — 90 s is plenty.
 const MAX_RECORDING_SEC = 90;
+
+const MAX_MEDIA_PER_POST = 10;
 
 function MemoriesPage() {
   const { kids, household } = useApp();
