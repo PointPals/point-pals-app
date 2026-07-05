@@ -8,17 +8,18 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
   head: () => ({
     meta: [
-      { title: "PointPals — Family chores & habits, made kind" },
+      { title: "PointPals — Family chores & behaviour, made kind" },
       {
         name: "description",
         content:
-          "PointPals turns everyday chores into habits worth cheering for. Points fill a shared family jar; kids collect companion avatars along the way.",
+          "PointPals is a warm, pastel family chore & behaviour tracker. Kids earn points toward collectible plush companions and vote on shared rewards.",
       },
       { name: "theme-color", content: "#F3E1A0" },
-      { property: "og:title", content: "PointPals — Family chores & habits, made kind" },
+      { property: "og:title", content: "PointPals — Family chores & behaviour, made kind" },
       {
         property: "og:description",
-        content: "A warm, pastel family chore & behaviour tracker — not a boring points list.",
+        content:
+          "PointPals is a warm, pastel family chore & behaviour tracker. Kids earn points toward collectible plush companions and vote on shared rewards.",
       },
       { property: "og:type", content: "website" },
     ],
