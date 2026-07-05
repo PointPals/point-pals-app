@@ -248,6 +248,14 @@ function ItemManager({
         </div>
       </form>
 
+      {items.length === 0 && (
+        <div className="card-soft px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nothing here yet — add your first one above to start tracking it.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-6 justify-items-center">
         {items.map((it) => (
           <div key={it.id} className="w-full flex flex-col items-center">

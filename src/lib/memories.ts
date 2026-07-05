@@ -135,7 +135,6 @@ async function remoteUpload(
     db.storage.from("memories").upload(path, blob, { contentType: "image/jpeg" }),
   );
   if (up.error) throw up.error;
-  const { data: pub } = db.storage.from("memories").getPublicUrl(path);
   const ins = await withTimeout(
     Promise.resolve(
       db.from("memories").insert({
@@ -148,7 +147,19 @@ async function remoteUpload(
     ),
   );
   if (ins.error) throw ins.error;
-  return pub.publicUrl;
+  // The `memories` bucket is PRIVATE (§3e) — photos of children must not be
+  // reachable by guessing a public URL. Serve a short-lived signed URL instead.
+  return signedUrl(path);
+}
+
+const SIGNED_TTL = 60 * 60; // 1 hour
+
+async function signedUrl(path: string): Promise<string> {
+  const { data, error } = await withTimeout(
+    db.storage.from("memories").createSignedUrl(path, SIGNED_TTL),
+  );
+  if (error || !data?.signedUrl) throw error ?? new Error("could not sign url");
+  return data.signedUrl;
 }
 
 // ---------------------------------------------------------------------------
@@ -187,14 +198,18 @@ async function loadOnce() {
         kid_ids: string[] | null;
         created_at: string;
       };
-      const remote: Memory[] = (res.data as Row[]).map((r) => ({
-        id: r.id,
-        url: db.storage.from("memories").getPublicUrl(r.storage_path).data.publicUrl,
-        caption: r.caption ?? "",
-        kidIds: r.kid_ids ?? [],
-        createdAt: new Date(r.created_at).getTime(),
-        remote: true,
-      }));
+      const remote: Memory[] = await Promise.all(
+        (res.data as Row[]).map(async (r) => ({
+          id: r.id,
+          // Private bucket → sign each object for display (§3e). If signing
+          // fails, skip the image URL rather than leak a public path.
+          url: await signedUrl(r.storage_path).catch(() => ""),
+          caption: r.caption ?? "",
+          kidIds: r.kid_ids ?? [],
+          createdAt: new Date(r.created_at).getTime(),
+          remote: true,
+        })),
+      );
       const localIds = new Set(memories.map((m) => m.id));
       memories = sortWall([...memories, ...remote.filter((m) => !localIds.has(m.id))]);
       emit();
@@ -204,7 +219,12 @@ async function loadOnce() {
   }
 }
 
-export async function addMemory(householdId: string, file: File, caption: string, kidIds: string[]): Promise<Memory> {
+export async function addMemory(
+  householdId: string,
+  file: File,
+  caption: string,
+  kidIds: string[],
+): Promise<Memory> {
   const id = uid();
   const { blob, dataUrl } = await downscale(file);
 
