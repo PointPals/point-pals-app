@@ -475,6 +475,7 @@ export type Database = {
           created_by: string | null
           household_id: string
           id: string
+          media_paths: Json
           media_type: string | null
           storage_path: string | null
         }
@@ -485,6 +486,7 @@ export type Database = {
           created_by?: string | null
           household_id: string
           id?: string
+          media_paths?: Json
           media_type?: string | null
           storage_path?: string | null
         }
@@ -495,6 +497,7 @@ export type Database = {
           created_by?: string | null
           household_id?: string
           id?: string
+          media_paths?: Json
           media_type?: string | null
           storage_path?: string | null
         }

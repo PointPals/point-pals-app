@@ -1,0 +1,1 @@
+ALTER TABLE public.memory_posts ADD COLUMN IF NOT EXISTS media_paths jsonb NOT NULL DEFAULT '[]'::jsonb;

@@ -12,16 +12,25 @@ const db = supabase as unknown as SupabaseClient;
 
 export type Memory = {
   id: string;
-  url: string; // signed URL (remote) or data URL (local); "" for media-less posts
+  url: string; // convenience: first media url (or "") — prefer `media` for multi-image
   caption: string;
   kidIds: string[];
   createdAt: number;
   remote: boolean;
-  kind?: "image" | "video"; // undefined = no media (caption/voice-only post)
-  storagePath?: string; // path inside the memories bucket (remote posts)
+  kind?: "image" | "video"; // convenience: first media kind
+  storagePath?: string; // convenience: first media path
+  media: MemoryMedia[]; // full list — up to 10 items, empty for caption/voice-only
   audioUrl?: string; // signed URL for audio playback
   audioPath?: string; // storage path
 };
+
+export type MemoryMedia = {
+  url: string; // signed URL (remote) or data URL (local)
+  kind: "image" | "video";
+  path?: string; // storage path (remote only)
+};
+
+export type MemoryMediaInput = { path: string; kind: "image" | "video" };
 
 export type MemoryLikeEntry = {
   postId: string;
