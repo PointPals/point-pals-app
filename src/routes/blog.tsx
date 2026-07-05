@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PublicPageLayout } from "@/components/PublicPageLayout";
-import blogHero from "@/assets/marketing/blog-hero.jpg";
+
 import imgResearch from "@/assets/marketing/blog-research.jpg";
 import imgCharacters from "@/assets/marketing/blog-characters.jpg";
 import imgChoresFun from "@/assets/marketing/blog-chores-fun.jpg";
