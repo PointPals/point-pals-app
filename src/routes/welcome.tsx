@@ -36,8 +36,7 @@ function WelcomePage() {
       <header className="max-w-5xl mx-auto px-6 pt-8 flex items-center justify-between">
         <div className="text-2xl font-display font-extrabold tracking-tight">PointPals</div>
         <Link
-          to="/"
-          search={{ entered: true }}
+          to="/sign-in"
           className="text-sm font-semibold text-muted-foreground hover:text-foreground transition"
         >
           Log in
@@ -60,14 +59,13 @@ function WelcomePage() {
         </p>
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            to="/onboarding"
+            to="/sign-up"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-base font-semibold text-background hover:opacity-90 transition shadow-lg"
           >
             Start free trial <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            to="/"
-            search={{ entered: true }}
+            to="/sign-in"
             className="inline-flex items-center justify-center gap-2 rounded-full border border-input bg-card px-7 py-3.5 text-base font-semibold hover:bg-muted transition"
           >
             Log in
