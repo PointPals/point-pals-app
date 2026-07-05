@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Download, Check, Loader2 } from "lucide-react";
 import { useApp } from "@/lib/app-store";
-import { PlushCompanion } from "@/components/PlushCompanion";
+import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { PASTEL_HEX, type Kid } from "@/lib/mock-data";
 import { companionForKid, downloadKidChart, weeklyChores } from "@/lib/printable-chart";
 
 // Per-kid card on the Family tab: shows the child's derived companion mascot and a
 // button that generates their printable weekly chore chart as a real PDF.
 export function KidChartCard({ kid }: { kid: Kid }) {
-  const { chores, household, unlockedCompanionIds } = useApp();
+  const { chores, household } = useApp();
   const [state, setState] = useState<"idle" | "working" | "done">("idle");
   const [note, setNote] = useState<string | null>(null);
 
-  const companion = companionForKid(kid, unlockedCompanionIds);
+  const companion = companionForKid(kid);
   const active = weeklyChores(chores);
 
   const onDownload = async () => {
@@ -47,7 +47,17 @@ export function KidChartCard({ kid }: { kid: Kid }) {
         className="rounded-full p-2"
         style={{ background: `linear-gradient(180deg, ${PASTEL_HEX[kid.color]}, transparent)` }}
       >
-        <PlushCompanion companion={companion} size={92} />
+        <div
+          className="h-[92px] w-[92px] rounded-full overflow-hidden flex items-center justify-center"
+          style={{ backgroundColor: PASTEL_HEX[kid.color] }}
+        >
+          <CompanionAvatar
+            seed={kid.id}
+            color={kid.color}
+            size={92}
+            companionId={kid.companionId}
+          />
+        </div>
       </div>
       <div className="font-display text-xl font-bold leading-tight">{kid.name}</div>
       <div className="text-xs text-muted-foreground mb-3">

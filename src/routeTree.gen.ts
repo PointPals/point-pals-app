@@ -17,7 +17,6 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MemoriesRouteImport } from './routes/memories'
 import { Route as LibraryRouteImport } from './routes/library'
-import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -61,11 +60,6 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CollectionRoute = CollectionRouteImport.update({
-  id: '/collection',
-  path: '/collection',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -80,7 +74,6 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
   '/memories': typeof MemoriesRoute
   '/onboarding': typeof OnboardingRoute
@@ -93,7 +86,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
   '/memories': typeof MemoriesRoute
   '/onboarding': typeof OnboardingRoute
@@ -107,7 +99,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
   '/memories': typeof MemoriesRoute
   '/onboarding': typeof OnboardingRoute
@@ -122,7 +113,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/collection'
     | '/library'
     | '/memories'
     | '/onboarding'
@@ -135,7 +125,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/collection'
     | '/library'
     | '/memories'
     | '/onboarding'
@@ -148,7 +137,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
-    | '/collection'
     | '/library'
     | '/memories'
     | '/onboarding'
@@ -162,7 +150,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  CollectionRoute: typeof CollectionRoute
   LibraryRoute: typeof LibraryRoute
   MemoriesRoute: typeof MemoriesRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -231,13 +218,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/collection': {
-      id: '/collection'
-      path: '/collection'
-      fullPath: '/collection'
-      preLoaderRoute: typeof CollectionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -258,7 +238,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  CollectionRoute: CollectionRoute,
   LibraryRoute: LibraryRoute,
   MemoriesRoute: MemoriesRoute,
   OnboardingRoute: OnboardingRoute,

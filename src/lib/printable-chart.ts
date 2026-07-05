@@ -13,7 +13,6 @@
 
 import { COMPANIONS, PASTEL_HEX, type Chore, type Companion, type Kid } from "./mock-data";
 import { iconUrl, isIconKey } from "./icons";
-import stickerSheetUrl from "@/assets/sticker-sheet.jpeg";
 import { addDays, format, startOfWeek } from "date-fns";
 
 // Cache images so repeated renders don't refetch.
@@ -24,12 +23,14 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => { imageCache.set(url, img); resolve(img); };
+    img.onload = () => {
+      imageCache.set(url, img);
+      resolve(img);
+    };
     img.onerror = () => reject(new Error(`Failed to load ${url}`));
     img.src = url;
   });
 }
-
 
 // A4 portrait, in PDF points (72 per inch) and in canvas pixels (~192 DPI for crisp text).
 const A4_W_PT = 595.28;
@@ -57,22 +58,18 @@ export type ChartResult = {
 };
 
 /**
- * Pick a stable "current companion" mascot for a kid.
- *
- * Companions in PointPals unlock at the household level (they're a shared menagerie),
- * so a kid has no single assigned mascot. We derive one deterministically: prefer an
- * unlocked companion whose colour matches the kid's, otherwise hash the kid's id so
- * each child consistently gets the same friendly face. Falls back to the first
- * companion if none are unlocked yet, so the sheet always has a mascot.
+ * The companion mascot shown on a kid's chart. Companions are avatars only
+ * (no unlock mechanic): use the kid's chosen companion, falling back to a
+ * stable hash of the kid's id so the sheet always has a friendly face.
  */
-export function companionForKid(kid: Kid, unlockedCompanionIds: string[]): Companion {
-  const unlocked = COMPANIONS.filter((c) => unlockedCompanionIds.includes(c.id));
-  const pool = unlocked.length ? unlocked : [COMPANIONS[0]];
-  const byColor = pool.find((c) => c.color === kid.color);
+export function companionForKid(kid: Kid): Companion {
+  const chosen = kid.companionId && COMPANIONS.find((c) => c.id === kid.companionId);
+  if (chosen) return chosen;
+  const byColor = COMPANIONS.find((c) => c.color === kid.color);
   if (byColor) return byColor;
   let h = 0;
   for (const ch of kid.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return pool[h % pool.length];
+  return COMPANIONS[h % COMPANIONS.length];
 }
 
 /** Chores that belong on a weekly chart: anything recurring (daily/weekly). */
@@ -113,6 +110,12 @@ function roundRect(
   ctx.arcTo(x, y + h, x, y, rr);
   ctx.arcTo(x, y, x + w, y, rr);
   ctx.closePath();
+}
+
+/** True when a chore's `icon` field is itself an image URL rather than a
+ * registry key ("i00") or a bare emoji glyph. */
+function isUrlIcon(icon: string): boolean {
+  return icon.startsWith("http://") || icon.startsWith("https://") || icon.startsWith("/");
 }
 
 function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
@@ -285,17 +288,24 @@ async function renderSheet(input: SheetInput): Promise<{
   truncated: boolean;
 }> {
   await ensureFonts();
-  // Preload chore icons (missing keys silently fall back to skipped drawing).
+  // Preload chore icons, resolved from whatever's LIVE on each chore right now
+  // (§7): a registry key ("i00") maps through iconUrl, and anything already a
+  // URL (the real Supabase-hosted illustrations) loads directly. Nothing here
+  // is cached across chart generations — this map is rebuilt from `input.chores`
+  // every call, so editing an icon in the Library shows up on the very next
+  // download. A bare emoji/glyph (no URL) falls back to drawing the glyph.
   const iconImages = new Map<string, HTMLImageElement>();
   await Promise.all(
     input.chores.map(async (c) => {
-      if (!isIconKey(c.icon)) return;
-      const url = iconUrl(c.icon);
+      const url = isIconKey(c.icon) ? iconUrl(c.icon) : isUrlIcon(c.icon) ? c.icon : undefined;
       if (!url) return;
-      try { iconImages.set(c.icon, await loadImage(url)); } catch { /* ignore */ }
+      try {
+        iconImages.set(c.icon, await loadImage(url));
+      } catch {
+        /* image failed to load (offline/broken URL) — falls back to the glyph */
+      }
     }),
   );
-
 
   const canvas = document.createElement("canvas");
   canvas.width = CANVAS_W;
@@ -431,17 +441,23 @@ async function renderSheet(input: SheetInput): Promise<{
       ctx.stroke();
     }
 
-    // icon — image tile from the pack (falls back to emoji glyph if the key is missing)
+    // icon — the chore's current illustration (falls back to a plain dot,
+    // never the raw icon string, so a broken/loading image never prints a URL)
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     const img = iconImages.get(c.icon);
     if (img) {
       ctx.drawImage(img, contentX + 8, rmid - iconSize / 2, iconSize, iconSize);
+    } else if (isUrlIcon(c.icon) || isIconKey(c.icon)) {
+      // image intended but unavailable (offline) — soft placeholder, not the URL text
+      ctx.fillStyle = tint(PASTEL_HEX[c.color], 0.5);
+      roundRect(ctx, contentX + 8, rmid - iconSize / 2, iconSize, iconSize, iconSize * 0.28);
+      ctx.fill();
     } else {
+      // a bare emoji/glyph icon
       ctx.font = `${iconSize}px "Nunito Sans Variable", system-ui, sans-serif`;
       ctx.fillText(c.icon, contentX + 8, rmid);
     }
-
 
     // name
     ctx.fillStyle = INK;
@@ -503,40 +519,16 @@ async function renderSheet(input: SheetInput): Promise<{
   return { canvas, shown: chores.length, total, truncated };
 }
 
-// ---- PDF assembly (chart page + sticker-sheet page, hand-written) --------
-
-async function fetchJpegBytes(url: string): Promise<{ bytes: Uint8Array; width: number; height: number }> {
-  const [img, res] = await Promise.all([loadImage(url), fetch(url)]);
-  const buf = new Uint8Array(await res.arrayBuffer());
-  return { bytes: buf, width: img.naturalWidth, height: img.naturalHeight };
-}
+// ---- PDF assembly (single-page A4 chart, hand-written) --------------------
+//
+// (§7 — the sticker sheet used to ship as page 2; that's dropped. This is just
+// the weekly chore grid, on its own.)
 
 async function canvasToPdfBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  // Page 1: the chart, drawn to canvas → JPEG.
   const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
   const bin = atob(dataUrl.split(",")[1]);
   const chartJpeg = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) chartJpeg[i] = bin.charCodeAt(i);
-
-  // Page 2: the printable die-cut sticker sheet that ships alongside the chart.
-  // Landscape A4 sized to the source image aspect (1920 × 1071).
-  const sticker = await fetchJpegBytes(stickerSheetUrl);
-  const STICKER_W_PT = A4_H_PT; // landscape
-  const STICKER_H_PT = A4_W_PT;
-  const sheetAspect = sticker.width / sticker.height;
-  const pageAspect = STICKER_W_PT / STICKER_H_PT;
-  const PAD = 24;
-  let drawW: number;
-  let drawH: number;
-  if (sheetAspect > pageAspect) {
-    drawW = STICKER_W_PT - PAD * 2;
-    drawH = drawW / sheetAspect;
-  } else {
-    drawH = STICKER_H_PT - PAD * 2;
-    drawW = drawH * sheetAspect;
-  }
-  const stickerX = (STICKER_W_PT - drawW) / 2;
-  const stickerY = (STICKER_H_PT - drawH) / 2;
 
   const enc = new TextEncoder();
   const chunks: Uint8Array[] = [];
@@ -552,15 +544,11 @@ async function canvasToPdfBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   push("%PDF-1.4\n");
   push(new Uint8Array([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));
 
-  // Object layout:
-  //  1 Catalog · 2 Pages · 3 Page1 · 4 Chart image · 5 Page1 content
-  //  6 Page2 · 7 Sticker image · 8 Page2 content
+  // Object layout: 1 Catalog · 2 Pages · 3 Page · 4 Chart image · 5 Page content
   objStart();
   push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
   objStart();
-  push("2 0 obj\n<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>\nendobj\n");
-
-  // ---- Page 1 (chart) ----
+  push("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
   objStart();
   push(
     `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4_W_PT} ${A4_H_PT}] ` +
@@ -577,32 +565,14 @@ async function canvasToPdfBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   objStart();
   push(`5 0 obj\n<< /Length ${content1.length} >>\nstream\n${content1}endstream\nendobj\n`);
 
-  // ---- Page 2 (sticker sheet, landscape) ----
-  objStart();
-  push(
-    `6 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${STICKER_W_PT} ${STICKER_H_PT}] ` +
-      `/Resources << /XObject << /Im0 7 0 R >> >> /Contents 8 0 R >>\nendobj\n`,
-  );
-  objStart();
-  push(
-    `7 0 obj\n<< /Type /XObject /Subtype /Image /Width ${sticker.width} /Height ${sticker.height} ` +
-      `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${sticker.bytes.length} >>\nstream\n`,
-  );
-  push(sticker.bytes);
-  push("\nendstream\nendobj\n");
-  const content2 = `q\n${drawW.toFixed(3)} 0 0 ${drawH.toFixed(3)} ${stickerX.toFixed(3)} ${stickerY.toFixed(3)} cm\n/Im0 Do\nQ\n`;
-  objStart();
-  push(`8 0 obj\n<< /Length ${content2.length} >>\nstream\n${content2}endstream\nendobj\n`);
-
   const xrefStart = length;
-  let xref = "xref\n0 9\n0000000000 65535 f \n";
+  let xref = "xref\n0 6\n0000000000 65535 f \n";
   for (const off of offsets) xref += String(off).padStart(10, "0") + " 00000 n \n";
   push(xref);
-  push(`trailer\n<< /Size 9 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+  push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
 
   return new Blob(chunks as BlobPart[], { type: "application/pdf" });
 }
-
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
