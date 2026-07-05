@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import { Sparkles, Heart, Gift, ArrowRight } from "lucide-react";
-import { PASTEL_HEX } from "@/lib/mock-data";
-import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { formatPrice, BILLING_CONFIG } from "@/lib/entitlements";
 import heroAsset from "@/assets/brand/pp-hero.asset.json";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
 import { HeroJarScene } from "@/components/HeroJarScene";
+import { WalkingMascots } from "@/components/WalkingMascots";
 
 export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
@@ -36,6 +36,26 @@ export const Route = createFileRoute("/welcome")({
 // for this route - see components/AppShell.tsx). Kept light and fast: no
 // canvas jar animation, no client-only state, just the pitch.
 function WelcomePage() {
+  const TARGET = 24;
+  const [value, setValue] = useState(0);
+  const [celebrating, setCelebrating] = useState(false);
+
+  const handleFull = useCallback(() => {
+    setCelebrating(true);
+    window.setTimeout(() => {
+      setValue(0);
+      window.setTimeout(() => setCelebrating(false), 900);
+    }, 3200);
+  }, []);
+
+  const addPoints = useCallback(
+    (n: number) => {
+      if (celebrating) return;
+      setValue((v) => Math.min(TARGET, v + n));
+    },
+    [celebrating],
+  );
+
   return (
     <div
       className="min-h-screen relative overflow-hidden"
@@ -60,8 +80,8 @@ function WelcomePage() {
       </header>
 
       {/* hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-8 pb-12 grid lg:grid-cols-2 gap-8 items-center">
-        <div>
+      <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-12 grid lg:grid-cols-2 gap-8 items-center">
+        <div className="relative z-10">
           <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
               <Sparkles className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
@@ -110,27 +130,17 @@ function WelcomePage() {
         </div>
 
         {/* Massive marble jar centrepiece */}
-        <div className="relative">
-          <HeroJarScene />
+        <div className="relative z-10">
+          <HeroJarScene
+            value={value}
+            target={TARGET}
+            celebrating={celebrating}
+            onFull={handleFull}
+          />
         </div>
-      </section>
 
-      {/* companion strip */}
-      <section className="relative max-w-3xl mx-auto px-6 pb-4">
-        <div className="flex items-center justify-center gap-4">
-          {(["blush", "sky", "sage", "lilac"] as const).map((c, i) => (
-            <div
-              key={c}
-              className="h-16 w-16 rounded-full overflow-hidden shadow-md"
-              style={{
-                backgroundColor: PASTEL_HEX[c],
-                transform: `translateY(${i % 2 === 0 ? "0px" : "10px"})`,
-              }}
-            >
-              <CompanionAvatar seed={`welcome-${c}`} color={c} size={64} />
-            </div>
-          ))}
-        </div>
+        {/* Full-width walking mascots + floating points */}
+        <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
       </section>
 
       {/* how it works */}
