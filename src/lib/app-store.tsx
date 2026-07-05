@@ -197,15 +197,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     hydrated,
     awardPoints: (kidIds, item) => {
       const now = Date.now();
-      const poolDelta = item.points > 0 ? item.points : 0;
+      // Both positive and negative awards move the shared pool now — negatives
+      // cause a marble to dissolve from the jar (§3 marble jar), which only
+      // works if the pool actually shrinks. Clamped at 0 below.
+      const poolDelta = item.points;
       const batch: AwardBatch = { id: uid(), at: now, kidIds, item, poolDelta };
       setState((s) => ({
         ...s,
         kids: s.kids.map((k) =>
           kidIds.includes(k.id) ? { ...k, points: Math.max(0, k.points + item.points) } : k,
         ),
-        // Shared pool grows on positive points, once per tap (not × kid count).
-        household: { ...s.household, sharedPool: s.household.sharedPool + poolDelta },
+        // Shared pool moves once per tap (not × kid count), clamped at 0.
+        household: {
+          ...s.household,
+          sharedPool: Math.max(0, s.household.sharedPool + poolDelta),
+        },
         history: [
           ...kidIds.map((kid, i) => ({
             id: batch.id + i,
