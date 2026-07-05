@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Heart, Bone, Sparkles, Scale, Minus } from "lucide-react";
 import { PublicPageLayout } from "@/components/PublicPageLayout";
+import aboutHero from "@/assets/marketing/about-hero.jpg";
 import {
   Accordion,
   AccordionItem,
@@ -27,6 +28,13 @@ function AboutPage() {
     <PublicPageLayout>
     <article className="mx-auto max-w-2xl space-y-8">
       <header>
+        <img
+          src={aboutHero}
+          alt="A family sitting together on a rug, dropping colorful marbles into a large glass jar"
+          width={1536}
+          height={768}
+          className="w-full h-auto rounded-3xl shadow-sm mb-6"
+        />
         <h1 className="font-display text-4xl font-bold">
           The real reason PointPals works
         </h1>
