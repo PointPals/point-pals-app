@@ -205,6 +205,41 @@ export type Database = {
           },
         ]
       }
+      memories: {
+        Row: {
+          caption: string | null
+          created_at: string
+          household_id: string
+          id: string
+          kid_ids: string[]
+          storage_path: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          kid_ids?: string[]
+          storage_path: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          kid_ids?: string[]
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memories_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_post_kids: {
         Row: {
           kid_id: string
