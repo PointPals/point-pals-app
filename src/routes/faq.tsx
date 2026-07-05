@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PublicPageLayout } from "@/components/PublicPageLayout";
+import faqHero from "@/assets/marketing/faq-hero.jpg";
 import {
   Accordion,
   AccordionItem,
@@ -26,6 +27,13 @@ function FaqPage() {
     <PublicPageLayout>
     <article className="mx-auto max-w-2xl space-y-8">
       <header>
+        <img
+          src={faqHero}
+          alt="A jar of marbles on a wooden shelf with question mark bubbles floating above"
+          width={1536}
+          height={768}
+          className="w-full h-auto rounded-3xl shadow-sm mb-6"
+        />
         <h1 className="font-display text-4xl font-bold">Frequently Asked Questions</h1>
         <p className="mt-3 text-muted-foreground leading-relaxed">
           Everything you&rsquo;ve wondered about PointPals — how it works, why it works, and how

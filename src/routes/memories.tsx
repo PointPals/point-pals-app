@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Camera, ImagePlus, Loader2, Trash2, X } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import { useHouseholdRole } from "@/lib/use-household-role";
 import { useMemories, addMemory, removeMemory } from "@/lib/memories";
 import { PASTEL_HEX } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
@@ -24,7 +25,8 @@ export const Route = createFileRoute("/memories")({
 // add a photo, an optional caption, and tag which kids are in it; the wall
 // shows everything chronologically, most recent first.
 function MemoriesPage() {
-  const { kids } = useApp();
+  const { kids, household } = useApp();
+  const { canAward, canEdit } = useHouseholdRole(household.id);
   const wall = useMemories();
 
   return (
@@ -36,7 +38,14 @@ function MemoriesPage() {
         </p>
       </div>
 
-      <Composer />
+      {canAward ? (
+        <Composer />
+      ) : (
+        <div className="card-soft px-4 py-3 text-sm border border-butter/60 bg-butter/20">
+          <strong className="font-semibold">View only.</strong>{" "}
+          Ask a household admin for contributor access to add memories.
+        </div>
+      )}
 
       {wall.length === 0 ? (
         <div className="card-soft text-center px-6 py-12">
@@ -93,15 +102,17 @@ function MemoriesPage() {
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (window.confirm("Delete this memory?")) void removeMemory(m.id);
-                    }}
-                    aria-label="Delete memory"
-                    className="shrink-0 h-9 w-9 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center transition"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm("Delete this memory?")) void removeMemory(m.id);
+                      }}
+                      aria-label="Delete memory"
+                      className="shrink-0 h-9 w-9 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center transition"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </li>
             );
