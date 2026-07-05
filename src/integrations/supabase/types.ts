@@ -55,6 +55,50 @@ export type Database = {
           },
         ]
       }
+      household_invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          household_id: string
+          id: string
+          role: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          household_id: string
+          id?: string
+          role?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          household_id?: string
+          id?: string
+          role?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_invites_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           created_at: string
@@ -163,6 +207,39 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kid_shares: {
+        Row: {
+          created_at: string
+          household_id: string
+          kid_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          kid_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          kid_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_shares_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_shares_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
             referencedColumns: ["id"]
           },
         ]
@@ -468,6 +545,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invite: { Args: { invite_code: string }; Returns: Json }
+      can_see_kid: { Args: { kid_id: string }; Returns: boolean }
+      generate_invite_code: { Args: never; Returns: string }
+      has_min_role: {
+        Args: { hid: string; min_role: string }
+        Returns: boolean
+      }
       is_member: { Args: { hid: string }; Returns: boolean }
     }
     Enums: {
