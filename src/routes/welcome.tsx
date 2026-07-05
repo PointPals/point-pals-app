@@ -175,7 +175,7 @@ function WelcomePage() {
           {[
             "Set up your family's chores and good-behaviour skills.",
             "Tap to award — watch a marble drop into the jar.",
-            "When it's full, the family votes on the reward and celebrates.",
+            "When it's full, it's time to celebrate the reward everyone's been working toward.",
           ].map((step, i) => (
             <li key={i} className="card-soft p-5 text-center">
               <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background font-display font-bold">
