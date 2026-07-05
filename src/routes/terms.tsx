@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDoc, H2 } from "@/components/LegalDoc";
+import { PublicPageLayout } from "@/components/PublicPageLayout";
 
 export const Route = createFileRoute("/terms")({
   component: Terms,
@@ -13,7 +14,8 @@ export const Route = createFileRoute("/terms")({
 
 function Terms() {
   return (
-    <LegalDoc title="Terms of Service" updated="July 2026">
+    <PublicPageLayout>
+      <LegalDoc title="Terms of Service" updated="July 2026">
       <p>
         These terms cover your use of PointPals. By using the app you agree to them. If you don't,
         please don't use the app.
@@ -81,6 +83,7 @@ function Terms() {
         </a>
         .
       </p>
-    </LegalDoc>
+      </LegalDoc>
+    </PublicPageLayout>
   );
 }

@@ -29,6 +29,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/about",
     "/faq",
     "/blog",
+    "/contact",
+    "/privacy",
+    "/terms",
+    "/refunds",
   ];
   if (CHROME_FREE.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return <>{children}</>;

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
+import { PublicLogo } from "@/components/PublicLogo";
 
 export const Route = createFileRoute("/sign-in")({
   component: SignInPage,
@@ -40,6 +41,7 @@ function SignInPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
+      <PublicLogo fixed />
       <div className="card-soft p-6 w-full max-w-sm">
         <h1 className="font-display text-2xl font-bold">Log in</h1>
         <p className="text-sm text-muted-foreground mt-1">Welcome back.</p>

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDoc, H2 } from "@/components/LegalDoc";
+import { PublicPageLayout } from "@/components/PublicPageLayout";
 
 export const Route = createFileRoute("/privacy")({
   component: Privacy,
@@ -16,7 +17,8 @@ export const Route = createFileRoute("/privacy")({
 
 function Privacy() {
   return (
-    <LegalDoc title="Privacy Policy" updated="July 2026">
+    <PublicPageLayout>
+      <LegalDoc title="Privacy Policy" updated="July 2026">
       <p>
         PointPals is a family chore and behaviour tracker. We take privacy seriously — especially
         because the app involves data about children. This policy explains what we collect, why, and
@@ -84,6 +86,7 @@ function Privacy() {
         </a>{" "}
         for any privacy request or question.
       </p>
-    </LegalDoc>
+      </LegalDoc>
+    </PublicPageLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDoc, H2 } from "@/components/LegalDoc";
+import { PublicPageLayout } from "@/components/PublicPageLayout";
 
 export const Route = createFileRoute("/refunds")({
   component: Refunds,
@@ -13,7 +14,8 @@ export const Route = createFileRoute("/refunds")({
 
 function Refunds() {
   return (
-    <LegalDoc title="Refund Policy" updated="July 2026">
+    <PublicPageLayout>
+      <LegalDoc title="Refund Policy" updated="July 2026">
       <p>
         We want you to feel good about supporting PointPals. This policy explains when we offer
         refunds. It sits alongside — and never overrides — your rights under mandatory consumer law.
@@ -68,6 +70,7 @@ function Refunds() {
         from the address on your account, with the date and rough amount. We aim to reply within 2
         business days.
       </p>
-    </LegalDoc>
+      </LegalDoc>
+    </PublicPageLayout>
   );
 }
