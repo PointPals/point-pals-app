@@ -409,8 +409,12 @@ export async function removeMemory(id: string): Promise<void> {
   if (target?.remote) {
     try {
       await withTimeout(Promise.resolve(db.from("memory_posts").delete().eq("id", id)));
-      if (target.storagePath) {
-        await withTimeout(db.storage.from("memories").remove([target.storagePath])).catch(() => {});
+      const paths = (target.media ?? [])
+        .map((m) => m.path)
+        .filter((p): p is string => !!p);
+      if (paths.length === 0 && target.storagePath) paths.push(target.storagePath);
+      if (paths.length > 0) {
+        await withTimeout(db.storage.from("memories").remove(paths)).catch(() => {});
       }
       if (target.audioPath) {
         await withTimeout(db.storage.from("memories").remove([target.audioPath])).catch(() => {});
