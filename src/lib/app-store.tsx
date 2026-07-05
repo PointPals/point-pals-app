@@ -746,7 +746,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               all_time_points: 0,
               points: 0,
               avatar_key: companionId ?? null,
-            }),
+            } as any),
           [id],
         );
       }
