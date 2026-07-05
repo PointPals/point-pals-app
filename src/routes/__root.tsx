@@ -106,6 +106,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-startup-image", href: "/app-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://pointpals.lovable.app/#org",
+              name: "PointPals",
+              url: "https://pointpals.lovable.app",
+              logo: "https://pointpals.lovable.app/app-icon.png",
+              email: "support@pointpals.co.nz",
+              areaServed: "NZ",
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://pointpals.lovable.app/#website",
+              name: "PointPals",
+              url: "https://pointpals.lovable.app",
+              publisher: { "@id": "https://pointpals.lovable.app/#org" },
+              inLanguage: "en-NZ",
+            },
+          ],
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
