@@ -75,12 +75,17 @@ function buildSynthetic(
 // tell "this marble is new" from "this marble was already here". Positive
 // events push kid-coloured marbles; negatives pop them, preferring one of
 // that kid's own marbles first (§3 phase 1 — "who contributed").
+//
+// If the event log's implied pool falls short of `fallbackValue`, the gap is
+// filled with neutral-colour synthetic marbles so the jar always represents
+// the actual sharedPool — even after a browser storage clear or data reset.
 function buildDesired(
   events: PointEvent[],
   kids: Kid[],
   target: number,
   perMarble: number,
   cap: number,
+  fallbackValue?: number,
 ): { id: string; kidId: string; color: string; hue: string }[] {
   const kidColor = new Map<string, string>();
   for (const k of kids) kidColor.set(k.id, k.color);
@@ -115,8 +120,6 @@ function buildDesired(
     } else if (diff < 0) {
       let toRemove = -diff;
       while (toRemove > 0 && list.length > 0) {
-        // Prefer removing one of this kid's own marbles (newest first),
-        // falling back to the newest marble regardless.
         let idx = -1;
         for (let i = list.length - 1; i >= 0; i--) {
           if (list[i].kidId === e.kidId) {
@@ -129,6 +132,23 @@ function buildDesired(
         toRemove--;
       }
     }
+  }
+
+  // If the event log ends below the pool value, fill the gap with synthetic
+  // neutral marbles so the jar matches what the user sees in the text.
+  const desiredCount = Math.min(
+    Math.round(Math.max(0, fallbackValue ?? pool) / perMarble),
+    Math.round(target / perMarble),
+    cap,
+  );
+  const neutral = MARBLE_TINT.sand ?? DEFAULT_TINT;
+  while (list.length < desiredCount) {
+    list.push({
+      id: `gap-${list.length}`,
+      kidId: "gap",
+      color: neutral[0],
+      hue: neutral[1],
+    });
   }
 
   // Cap: keep the newest `cap` marbles so an old jar full of ancient events
@@ -250,7 +270,7 @@ export function MarbleJar({
     // When callers don't supply real events (marketing hero), synthesize a
     // stable set from `value` so the jar still fills honestly.
     const desired = events && kids
-      ? buildDesired(events, kids, target, perMarble, cap)
+      ? buildDesired(events, kids, target, perMarble, cap, value)
       : buildSynthetic(value, target, perMarble, cap);
     const desiredIds = new Set(desired.map((d) => d.id));
     const currentIds = new Set(marbles.current.map((m) => m.id));
@@ -547,7 +567,7 @@ export function MarbleJar({
         raf.current = null;
       }
     };
-  }, [events, kids, renderSize, target, perMarble, reducedMotion]);
+  }, [events, kids, renderSize, target, perMarble, reducedMotion, value]);
 
   // Fire the "full" celebration exactly once when we cross the target.
   useEffect(() => {

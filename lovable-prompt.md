@@ -2,17 +2,40 @@
 
 ## Important Context
 
-Claude Code (VS Code agent) has already built a major architecture rebuild. The SQL migrations have been applied to Supabase. Edge functions exist as files. What's listed below are the remaining frontend gaps that need Lovable.
+Claude Code (VS Code agent) has just built marketing content pages + a security hardening migration. The SQL migrations have been applied to Supabase (including the security fix). Edge functions exist as files. What's listed below are the remaining frontend gaps that need Lovable.
+
+**Most recent commit:** `3f49528` — "Add marketing pages: updated About, new FAQ and Blog with accordion layouts"
+- About page with marble-loss evidence section (10 cited sources, accordion layout)
+- FAQ page with 15 questions across 4 categories
+- Blog page with 6 full SEO-tagged posts
+- PublicPageLayout component (warm gradient + nav + footer for public pages)
 
 ## What's Already Done (don't rebuild)
 
+- **Marketing content pages** (already built, needs polish):
+  - `/about` — accordion layout, marble-loss evidence section
+  - `/faq` — 15 Q&A items in accordions
+  - `/blog` — 6 full posts in accordion, clickable index strip
+  - `PublicPageLayout.tsx` — shared chrome-free wrapper
 - SQL migration `20260705000000_pointpals_full_schema.sql` — APPLIED to Supabase (all 11 tables, RLS, storage buckets, triggers)
+- SQL migration `20260705000003_security_hardening.sql` — APPLIED to Supabase (fixes all 8 security findings)
 - Edge functions: `stripe-checkout`, `stripe-portal`, `stripe-webhook`, `generate-icon` — exist at `supabase/functions/` but NOT deployed yet
 - All `lib/` files: `app-store.tsx`, `entitlements.ts`, `billing.ts`, `settings.ts`, `memories.ts`, `feedback.ts`, `analytics.ts`
 - All components: `AwardModal.tsx`, `MarbleJar.tsx`, `Confetti.tsx`, `Paywall.tsx`, `FamilyJarCard.tsx`, `KidBadge.tsx`, `IconTile.tsx`, `CompanionAvatar.tsx`
-- Routes: `index.tsx` (home), `library.tsx`, `memories.tsx`, `welcome.tsx`, `settings.tsx`, `onboarding.tsx`, `rewards.tsx`
+- Routes: `index.tsx` (home), `library.tsx`, `memories.tsx`, `welcome.tsx`, `settings.tsx`, `onboarding.tsx`, `rewards.tsx`, `about.tsx`, `faq.tsx`, `blog.tsx`
 
-## Priority 1 — Auth Pages (missing links on /welcome)
+## Priority 1 — Polish Marketing Pages (generate images + refine)
+
+The content pages are built with shadcn accordions and content, but need visual polish:
+
+**What to do:**
+- Generate hero/header images for these pages (warm family illustrations, marble jar imagery)
+- Generate blog images for each of the 6 posts (character art for the characters post, infographic-style images for the others)
+- Tidy up spacing, transitions, and accordion animation feel
+- The welcome page footer now links to the public pages — make sure those links look good
+- Add a subtle desktop nav bar for public pages (PublicPageLayout already has a basic one)
+
+## Priority 2 — Auth Pages (missing links on /welcome)
 
 The `/welcome` route has "Log in" and "Start free trial" links but no auth pages exist. The app currently works entirely client-side via localStorage.
 
@@ -46,9 +69,9 @@ The auto-member trigger already runs on household insert: `households_add_creato
 
 **Key: the app-store currently uses localStorage.** The auth flow needs to add a `syncFromSupabase()` function that loads from the server and merges into the app store. After that, all mutations (award points, add chore, etc.) should also write to Supabase.
 
-## Priority 2 — Sync localStorage → Supabase
+## Priority 3 — Sync localStorage → Supabase
 
-When a user signs in (Priority 1 is done), we need to push any local data up to the server.
+When a user signs in (Priority 2 is done), we need to push any local data up to the server.
 
 **What to build:**
 - A `syncToSupabase()` function in `lib/app-store.tsx` or a new `lib/sync.ts` file
@@ -67,22 +90,19 @@ Every `setState` call in `app-store.tsx` that mutates data should also write to 
 
 These writes should be fire-and-forget (no await) so they don't slow down the UI — the local state is already updated.
 
-## Priority 3 — Fix the Emoji/Icon Pools in Library Page
+## Priority 4 — Fix the Emoji/Icon Pools in Library Page
 
-In `src/lib/mock-data.ts`, the emoji arrays (`EMOJI_POOL_CHORE`, `EMOJI_POOL_SKILL_POS`, `EMOJI_POOL_SKILL_NEG`) contain garbled/corrupted characters. These were the result of a bad copy-paste.
+In `src/lib/mock-data.ts`, the emoji arrays (`EMOJI_POOL_CHORE`, `EMOJI_POOL_SKILL_POS`, `EMOJI_POOL_SKILL_NEG`) contain garbled/corrupted characters.
 
 **What to do:**
 Replace the emoji pools with clean emoji or icon references:
 ```typescript
-// Example — clean up the actual values
 export const EMOJI_POOL_POSITIVE = ['🌟', '🎉', '💪', '🌟', '⭐', '🏆', '🎯', '🌈', '🦋', '🌸'];
 export const EMOJI_POOL_CHORE = ['🧹', '🧺', '🧽', '🛏️', '🍳', '🧤', '🪴', '📚', '👟', '🚮'];
 export const EMOJI_POOL_NEEDS_WORK = ['🤔', '💭', '🔄', '🌱', '📝', '🧠', '🤝', '⏰', '🎯', '💡'];
 ```
 
-The `icon` field on `Chore` and `Skill` types can use either an emoji or a full image URL. The current code in `<LibraryPage>` renders the icon either as an `<img>` (if URL) or as raw text (if emoji). This works — just needs clean emoji data.
-
-## Priority 4 — Wire Up Billing + Stripe
+## Priority 5 — Wire Up Billing + Stripe
 
 The billing flow is fully scaffolded but needs Stripe connected.
 
@@ -92,11 +112,11 @@ The billing flow is fully scaffolded but needs Stripe connected.
 2. Deploy the edge functions (Lovable should auto-detect `supabase/functions/stripe-checkout/` etc.)
 3. The `Paywall` component in `src/components/Paywall.tsx` uses `startCheckout("household_local")` — replace `"household_local"` with the real household ID from the app store: `household.id`
 
-## Priority 5 — Extended Family + Kid Sharing (Phase 1)
+## Priority 6 — Extended Family + Kid Sharing (Phase 1)
 
 A migration + edge function has been deployed for this. The frontend needs:
 
-### 5a. Invite Page in Settings
+### 6a. Invite Page in Settings
 
 In the Settings route (`settings.tsx`), add a section called **"Extended Family"**:
 
@@ -116,7 +136,7 @@ In the Settings route (`settings.tsx`), add a section called **"Extended Family"
 - List active invite codes (with expiry dates) so the admin can see what's pending
 - Revoke invite: DELETE from `household_invites` where `id = ...`
 
-### 5b. Join Page (`/join?code=X`)
+### 6b. Join Page (`/join?code=X`)
 
 Create a new route at `/join` that:
 - Reads the `code` query parameter from the URL
@@ -129,7 +149,7 @@ Create a new route at `/join` that:
   - Show "Sign up free" and "Log in" buttons
   - After sign-in/sign-up, redirect back to `/join?code=CODE` (so the accept happens after auth)
 
-### 5c. Role-Conscious UI
+### 6c. Role-Conscious UI
 
 When a user is a **viewer**:
 - The home page still shows the marble jar, kids' avatars, and point totals
@@ -145,7 +165,7 @@ When a user is a **contributor**:
 - BUT cannot add/remove kids, chores, skills, or change settings
 - Badge: "Contributor"
 
-### 5d. Shared Kids Display
+### 6d. Shared Kids Display
 
 When a user belongs to a household that has shared kids (via `kid_shares`):
 - The kids appear in the dashboard alongside the household's own kids
@@ -161,12 +181,11 @@ const sharedKidIds = await supabase.from('kid_shares').select('kid_id').eq('hous
 const sharedKids = await supabase.from('kids').select('*').in('id', sharedKidIds.map(s => s.kid_id))
 ```
 
-## Priority 6 — Responsive Desktop Layout
+## Priority 7 — Responsive Desktop Layout
 
 **What to build:**
 The app is currently mobile-only (floating pill nav, `max-w-4xl` centered content).
 
-- Read the PWA prompt from previous work if available — it describes the desktop sidebar approach
 - Desktop (>768px): replace the floating pill nav with a proper sidebar
   - Left sidebar: logo at top, nav items (Home, Library, Memories, Rewards), settings gear at bottom
 - Mobile (<768px): keep the existing floating pill nav
@@ -177,6 +196,10 @@ The app is currently mobile-only (floating pill nav, `max-w-4xl` centered conten
 
 | File | Action |
 |------|--------|
+| `src/routes/about.tsx` | Already built — generate images, polish accordion styling |
+| `src/routes/faq.tsx` | Already built — generate images, polish |
+| `src/routes/blog.tsx` | Already built — generate blog post hero images, polish |
+| `src/components/PublicPageLayout.tsx` | Already built — add subtle decorative elements, polish nav |
 | `src/routes/welcome.tsx` | Update links to point at new `/sign-in`, `/sign-up` |
 | New: `src/routes/sign-in.tsx` | Create |
 | New: `src/routes/sign-up.tsx` | Create |
@@ -186,5 +209,5 @@ The app is currently mobile-only (floating pill nav, `max-w-4xl` centered conten
 | `src/components/Paywall.tsx` | Fix householdId from `"household_local"` to `household.id` |
 | `src/lib/mock-data.ts` | Fix corrupted emoji pools |
 | `src/components/AppShell.tsx` | Add responsive sidebar for desktop |
-| `src/lib/memories.ts` | ✅ Already fixed (household_id added to insert) |
-| `src/routes/memories.tsx` | ✅ Already fixed (passes household.id) |
+| `src/lib/memories.ts` | ✅ Already fixed |
+| `src/routes/memories.tsx` | ✅ Already fixed |
