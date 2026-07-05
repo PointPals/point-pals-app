@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       chores: {
         Row: {
+          assigned_kid_ids: string[] | null
           color: string
           created_at: string
           household_id: string
@@ -24,8 +25,10 @@ export type Database = {
           name: string
           points: number
           recurrence: string
+          tags: string[]
         }
         Insert: {
+          assigned_kid_ids?: string[] | null
           color?: string
           created_at?: string
           household_id: string
@@ -34,8 +37,10 @@ export type Database = {
           name: string
           points?: number
           recurrence?: string
+          tags?: string[]
         }
         Update: {
+          assigned_kid_ids?: string[] | null
           color?: string
           created_at?: string
           household_id?: string
@@ -44,6 +49,7 @@ export type Database = {
           name?: string
           points?: number
           recurrence?: string
+          tags?: string[]
         }
         Relationships: [
           {
@@ -123,6 +129,35 @@ export type Database = {
             foreignKeyName: "household_members_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_settings: {
+        Row: {
+          ext_family_can_award_needs_work: boolean
+          ext_family_can_post_memories: boolean
+          household_id: string
+          updated_at: string
+        }
+        Insert: {
+          ext_family_can_award_needs_work?: boolean
+          ext_family_can_post_memories?: boolean
+          household_id: string
+          updated_at?: string
+        }
+        Update: {
+          ext_family_can_award_needs_work?: boolean
+          ext_family_can_post_memories?: boolean
+          household_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_settings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
             referencedRelation: "households"
             referencedColumns: ["id"]
           },
@@ -267,27 +302,33 @@ export type Database = {
       }
       kids: {
         Row: {
+          all_time_points: number
           avatar_key: string | null
           color: string
           created_at: string
+          current_points: number
           household_id: string
           id: string
           name: string
           points: number
         }
         Insert: {
+          all_time_points?: number
           avatar_key?: string | null
           color?: string
           created_at?: string
+          current_points?: number
           household_id: string
           id?: string
           name: string
           points?: number
         }
         Update: {
+          all_time_points?: number
           avatar_key?: string | null
           color?: string
           created_at?: string
+          current_points?: number
           household_id?: string
           id?: string
           name?: string
@@ -338,6 +379,64 @@ export type Database = {
           },
         ]
       }
+      memory_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "memory_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "memory_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_post_kids: {
         Row: {
           kid_id: string
@@ -370,28 +469,34 @@ export type Database = {
       }
       memory_posts: {
         Row: {
+          audio_path: string | null
           caption: string | null
           created_at: string
           created_by: string | null
           household_id: string
           id: string
-          storage_path: string
+          media_type: string | null
+          storage_path: string | null
         }
         Insert: {
+          audio_path?: string | null
           caption?: string | null
           created_at?: string
           created_by?: string | null
           household_id: string
           id?: string
-          storage_path: string
+          media_type?: string | null
+          storage_path?: string | null
         }
         Update: {
+          audio_path?: string | null
           caption?: string | null
           created_at?: string
           created_by?: string | null
           household_id?: string
           id?: string
-          storage_path?: string
+          media_type?: string | null
+          storage_path?: string | null
         }
         Relationships: [
           {
@@ -405,6 +510,7 @@ export type Database = {
       }
       point_events: {
         Row: {
+          awarded_by: string | null
           batch_id: string | null
           created_at: string
           household_id: string
@@ -415,6 +521,7 @@ export type Database = {
           points: number
         }
         Insert: {
+          awarded_by?: string | null
           batch_id?: string | null
           created_at?: string
           household_id: string
@@ -425,6 +532,7 @@ export type Database = {
           points: number
         }
         Update: {
+          awarded_by?: string | null
           batch_id?: string | null
           created_at?: string
           household_id?: string
@@ -451,77 +559,44 @@ export type Database = {
           },
         ]
       }
-      reward_proposals: {
+      reward_history: {
         Row: {
-          created_at: string
+          achieved_at: string
+          contributing_kid_ids: string[] | null
           household_id: string
           id: string
-          name: string
-          proposed_by: string | null
+          reward_name: string
+          target_points: number
         }
         Insert: {
-          created_at?: string
+          achieved_at?: string
+          contributing_kid_ids?: string[] | null
           household_id: string
           id?: string
-          name: string
-          proposed_by?: string | null
+          reward_name: string
+          target_points: number
         }
         Update: {
-          created_at?: string
+          achieved_at?: string
+          contributing_kid_ids?: string[] | null
           household_id?: string
           id?: string
-          name?: string
-          proposed_by?: string | null
+          reward_name?: string
+          target_points?: number
         }
         Relationships: [
           {
-            foreignKeyName: "reward_proposals_household_id_fkey"
+            foreignKeyName: "reward_history_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reward_proposals_proposed_by_fkey"
-            columns: ["proposed_by"]
-            isOneToOne: false
-            referencedRelation: "kids"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      reward_votes: {
-        Row: {
-          kid_id: string
-          proposal_id: string
-        }
-        Insert: {
-          kid_id: string
-          proposal_id: string
-        }
-        Update: {
-          kid_id?: string
-          proposal_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reward_votes_kid_id_fkey"
-            columns: ["kid_id"]
-            isOneToOne: false
-            referencedRelation: "kids"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reward_votes_proposal_id_fkey"
-            columns: ["proposal_id"]
-            isOneToOne: false
-            referencedRelation: "reward_proposals"
             referencedColumns: ["id"]
           },
         ]
       }
       skills: {
         Row: {
+          assigned_kid_ids: string[] | null
           color: string
           created_at: string
           household_id: string
@@ -532,6 +607,7 @@ export type Database = {
           points: number
         }
         Insert: {
+          assigned_kid_ids?: string[] | null
           color?: string
           created_at?: string
           household_id: string
@@ -542,6 +618,7 @@ export type Database = {
           points?: number
         }
         Update: {
+          assigned_kid_ids?: string[] | null
           color?: string
           created_at?: string
           household_id?: string
@@ -587,6 +664,35 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      transcriptions: {
+        Row: {
+          created_at: string
+          duration_sec: number | null
+          household_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_sec?: number | null
+          household_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_sec?: number | null
+          household_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcriptions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
