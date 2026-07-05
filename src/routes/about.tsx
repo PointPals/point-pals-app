@@ -140,7 +140,7 @@ function AboutPage() {
           </p>
           <p>
             Kevin Leman, in <em>Have a New Kid by Friday</em>, makes the same case from a different
-            angle: children learn best from <em>reality consequences</em>. When a parent removes
+            angle: children learn best from <em>real consequences</em>. When a parent removes
             themselves from the role of punisher and lets natural outcomes teach the lesson,
             children develop genuine accountability. Real competence comes from real contribution.
           </p>
