@@ -141,7 +141,7 @@ function Composer() {
     if (!file || saving) return;
     setSaving(true);
     try {
-      await addMemory(household.id, file, caption.trim(), taggedIds);
+      await addMemory(household.name, file, caption.trim(), taggedIds);
       trackParent("memory_added", { tagged: taggedIds.length, has_caption: caption.trim() !== "" });
       reset();
     } finally {
