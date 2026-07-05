@@ -762,3 +762,129 @@ function AgeChoresPost() {
     </>
   );
 }
+
+/* ── Blog Post: 50+ Screen-Free Reward Ideas ── */
+function ScreenFreeRewardsPost() {
+  return (
+    <>
+      <p>
+        When a reward chart fills up, the last thing many parents want to hand over is another hour of screen time. It works in the moment, but it can quietly become the only reward that feels &ldquo;big enough,&rdquo; and the rest of family life starts to shrink around a screen.
+      </p>
+      <p>
+        The good news: kids do not actually need extra screen time to feel proud of their effort. They need <strong>connection, novelty, autonomy and a bit of ceremony</strong>. Below are more than 50 screen-free reward ideas, sorted by size, so you can slot them into a marble jar, a points app like PointPals, or a simple sticker chart.
+      </p>
+
+      <h3 className="font-display text-lg font-bold mt-5">What makes a reward actually motivating?</h3>
+      <p>Before the list, three quick rules of thumb:</p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li><strong>Time with you beats stuff.</strong> A 20-minute one-on-one walk is remembered far longer than a plastic toy.</li>
+        <li><strong>Small and frequent beats huge and rare.</strong> Tiny wins keep momentum going between the big goals.</li>
+        <li><strong>Let the child choose from a menu.</strong> Autonomy turns a reward from a bribe into a genuine celebration.</li>
+      </ul>
+
+      <h3 className="font-display text-lg font-bold mt-5">Tiny rewards (a few points / everyday wins)</h3>
+      <p>Perfect for a single good day, a chore streak, or clearing the daily list.</p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Choose the music in the car or kitchen</li>
+        <li>Pick what&rsquo;s for dinner (from two options)</li>
+        <li>Stay up 15 minutes later than usual</li>
+        <li>A silly sticker or stamp on the hand</li>
+        <li>One extra bedtime story</li>
+        <li>Choose the family walk route</li>
+        <li>Pick the vegetable for tonight&rsquo;s dinner</li>
+        <li>A special &ldquo;proud of you&rdquo; note in the lunchbox</li>
+        <li>Their favourite breakfast tomorrow</li>
+        <li>Wear pyjamas all Saturday morning</li>
+        <li>A tiny treat from the pantry &ldquo;secret shelf&rdquo;</li>
+        <li>Sit in the front seat on the school run</li>
+        <li>Pick the game at family game time</li>
+        <li>Extra bubbles in the bath</li>
+        <li>A trip to the letterbox with a parent, just the two of you</li>
+      </ul>
+
+      <h3 className="font-display text-lg font-bold mt-5">Small rewards (a good week / a filled jar)</h3>
+      <p>These take a little planning but almost nothing to run.</p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Backyard picnic dinner on a blanket</li>
+        <li>Build a pillow fort and eat lunch inside it</li>
+        <li>Bake something together — cookies, muffins, pancakes</li>
+        <li>A trip to the library and choose 3 books</li>
+        <li>Movie night at home with popcorn (parent-picked film if screen time is the reward, otherwise skip)</li>
+        <li>Dance party in the lounge with disco lights off the phone torch</li>
+        <li>Board game marathon</li>
+        <li>Craft afternoon: paint, glue, glitter, chaos</li>
+        <li>&ldquo;Yes day&rdquo; for one small hour</li>
+        <li>Sleep in the lounge in a sleeping bag</li>
+        <li>Choose a new plant to grow on the windowsill</li>
+        <li>A homemade &ldquo;certificate of awesomeness&rdquo;</li>
+        <li>Face paint or hair chalk day</li>
+        <li>A scavenger hunt around the house or garden</li>
+        <li>Choose the family&rsquo;s Friday-night takeaway</li>
+        <li>A bath with food colouring drops and glow sticks</li>
+        <li>Bring their favourite soft toy on an outing</li>
+      </ul>
+
+      <h3 className="font-display text-lg font-bold mt-5">Medium rewards (a full jar / a big streak)</h3>
+      <p>Save these for when a reward chart is genuinely full.</p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Trip to the playground with an ice cream</li>
+        <li>A visit to the pools or beach</li>
+        <li>Bike ride or scooter adventure to a new spot</li>
+        <li>Bush walk or nature trail with a snack pack</li>
+        <li>A picnic breakfast at the park</li>
+        <li>Choose a new book or magazine at the shop</li>
+        <li>A play date at home with a friend of their choice</li>
+        <li>Camping in the backyard (tent, torch, cocoa)</li>
+        <li>A visit to a farm, aquarium or animal park</li>
+        <li>Cook a full meal together, start to finish</li>
+        <li>DIY science experiment kit from the pantry</li>
+        <li>A small budget at an op-shop to find a &ldquo;treasure&rdquo;</li>
+        <li>A trip to the botanical gardens or a museum</li>
+        <li>Ride the bus or train somewhere new, just for the ride</li>
+        <li>Learn one new skill together (whistling, cartwheels, a card trick)</li>
+      </ul>
+
+      <h3 className="font-display text-lg font-bold mt-5">Big rewards (family-wide goals)</h3>
+      <p>These work best as a shared goal — the whole family fills the jar together.</p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>A day trip somewhere the kids chose</li>
+        <li>Camping trip for a night</li>
+        <li>Family bike ride and cafe stop</li>
+        <li>Home &ldquo;theme night&rdquo; — Italian night, Japanese night, breakfast-for-dinner</li>
+        <li>Adopt a plant, a worm farm or (brace yourself) a pet</li>
+        <li>A morning at a trampoline park, pool or indoor climb</li>
+        <li>A family volunteer day — beach clean-up, food bank, animal shelter</li>
+        <li>A special dinner out that the kids helped plan</li>
+        <li>A weekend project chosen by the kids (treehouse, garden bed, mural wall)</li>
+      </ul>
+
+      <h3 className="font-display text-lg font-bold mt-5">Connection-only rewards (the secret weapon)</h3>
+      <p>
+        These cost nothing and often mean the most. Add a handful to your reward menu and watch which ones get picked most often — the answer is usually surprising.
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>15 minutes of undivided one-on-one time with a parent</li>
+        <li>A long cuddle on the couch with no phones in sight</li>
+        <li>Being the &ldquo;boss of dinner&rdquo; for one night</li>
+        <li>A written note listing three things you love about them</li>
+        <li>Interviewing a grandparent on speakerphone</li>
+        <li>A walk-and-talk after dinner, just the two of you</li>
+        <li>Reading a whole chapter book out loud together</li>
+        <li>Teaching a parent a game <em>they</em> know</li>
+        <li>Planning next weekend&rsquo;s family day together</li>
+      </ul>
+
+      <h3 className="font-display text-lg font-bold mt-5">How to use these with a reward chart or jar</h3>
+      <ul className="list-disc pl-5 space-y-1">
+        <li><strong>Build a menu, not a promise.</strong> Write 5–10 options on a card. When the jar fills, the child picks from the menu.</li>
+        <li><strong>Match the reward to the effort.</strong> Tiny rewards for daily wins, medium rewards for a filled jar, big rewards for a family-wide milestone.</li>
+        <li><strong>Refresh the menu every month.</strong> Novelty is half the magic.</li>
+        <li><strong>Celebrate the reward, not just the prize.</strong> Take a photo of the pillow fort. Talk about the walk. Make the moment feel earned.</li>
+      </ul>
+
+      <p className="font-display font-bold mt-4">
+        The best screen-free reward is almost always the same thing wearing a different hat: your attention, on purpose, without a screen between you.
+      </p>
+    </>
+  );
+}
