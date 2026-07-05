@@ -6,6 +6,7 @@ import { Paywall } from "@/components/Paywall";
 import { trackParent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { PASTEL_HEX } from "@/lib/mock-data";
+import { useHouseholdRole, type HouseholdRole } from "@/lib/use-household-role";
 import {
   Volume2,
   Vibrate,
@@ -22,6 +23,9 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  ShieldCheck,
+  UserRound,
+  Trash,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
@@ -50,6 +54,52 @@ function SettingsPage() {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+
+  const { role, userId, isAdmin } = useHouseholdRole(household.id);
+  const isLive = !!userId; // signed in against Supabase household
+  const [members, setMembers] = useState<
+    { user_id: string; role: string; created_at: string }[]
+  >([]);
+  const [invites, setInvites] = useState<
+    { id: string; code: string; role: string; expires_at: string; used_at: string | null }[]
+  >([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+
+  async function loadMembersAndInvites() {
+    if (!isLive) return;
+    setMembersLoading(true);
+    const [{ data: m }, { data: inv }] = await Promise.all([
+      supabase
+        .from("household_members")
+        .select("user_id, role, created_at")
+        .eq("household_id", household.id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("household_invites")
+        .select("id, code, role, expires_at, used_at")
+        .eq("household_id", household.id)
+        .is("used_at", null)
+        .order("created_at", { ascending: false }),
+    ]);
+    setMembers(m ?? []);
+    setInvites(inv ?? []);
+    setMembersLoading(false);
+  }
+
+  useEffect(() => {
+    void loadMembersAndInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLive, household.id]);
+
+  const revokeInvite = async (id: string) => {
+    if (!window.confirm("Revoke this invite? The code will stop working immediately.")) return;
+    const { error } = await supabase.from("household_invites").delete().eq("id", id);
+    if (error) {
+      setInviteError(error.message);
+      return;
+    }
+    setInvites((prev) => prev.filter((i) => i.id !== id));
+  };
 
   const exportJson = () => {
     trackParent("data_export");
@@ -128,13 +178,52 @@ function SettingsPage() {
       {/* Extended Family */}
       <section className="space-y-3">
         <SectionTitle icon={<Users className="h-4 w-4" />}>Extended family</SectionTitle>
+
+        {isLive && (
+          <div className="card-soft p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                Members
+              </h3>
+              {role && <RoleBadge role={role} />}
+            </div>
+            {membersLoading ? (
+              <div className="text-xs text-muted-foreground flex items-center gap-2">
+                <Loader2 className="w-3 h-3 animate-spin" /> Loading…
+              </div>
+            ) : members.length === 0 ? (
+              <div className="text-xs text-muted-foreground">No members yet.</div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {members.map((m) => (
+                  <li key={m.user_id} className="flex items-center gap-3 py-2.5">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                      <UserRound className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate">
+                        {m.user_id === userId ? "You" : `Member · ${m.user_id.slice(0, 8)}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Joined {new Date(m.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <RoleBadge role={m.role as HouseholdRole} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         <div className="card-soft p-5 space-y-4">
           <p className="text-sm text-muted-foreground">
-            Generate an invite code so grandparents or other family members can join your
-            household. Contributors can award points and add memories; viewers see everything
-            but can't award.
+            {isLive && !isAdmin
+              ? "Only admins can invite new family members. Ask a family admin to generate an invite code."
+              : "Generate an invite code so grandparents or other family members can join your household. Contributors can award points and add memories; viewers see everything but can't award."}
           </p>
 
+          {(!isLive || isAdmin) && (
           <div className="flex flex-wrap gap-3 items-end">
             <div className="flex gap-2">
               {[
@@ -167,6 +256,7 @@ function SettingsPage() {
                   if (fnErr) throw fnErr;
                   if (data.error) throw new Error(data.error);
                   setInviteCode(data.code ?? data.invite_code ?? "");
+                  void loadMembersAndInvites();
                 } catch (err) {
                   setInviteError(
                     err instanceof Error ? err.message : "Failed to generate invite",
@@ -189,6 +279,7 @@ function SettingsPage() {
               )}
             </button>
           </div>
+          )}
 
           {inviteCode && (
             <div className="flex items-center gap-3 card-soft p-3">
@@ -238,6 +329,40 @@ function SettingsPage() {
             </div>
           )}
         </div>
+
+        {isLive && isAdmin && invites.length > 0 && (
+          <div className="card-soft p-5 space-y-3">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              Active invites
+            </h3>
+            <ul className="divide-y divide-border">
+              {invites.map((inv) => {
+                const expiresIn = Math.max(
+                  0,
+                  Math.round((new Date(inv.expires_at).getTime() - Date.now()) / 86400000),
+                );
+                return (
+                  <li key={inv.id} className="flex items-center gap-3 py-2.5">
+                    <code className="font-display font-bold tracking-[0.2em] text-sm">
+                      {inv.code}
+                    </code>
+                    <div className="flex-1 min-w-0 text-xs text-muted-foreground">
+                      <RoleBadge role={inv.role as HouseholdRole} /> · expires in {expiresIn}d
+                    </div>
+                    <button
+                      onClick={() => revokeInvite(inv.id)}
+                      className="tap rounded-full bg-muted p-2 hover:bg-destructive/10 hover:text-destructive transition"
+                      title="Revoke invite"
+                      aria-label="Revoke invite"
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </section>
 
       {/* Sound & haptics */}
