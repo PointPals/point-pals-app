@@ -8,9 +8,58 @@ import { CompanionPicker } from "@/components/CompanionPicker";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
-import { ICON_KEYS } from "@/lib/icons";
+import { ICON_KEYS, iconUrl } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Sparkles, Pencil, X, Check, Wand2 } from "lucide-react";
+
+// Grid of built-in illustrated icons, styled like the ClassDojo picker.
+// Selecting one overrides the auto icon that would otherwise be derived from
+// the item name hash. Keep the AI-generation option hidden for now — the
+// prompt-based generator lives further down and can be re-enabled later.
+function IconPickerGrid({
+  selected,
+  onSelect,
+}: {
+  selected: string | null;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        Icon
+      </label>
+      <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2">
+        <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
+          {ICON_KEYS.map((k) => {
+            const on = selected === k;
+            return (
+              <button
+                type="button"
+                key={k}
+                onClick={() => onSelect(k)}
+                aria-pressed={on}
+                aria-label={`Icon ${k}`}
+                className={`tap aspect-square rounded-xl bg-card flex items-center justify-center transition ${
+                  on
+                    ? "ring-2 ring-foreground scale-95"
+                    : "hover:scale-105 border border-border/60"
+                }`}
+              >
+                <img
+                  src={iconUrl(k)}
+                  alt=""
+                  aria-hidden
+                  className="w-[86%] h-[86%] object-contain pointer-events-none"
+                  draggable={false}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/library")({
   component: LibraryPage,
