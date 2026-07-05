@@ -125,6 +125,7 @@ function withTimeout<T>(p: Promise<T>): Promise<T> {
 
 async function remoteUpload(
   id: string,
+  householdId: string,
   blob: Blob,
   caption: string,
   kidIds: string[],
@@ -139,6 +140,7 @@ async function remoteUpload(
     Promise.resolve(
       db.from("memories").insert({
         id,
+        household_id: householdId,
         storage_path: path,
         caption,
         kid_ids: kidIds,
@@ -202,13 +204,13 @@ async function loadOnce() {
   }
 }
 
-export async function addMemory(file: File, caption: string, kidIds: string[]): Promise<Memory> {
+export async function addMemory(householdId: string, file: File, caption: string, kidIds: string[]): Promise<Memory> {
   const id = uid();
   const { blob, dataUrl } = await downscale(file);
 
   let memory: Memory;
   try {
-    const url = await remoteUpload(id, blob, caption, kidIds);
+    const url = await remoteUpload(id, householdId, blob, caption, kidIds);
     memory = { id, url, caption, kidIds, createdAt: Date.now(), remote: true };
   } catch {
     // Backend unreachable — keep the photo locally so nothing is lost.

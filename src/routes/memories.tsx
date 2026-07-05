@@ -113,7 +113,7 @@ function MemoriesPage() {
 }
 
 function Composer() {
-  const { kids } = useApp();
+  const { kids, household } = useApp();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -141,7 +141,7 @@ function Composer() {
     if (!file || saving) return;
     setSaving(true);
     try {
-      await addMemory(file, caption.trim(), taggedIds);
+      await addMemory(household.id, file, caption.trim(), taggedIds);
       trackParent("memory_added", { tagged: taggedIds.length, has_caption: caption.trim() !== "" });
       reset();
     } finally {
