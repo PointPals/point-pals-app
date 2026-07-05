@@ -11,6 +11,7 @@ export function isRootTab(pathname: string): boolean {
 // Human label for a sub-page, shown next to the back chevron.
 const TITLES: Record<string, string> = {
   "/settings": "Settings",
+  "/reports": "Reports",
   "/about": "About",
   "/faq": "FAQ",
   "/blog": "Blog",

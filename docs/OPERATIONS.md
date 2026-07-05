@@ -32,20 +32,20 @@ Schema highlights: `households` carries the entitlement fields
 rate-limit ledger; RLS is member-scoped and billing columns are service-role
 only (`0004_billing_guard.sql` adds a BEFORE-UPDATE trigger enforcing this).
 
-### Regenerate the client types (blocked here)
+### Regenerating the client types
 
-`src/integrations/supabase/types.ts` is still the empty placeholder — it can
-only be generated against the live project, which this environment cannot
-reach. After the migrations above are applied, run:
+`src/integrations/supabase/types.ts` is now generated from the live project
+(no longer the empty placeholder). Re-run this after any migration:
 
 ```bash
 supabase gen types typescript --project-id tcpbvcgvtwrqsrzerwwr \
   > src/integrations/supabase/types.ts
 ```
 
-and commit the result. Until then, `src/lib/memories.ts` casts the client
-(`supabase as unknown as SupabaseClient`) because the `memories` table isn't
-in the generated types; that cast can be removed once types are regenerated.
+A few call sites (`src/lib/memories.ts`, `src/lib/correction-store.tsx`) still
+cast the client (`supabase as unknown as SupabaseClient`) or individual calls
+(`as never`) from when those tables predated the generated types — safe to
+drop those casts opportunistically now that the types include them.
 
 ## 3. Stripe (§5)
 

@@ -616,3 +616,18 @@
 .game-glimmer {
   animation: pp-game-glimmer 3.2s ease-in-out infinite;
 }
+
+/* Reports print view: hide app chrome (nav, header, per-row menus) and let
+ * the gauge/list print as a clean report — reusing the printable-chart
+ * feature's "actually printable, not a screenshot of the UI" instinct. */
+@media print {
+  .pp-bottom-nav,
+  header,
+  aside,
+  .pp-print-hide {
+    display: none !important;
+  }
+  .pp-print-report {
+    padding: 0 !important;
+  }
+}

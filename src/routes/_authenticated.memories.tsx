@@ -120,6 +120,9 @@ function Composer({
   const [keepAudio, setKeepAudio] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [micNote, setMicNote] = useState<string | null>(null);
+  // Teaser bar (default) vs. the full single-screen composer — tapping the
+  // bar, or any of its icon pills, expands into the composer already built.
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
@@ -147,9 +150,23 @@ function Composer({
     setAudioBlob(null);
     setKeepAudio(false);
     setMicNote(null);
+    setExpanded(false);
     if (inputRef.current) inputRef.current.value = "";
     if (cameraRef.current) cameraRef.current.value = "";
     if (videoRef.current) videoRef.current.value = "";
+  };
+
+  const openGallery = () => {
+    setExpanded(true);
+    inputRef.current?.click();
+  };
+  const openCamera = () => {
+    setExpanded(true);
+    cameraRef.current?.click();
+  };
+  const openMicFromTeaser = () => {
+    setExpanded(true);
+    void startRecording();
   };
 
   const canPost = file !== null || caption.trim().length > 0 || (audioBlob !== null && keepAudio);
@@ -284,232 +301,285 @@ function Composer({
         onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
       />
 
-      <div className="space-y-3">
-        {file && (
-          <div className="relative">
-            {preview &&
-              (isVideo ? (
-                <video
-                  src={preview}
-                  controls
-                  playsInline
-                  className="w-full max-h-72 rounded-2xl bg-foreground/5"
-                />
-              ) : (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full max-h-72 object-cover rounded-2xl"
-                />
-              ))}
+      {!expanded ? (
+        // Persistent teaser bar — an always-visible entry point at the top of
+        // the feed, rather than relying solely on a floating action button.
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setExpanded(true)}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setExpanded(true)}
+          className="tap w-full flex items-center gap-2 rounded-full border border-input bg-muted/40 pl-4 pr-1.5 py-1.5 hover:bg-muted/60 transition cursor-text"
+        >
+          <span className="flex-1 text-sm text-muted-foreground">What&apos;s happening?</span>
+          <span className="flex items-center gap-1">
             <button
-              onClick={() => pickFile(null)}
-              aria-label="Remove media"
-              className="absolute top-2 right-2 h-8 w-8 rounded-full bg-foreground/60 text-background flex items-center justify-center hover:bg-foreground transition"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openGallery();
+              }}
+              className="tap rounded-full p-2 bg-sky/40 hover:bg-sky/60 transition"
+              aria-label="Add a photo"
             >
-              <X className="h-4 w-4" />
+              <ImagePlus className="h-4 w-4" />
             </button>
-          </div>
-        )}
-
-        {/* Caption — transcribed narration lands here, editable */}
-        <textarea
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          placeholder={transcribing ? "Listening back…" : "What's happening?"}
-          rows={1}
-          className="w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none min-h-[42px]"
-          onInput={(e) => {
-            const el = e.currentTarget;
-            el.style.height = "auto";
-            el.style.height = `${el.scrollHeight}px`;
-          }}
-        />
-
-        {/* Recording overlay — phrased for the child, who's the one talking */}
-        {recording && (
-          <div className="rounded-2xl bg-blush/30 border border-blush px-4 py-3 flex items-center gap-3 animate-pop-in">
-            <span className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">What's happening here? Tell me about it!</div>
-              <div className="text-xs text-muted-foreground">
-                Recording {formatDuration(recordingDuration)} · up to{" "}
-                {formatDuration(MAX_RECORDING_SEC)}
-              </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openCamera();
+              }}
+              className="tap rounded-full p-2 bg-butter/40 hover:bg-butter/60 transition"
+              aria-label="Camera"
+            >
+              <Camera className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openMicFromTeaser();
+              }}
+              className="tap rounded-full p-2 bg-blush/40 hover:bg-blush/60 transition"
+              aria-label="Record a voice note"
+            >
+              <Mic className="h-4 w-4" />
+            </button>
+          </span>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {file && (
+            <div className="relative">
+              {preview &&
+                (isVideo ? (
+                  <video
+                    src={preview}
+                    controls
+                    playsInline
+                    className="w-full max-h-72 rounded-2xl bg-foreground/5"
+                  />
+                ) : (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full max-h-72 object-cover rounded-2xl"
+                  />
+                ))}
+              <button
+                onClick={() => pickFile(null)}
+                aria-label="Remove media"
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-foreground/60 text-background flex items-center justify-center hover:bg-foreground transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={stopRecording}
-              className="tap rounded-full px-4 py-2 bg-destructive text-destructive-foreground text-sm font-semibold flex items-center gap-1.5"
-              title="Stop recording"
-            >
-              <Square className="h-3.5 w-3.5 fill-current" /> Done
-            </button>
-          </div>
-        )}
-
-        {transcribing && (
-          <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Turning their words into the caption…
-          </div>
-        )}
-        {micNote && !transcribing && <div className="text-xs text-muted-foreground">{micNote}</div>}
-
-        {/* Secondary, off by default: keep the raw recording too — a small
-              voice at this age is often the more precious artifact. */}
-        {audioBlob && !recording && !transcribing && (
-          <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground select-none">
-            <input
-              type="checkbox"
-              checked={keepAudio}
-              onChange={(e) => setKeepAudio(e.target.checked)}
-              className="accent-foreground"
-            />
-            Keep the audio too ({Math.round(audioBlob.size / 1024)} KB)
-            <button
-              onClick={removeAudio}
-              aria-label="Discard recording"
-              className="tap text-destructive hover:text-destructive/80"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </label>
-        )}
-
-        {/* Bottom action row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Media buttons */}
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="tap rounded-full p-2.5 bg-sky/40 hover:bg-sky/60 transition"
-            title="Gallery"
-          >
-            <ImagePlus className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => cameraRef.current?.click()}
-            className="tap rounded-full p-2.5 bg-butter/40 hover:bg-butter/60 transition"
-            title="Camera"
-          >
-            <Camera className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => videoRef.current?.click()}
-            className="tap rounded-full p-2.5 bg-sage/40 hover:bg-sage/60 transition"
-            title="Video"
-          >
-            <Video className="h-5 w-5" />
-          </button>
-
-          {/* Microphone — hand the phone to the child and let them narrate */}
-          {recording ? (
-            <button
-              onClick={stopRecording}
-              className="tap rounded-full p-2.5 bg-destructive text-destructive-foreground animate-pulse"
-              title="Stop recording"
-            >
-              <Square className="h-5 w-5 fill-current" />
-            </button>
-          ) : (
-            <button
-              onClick={startRecording}
-              disabled={transcribing}
-              className="tap rounded-full p-2.5 bg-blush/40 hover:bg-blush/60 transition disabled:opacity-50"
-              title="Let them tell the story"
-            >
-              <Mic className="h-5 w-5" />
-            </button>
           )}
 
-          {/* Tag kids — inline popover */}
-          <div className="relative ml-auto">
+          {/* Caption — transcribed narration lands here, editable */}
+          <textarea
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder={transcribing ? "Listening back…" : "What's happening?"}
+            rows={1}
+            className="w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none min-h-[42px]"
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }}
+          />
+
+          {/* Recording overlay — phrased for the child, who's the one talking */}
+          {recording && (
+            <div className="rounded-2xl bg-blush/30 border border-blush px-4 py-3 flex items-center gap-3 animate-pop-in">
+              <span className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold">
+                  What's happening here? Tell me about it!
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Recording {formatDuration(recordingDuration)} · up to{" "}
+                  {formatDuration(MAX_RECORDING_SEC)}
+                </div>
+              </div>
+              <button
+                onClick={stopRecording}
+                className="tap rounded-full px-4 py-2 bg-destructive text-destructive-foreground text-sm font-semibold flex items-center gap-1.5"
+                title="Stop recording"
+              >
+                <Square className="h-3.5 w-3.5 fill-current" /> Done
+              </button>
+            </div>
+          )}
+
+          {transcribing && (
+            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Turning their words into the caption…
+            </div>
+          )}
+          {micNote && !transcribing && (
+            <div className="text-xs text-muted-foreground">{micNote}</div>
+          )}
+
+          {/* Secondary, off by default: keep the raw recording too — a small
+              voice at this age is often the more precious artifact. */}
+          {audioBlob && !recording && !transcribing && (
+            <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground select-none">
+              <input
+                type="checkbox"
+                checked={keepAudio}
+                onChange={(e) => setKeepAudio(e.target.checked)}
+                className="accent-foreground"
+              />
+              Keep the audio too ({Math.round(audioBlob.size / 1024)} KB)
+              <button
+                onClick={removeAudio}
+                aria-label="Discard recording"
+                className="tap text-destructive hover:text-destructive/80"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </label>
+          )}
+
+          {/* Bottom action row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Media buttons */}
             <button
-              onClick={() => setShowTagSheet(!showTagSheet)}
-              className={`tap rounded-full px-3 py-2 text-sm font-semibold border transition flex items-center gap-1.5 ${
-                taggedIds.length > 0
-                  ? "bg-foreground text-background border-foreground"
-                  : "border-input hover:bg-muted"
-              }`}
+              onClick={() => inputRef.current?.click()}
+              className="tap rounded-full p-2.5 bg-sky/40 hover:bg-sky/60 transition"
+              title="Gallery"
             >
-              {taggedIds.length > 0 ? (
-                <>
-                  <span className="flex -space-x-1">
-                    {taggedIds.slice(0, 3).map((id) => {
-                      const k = kids.find((x) => x.id === id);
-                      if (!k) return null;
-                      return (
-                        <span
-                          key={id}
-                          className="w-4 h-4 rounded-full border border-background"
-                          style={{
-                            backgroundColor:
-                              PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
-                          }}
-                        />
-                      );
-                    })}
-                  </span>
-                  <span>{taggedIds.length > 3 ? `${taggedIds.length}` : ""}</span>
-                </>
-              ) : (
-                <>👤 Tag</>
-              )}
+              <ImagePlus className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => cameraRef.current?.click()}
+              className="tap rounded-full p-2.5 bg-butter/40 hover:bg-butter/60 transition"
+              title="Camera"
+            >
+              <Camera className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => videoRef.current?.click()}
+              className="tap rounded-full p-2.5 bg-sage/40 hover:bg-sage/60 transition"
+              title="Video"
+            >
+              <Video className="h-5 w-5" />
             </button>
 
-            {showTagSheet && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowTagSheet(false)} />
-                <div className="absolute right-0 bottom-full mb-2 z-50 min-w-[200px] bg-card border border-border rounded-2xl shadow-xl p-3 space-y-1 animate-pop-in">
-                  {kids.map((k) => {
-                    const on = taggedIds.includes(k.id);
-                    return (
-                      <button
-                        key={k.id}
-                        onClick={() => toggleTag(k.id)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                          on ? "bg-foreground text-background" : "hover:bg-muted"
-                        }`}
-                      >
-                        <span
-                          className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                          style={{
-                            backgroundColor:
-                              PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
-                          }}
-                        >
-                          <CompanionAvatar
-                            seed={k.id}
-                            color={k.color as PastelKey}
-                            size={24}
-                            companionId={k.companionId}
-                          />
-                        </span>
-                        <span className="flex-1 text-left">{k.name}</span>
-                        {on && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    );
-                  })}
-                  <button
-                    onClick={() => setShowTagSheet(false)}
-                    className="w-full text-center text-xs text-muted-foreground pt-2 mt-1 border-t border-border"
-                  >
-                    Done
-                  </button>
-                </div>
-              </>
+            {/* Microphone — hand the phone to the child and let them narrate */}
+            {recording ? (
+              <button
+                onClick={stopRecording}
+                className="tap rounded-full p-2.5 bg-destructive text-destructive-foreground animate-pulse"
+                title="Stop recording"
+              >
+                <Square className="h-5 w-5 fill-current" />
+              </button>
+            ) : (
+              <button
+                onClick={startRecording}
+                disabled={transcribing}
+                className="tap rounded-full p-2.5 bg-blush/40 hover:bg-blush/60 transition disabled:opacity-50"
+                title="Let them tell the story"
+              >
+                <Mic className="h-5 w-5" />
+              </button>
             )}
-          </div>
-        </div>
 
-        {/* Save button */}
-        <button
-          onClick={() => void save()}
-          disabled={!canPost || saving}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-          Post
-        </button>
-      </div>
+            {/* Tag kids — inline popover */}
+            <div className="relative ml-auto">
+              <button
+                onClick={() => setShowTagSheet(!showTagSheet)}
+                className={`tap rounded-full px-3 py-2 text-sm font-semibold border transition flex items-center gap-1.5 ${
+                  taggedIds.length > 0
+                    ? "bg-foreground text-background border-foreground"
+                    : "border-input hover:bg-muted"
+                }`}
+              >
+                {taggedIds.length > 0 ? (
+                  <>
+                    <span className="flex -space-x-1">
+                      {taggedIds.slice(0, 3).map((id) => {
+                        const k = kids.find((x) => x.id === id);
+                        if (!k) return null;
+                        return (
+                          <span
+                            key={id}
+                            className="w-4 h-4 rounded-full border border-background"
+                            style={{
+                              backgroundColor:
+                                PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
+                            }}
+                          />
+                        );
+                      })}
+                    </span>
+                    <span>{taggedIds.length > 3 ? `${taggedIds.length}` : ""}</span>
+                  </>
+                ) : (
+                  <>👤 Tag</>
+                )}
+              </button>
+
+              {showTagSheet && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowTagSheet(false)} />
+                  <div className="absolute right-0 bottom-full mb-2 z-50 min-w-[200px] bg-card border border-border rounded-2xl shadow-xl p-3 space-y-1 animate-pop-in">
+                    {kids.map((k) => {
+                      const on = taggedIds.includes(k.id);
+                      return (
+                        <button
+                          key={k.id}
+                          onClick={() => toggleTag(k.id)}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition ${
+                            on ? "bg-foreground text-background" : "hover:bg-muted"
+                          }`}
+                        >
+                          <span
+                            className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                            style={{
+                              backgroundColor:
+                                PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
+                            }}
+                          >
+                            <CompanionAvatar
+                              seed={k.id}
+                              color={k.color as PastelKey}
+                              size={24}
+                              companionId={k.companionId}
+                            />
+                          </span>
+                          <span className="flex-1 text-left">{k.name}</span>
+                          {on && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setShowTagSheet(false)}
+                      className="w-full text-center text-xs text-muted-foreground pt-2 mt-1 border-t border-border"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Save button */}
+          <button
+            onClick={() => void save()}
+            disabled={!canPost || saving}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            Post
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -603,52 +673,70 @@ function MemoryCard({
 
   return (
     <li className="card-soft overflow-hidden">
-      {/* Seesaw-style header: tagged kids are the post's identity, never the
-          uploading parent. Icon+name pairs, first two inline, overflow behind
-          a tappable inline expand. */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-border/40">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
-            {shown.length > 0 ? (
-              shown.map((k) => (
-                <span key={k.id} className="inline-flex items-center gap-1.5">
-                  <span
-                    className="h-7 w-7 rounded-full border-2 border-card overflow-hidden flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
-                    }}
-                  >
-                    <CompanionAvatar
-                      seed={k.id}
-                      color={k.color as PastelKey}
-                      size={26}
-                      companionId={k.companionId}
-                    />
-                  </span>
-                  <span className="text-sm font-semibold">{k.name}</span>
-                </span>
-              ))
-            ) : (
-              <span className="text-sm font-semibold text-muted-foreground">The whole family</span>
-            )}
-            {!tagsExpanded && overflow > 0 && (
-              <button
-                onClick={() => setTagsExpanded(true)}
-                className="tap text-xs font-semibold text-muted-foreground hover:text-foreground"
+      {/* Restyled header: a single stacked-avatar cluster on the left, a
+          two-line text block on the right (bold name(s), date right-aligned
+          on the same row; a lighter sync-status line below when relevant).
+          Tagged kids are still the post's identity, never the uploading
+          parent — same data, just a cleaner arrangement. */}
+      <div className="px-4 py-3 flex items-start gap-3 border-b border-border/40">
+        <div className="flex -space-x-2 shrink-0">
+          {tagged.length > 0 ? (
+            tagged.slice(0, 3).map((k) => (
+              <span
+                key={k.id}
+                className="h-9 w-9 rounded-full border-2 border-card overflow-hidden flex items-center justify-center"
+                style={{
+                  backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
+                }}
               >
-                and {overflow} more
-              </button>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {formatDateTime(memory.createdAt)}
-            {!memory.remote && (
-              <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                · local
+                <CompanionAvatar
+                  seed={k.id}
+                  color={k.color as PastelKey}
+                  size={32}
+                  companionId={k.companionId}
+                />
               </span>
-            )}
-          </div>
+            ))
+          ) : (
+            <span className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
+              ?
+            </span>
+          )}
+          {tagged.length > 3 && (
+            <span className="h-9 w-9 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[11px] font-bold">
+              +{tagged.length - 3}
+            </span>
+          )}
         </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="text-sm font-semibold truncate flex items-baseline gap-1.5 min-w-0">
+              <span className="truncate">
+                {tagged.length === 0
+                  ? "The whole family"
+                  : shown.map((k) => k.name).join(tagged.length > 2 ? ", " : " & ")}
+              </span>
+              {!tagsExpanded && overflow > 0 && (
+                <button
+                  onClick={() => setTagsExpanded(true)}
+                  className="tap text-xs font-semibold text-muted-foreground hover:text-foreground shrink-0"
+                >
+                  and {overflow} more
+                </button>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {formatDateTime(memory.createdAt)}
+            </span>
+          </div>
+          {!memory.remote && (
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mt-0.5">
+              Not yet synced
+            </div>
+          )}
+        </div>
+
         {canEdit && (
           <button
             onClick={() => {
