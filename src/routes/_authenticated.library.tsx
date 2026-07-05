@@ -531,7 +531,7 @@ function SkillManager({
   defaultPoints,
 }: {
   skills: SkillItem[];
-  addSkill: (name: string, points: number, color: PastelKey) => void;
+  addSkill: (name: string, points: number, color: PastelKey, icon?: string) => void;
   updateSkill: (id: string, patch: ItemPatch) => void;
   removeSkill: (id: string) => void;
   addLabel: string;
