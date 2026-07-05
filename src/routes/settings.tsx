@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/app-store";
 import { useSettings, setSetting } from "@/lib/settings";
@@ -26,6 +26,8 @@ import {
   ShieldCheck,
   UserRound,
   Trash,
+  BarChart3,
+  ChevronRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
@@ -57,9 +59,9 @@ function SettingsPage() {
 
   const { role, userId, isAdmin } = useHouseholdRole(household.id);
   const isLive = !!userId; // signed in against Supabase household
-  const [members, setMembers] = useState<
-    { user_id: string; role: string; created_at: string }[]
-  >([]);
+  const [members, setMembers] = useState<{ user_id: string; role: string; created_at: string }[]>(
+    [],
+  );
   const [invites, setInvites] = useState<
     { id: string; code: string; role: string; expires_at: string; used_at: string | null }[]
   >([]);
@@ -175,6 +177,25 @@ function SettingsPage() {
         </div>
       </section>
 
+      {/* Reports — parent/admin only */}
+      {(role === null || role === "admin" || role === "parent") && (
+        <section className="space-y-3">
+          <SectionTitle icon={<BarChart3 className="h-4 w-4" />}>Reports</SectionTitle>
+          <Link
+            to="/reports"
+            className="card-soft p-4 flex items-center justify-between hover:bg-muted/40 transition"
+          >
+            <div>
+              <div className="text-sm font-semibold">Positive vs. needs-work trends</div>
+              <div className="text-xs text-muted-foreground">
+                Date-range gauge, event log, CSV export
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </Link>
+        </section>
+      )}
+
       {/* Extended Family */}
       <section className="space-y-3">
         <SectionTitle icon={<Users className="h-4 w-4" />}>Extended family</SectionTitle>
@@ -224,61 +245,61 @@ function SettingsPage() {
           </p>
 
           {(!isLive || isAdmin) && (
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="flex gap-2">
-              {[
-                { value: "contributor" as const, label: "Can give points" },
-                { value: "viewer" as const, label: "View only" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setInviteRole(opt.value)}
-                  className={`tap px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                    inviteRole === opt.value
-                      ? "bg-foreground text-background"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex gap-2">
+                {[
+                  { value: "contributor" as const, label: "Can give points" },
+                  { value: "viewer" as const, label: "View only" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setInviteRole(opt.value)}
+                    className={`tap px-4 py-1.5 rounded-full text-sm font-semibold transition ${
+                      inviteRole === opt.value
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={async () => {
+                  setGenerating(true);
+                  setInviteError(null);
+                  setCopied(false);
+                  try {
+                    const { data, error: fnErr } = await supabase.functions.invoke(
+                      "generate-invite",
+                      { body: { household_id: household.id, role: inviteRole } },
+                    );
+                    if (fnErr) throw fnErr;
+                    if (data.error) throw new Error(data.error);
+                    setInviteCode(data.code ?? data.invite_code ?? "");
+                    void loadMembersAndInvites();
+                  } catch (err) {
+                    setInviteError(
+                      err instanceof Error ? err.message : "Failed to generate invite",
+                    );
+                  } finally {
+                    setGenerating(false);
+                  }
+                }}
+                disabled={generating}
+                className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Generating…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" /> Generate invite
+                  </>
+                )}
+              </button>
             </div>
-            <button
-              onClick={async () => {
-                setGenerating(true);
-                setInviteError(null);
-                setCopied(false);
-                try {
-                  const { data, error: fnErr } = await supabase.functions.invoke(
-                    "generate-invite",
-                    { body: { household_id: household.id, role: inviteRole } },
-                  );
-                  if (fnErr) throw fnErr;
-                  if (data.error) throw new Error(data.error);
-                  setInviteCode(data.code ?? data.invite_code ?? "");
-                  void loadMembersAndInvites();
-                } catch (err) {
-                  setInviteError(
-                    err instanceof Error ? err.message : "Failed to generate invite",
-                  );
-                } finally {
-                  setGenerating(false);
-                }
-              }}
-              disabled={generating}
-              className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Generating…
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" /> Generate invite
-                </>
-              )}
-            </button>
-          </div>
           )}
 
           {inviteCode && (
