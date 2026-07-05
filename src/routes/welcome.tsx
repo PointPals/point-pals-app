@@ -1,27 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import { Sparkles, Heart, Gift, ArrowRight } from "lucide-react";
-import { PASTEL_HEX } from "@/lib/mock-data";
-import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { formatPrice, BILLING_CONFIG } from "@/lib/entitlements";
 import heroAsset from "@/assets/brand/pp-hero.asset.json";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
-import { AnimatedHeroScene } from "@/components/AnimatedHeroScene";
+import { HeroJarScene } from "@/components/HeroJarScene";
+import { WalkingMascots } from "@/components/WalkingMascots";
 
 export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
   head: () => ({
     meta: [
-      { title: "PointPals - Family chores & habits, made kind" },
+      { title: "PointPals — Family chores & behaviour, made kind" },
       {
         name: "description",
         content:
-          "PointPals turns everyday chores into habits worth cheering for. Points fill a shared family jar; kids collect companion avatars along the way.",
+          "PointPals is a warm, pastel family chore & behaviour tracker. Kids earn points toward collectible plush companions and vote on shared rewards.",
       },
       { name: "theme-color", content: "#F3E1A0" },
-      { property: "og:title", content: "PointPals - Family chores & habits, made kind" },
+      { property: "og:title", content: "PointPals — Family chores & behaviour, made kind" },
       {
         property: "og:description",
-        content: "A warm, pastel family chore & behaviour tracker - not a boring points list.",
+        content:
+          "PointPals is a warm, pastel family chore & behaviour tracker. Kids earn points toward collectible plush companions and vote on shared rewards.",
       },
       { property: "og:type", content: "website" },
       { property: "og:image", content: heroAsset.url },
@@ -35,9 +36,36 @@ export const Route = createFileRoute("/welcome")({
 // for this route - see components/AppShell.tsx). Kept light and fast: no
 // canvas jar animation, no client-only state, just the pitch.
 function WelcomePage() {
+  const TARGET = 24;
+  const [value, setValue] = useState(0);
+  const [celebrating, setCelebrating] = useState(false);
+
+  const handleFull = useCallback(() => {
+    setCelebrating(true);
+    window.setTimeout(() => {
+      setValue(0);
+      window.setTimeout(() => setCelebrating(false), 900);
+    }, 3200);
+  }, []);
+
+  const addPoints = useCallback(
+    (n: number) => {
+      if (celebrating) return;
+      setValue((v) => Math.min(TARGET, v + n));
+    },
+    [celebrating],
+  );
+
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <AnimatedHeroScene />
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(1000px 700px at 15% 10%, #FEE7B5 0%, transparent 60%)," +
+          "radial-gradient(900px 700px at 85% 20%, #FBD0E4 0%, transparent 60%)," +
+          "linear-gradient(180deg, #FFF6E4 0%, #FCE7F3 60%, #FDE1EC 100%)",
+      }}
+    >
       {/* header */}
       <header className="max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between">
         <Link to="/" className="flex items-center">
@@ -52,9 +80,9 @@ function WelcomePage() {
       </header>
 
       {/* hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-8 pb-12 min-h-[80vh] flex items-center">
-        <div className="max-w-2xl">
-          <div className="rounded-3xl bg-white/55 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
+      <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-12 grid lg:grid-cols-2 gap-8 items-center">
+        <div className="relative z-10">
+          <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
               <Sparkles className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
             </div>
@@ -100,24 +128,19 @@ function WelcomePage() {
             </p>
           </div>
         </div>
-      </section>
 
-      {/* companion strip */}
-      <section className="relative max-w-3xl mx-auto px-6 pb-4">
-        <div className="flex items-center justify-center gap-4">
-          {(["blush", "sky", "sage", "lilac"] as const).map((c, i) => (
-            <div
-              key={c}
-              className="h-16 w-16 rounded-full overflow-hidden shadow-md"
-              style={{
-                backgroundColor: PASTEL_HEX[c],
-                transform: `translateY(${i % 2 === 0 ? "0px" : "10px"})`,
-              }}
-            >
-              <CompanionAvatar seed={`welcome-${c}`} color={c} size={64} />
-            </div>
-          ))}
+        {/* Massive marble jar centrepiece */}
+        <div className="relative z-10">
+          <HeroJarScene
+            value={value}
+            target={TARGET}
+            celebrating={celebrating}
+            onFull={handleFull}
+          />
         </div>
+
+        {/* Full-width walking mascots + floating points */}
+        <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
       </section>
 
       {/* how it works */}

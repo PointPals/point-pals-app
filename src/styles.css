@@ -77,6 +77,27 @@
   100% { transform: translate(0,0); }
 }
 
+/* Marketing hero: a +N point bubble flies from the left into the jar. */
+@keyframes pp-fly-to-jar {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  15%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(70vw, 10vh) scale(0.4); opacity: 0; }
+}
+/* Reward pop-in when the jar fills. */
+@keyframes pp-reward-pop {
+  0%   { transform: scale(0.6) translateY(20px); opacity: 0; }
+  100% { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+/* Point bubble floats up from a mascot at the bottom into the jar top-right. */
+@keyframes pp-float-to-jar {
+  0%   { transform: translate(0, 0) scale(0.7); opacity: 0; }
+  12%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translate(28vw, -62vh) scale(0.5); opacity: 0; }
+}
+
 /*
  * PointPals — soft pastel design system.
  * Zain (display) + Nunito Sans (body). No pure black; warm charcoal for text.
