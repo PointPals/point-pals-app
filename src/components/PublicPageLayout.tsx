@@ -11,7 +11,16 @@ const PAGES = [
   { to: "/contact", label: "Contact" },
 ] as const;
 
-export function PublicPageLayout({ children }: { children: ReactNode }) {
+export function PublicPageLayout({
+  children,
+  wide = false,
+}: {
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  const mainCls = wide
+    ? "max-w-6xl mx-auto px-5 pb-12"
+    : "max-w-4xl mx-auto px-5 pb-12";
   return (
     <div
       className="min-h-screen"
@@ -38,7 +47,7 @@ export function PublicPageLayout({ children }: { children: ReactNode }) {
         </Link>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-5 pb-12">{children}</main>
+      <main className={mainCls}>{children}</main>
 
       <footer className="max-w-4xl mx-auto px-6 pb-10 text-center space-y-3">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">

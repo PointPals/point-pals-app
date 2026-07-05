@@ -122,7 +122,7 @@ function BlogPage() {
   ];
 
   return (
-    <PublicPageLayout>
+    <PublicPageLayout wide>
     <article className="mx-auto max-w-2xl md:max-w-6xl space-y-8">
       <header>
         <img
