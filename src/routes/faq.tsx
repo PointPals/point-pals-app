@@ -7,6 +7,14 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useState, type ReactNode } from "react";
 
 export const Route = createFileRoute("/faq")({
   component: FaqPage,
@@ -22,32 +30,18 @@ export const Route = createFileRoute("/faq")({
   }),
 });
 
-function FaqPage() {
-  return (
-    <PublicPageLayout>
-    <article className="mx-auto max-w-2xl space-y-8">
-      <header>
-        <img
-          src={faqHero}
-          alt="A jar of marbles on a wooden shelf with question mark bubbles floating above"
-          width={1536}
-          height={768}
-          className="w-full h-auto rounded-3xl shadow-sm mb-6"
-        />
-        <h1 className="font-display text-4xl font-bold">Frequently Asked Questions</h1>
-        <p className="mt-3 text-muted-foreground leading-relaxed">
-          Everything you&rsquo;ve wondered about PointPals — how it works, why it works, and how
-          to get the most out of it.
-        </p>
-      </header>
+type FaqEntry = { id: string; question: string; content: ReactNode };
+type FaqSection = { heading: string; items: FaqEntry[] };
 
-      <section>
-        <h2 className="font-display text-2xl font-bold mb-4">Getting started</h2>
-        <Accordion type="multiple" className="space-y-1">
-          <FaqItem
-            id="what-is"
-            question="What is PointPals?"
-          >
+const SECTIONS: FaqSection[] = [
+  {
+    heading: "Getting started",
+    items: [
+      {
+        id: "what-is",
+        question: "What is PointPals?",
+        content: (
+          <>
             <p>
               PointPals is a family habit app that turns chores, kindness, and positive habits into
               points that fill a shared marble jar. When the jar is full, the family celebrates
@@ -58,12 +52,14 @@ function FaqPage() {
               over everyday tasks. Instead of fighting about chores, families track progress together
               and celebrate effort.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="how-it-works"
-            question="How does the marble jar work?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "how-it-works",
+        question: "How does the marble jar work?",
+        content: (
+          <>
             <p>
               Every time a child completes a chore, shows kindness, or practises a positive habit, a
               parent taps to award points. Each point drops a marble into the family&rsquo;s shared
@@ -74,12 +70,14 @@ function FaqPage() {
               The jar is shared — every child&rsquo;s contribution fills it together. This encourages
               teamwork rather than competition between siblings.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="ages"
-            question="What ages is PointPals for?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "ages",
+        question: "What ages is PointPals for?",
+        content: (
+          <>
             <p>
               PointPals works best for children aged 3–14. For toddlers, keep tasks very simple
               (putting toys away, brushing teeth with help). For tweens and teens, involve them in
@@ -93,12 +91,14 @@ function FaqPage() {
               </Link>
               .
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="multiple-kids"
-            question="Can I use it with more than one child?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "multiple-kids",
+        question: "Can I use it with more than one child?",
+        content: (
+          <>
             <p>Yes. PointPals is built for families with multiple children. Each child can:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>Have their own set of chores and habits</li>
@@ -110,12 +110,14 @@ function FaqPage() {
               The shared jar is one of our most important features — it turns chore time from
               sibling competition into teamwork.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="adults"
-            question="Can more than one adult use PointPals?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "adults",
+        question: "Can more than one adult use PointPals?",
+        content: (
+          <>
             <p>
               Yes. Multiple parents or caregivers can join the same household. Each adult can award
               points to any child, so both Mum and Dad (or other caregivers) stay in the loop.
@@ -124,17 +126,19 @@ function FaqPage() {
               This also means grandparents, babysitters, or other trusted adults can be included if
               you choose to invite them.
             </p>
-          </FaqItem>
-        </Accordion>
-      </section>
-
-      <section>
-        <h2 className="font-display text-2xl font-bold mb-4">Points &amp; rewards</h2>
-        <Accordion type="multiple" className="space-y-1">
-          <FaqItem
-            id="what-points"
-            question="What can children earn points for?"
-          >
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    heading: "Points & rewards",
+    items: [
+      {
+        id: "what-points",
+        question: "What can children earn points for?",
+        content: (
+          <>
             <p>Anything you want to encourage. Common examples include:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Chores:</strong> making the bed, putting shoes away, clearing the table, feeding pets</li>
@@ -146,12 +150,14 @@ function FaqPage() {
               You decide what matters for your family. PointPals lets you create custom chores and
               habits that fit your household.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="what-rewards"
-            question="What kind of rewards work best?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "what-rewards",
+        question: "What kind of rewards work best?",
+        content: (
+          <>
             <p>
               The best rewards are shared experiences, not things. Screen time is an easy default,
               but research shows it can backfire as a reward (see our{" "}
@@ -173,12 +179,14 @@ function FaqPage() {
               Involve your children in choosing rewards — they&rsquo;ll be more invested when they
               helped pick the goal.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="how-many-points"
-            question="How many points should each task be worth?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "how-many-points",
+        question: "How many points should each task be worth?",
+        content: (
+          <>
             <p>Keep it simple, especially at the start:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>1 point for simple daily tasks (brushing teeth, putting shoes away)</li>
@@ -189,12 +197,14 @@ function FaqPage() {
               You can adjust as your family finds its rhythm. The goal isn&rsquo;t a perfect points
               economy — it&rsquo;s making effort visible.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="isnt-bribery"
-            question="Isn't this just bribery?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "isnt-bribery",
+        question: "Isn't this just bribery?",
+        content: (
+          <>
             <p>
               This is the most common question, and it deserves an honest answer.
             </p>
@@ -213,17 +223,19 @@ function FaqPage() {
               The difference between a bribe and a system: a bribe is reactive. A system is
               intentional.
             </p>
-          </FaqItem>
-        </Accordion>
-      </section>
-
-      <section>
-        <h2 className="font-display text-2xl font-bold mb-4">Consequences &amp; discipline</h2>
-        <Accordion type="multiple" className="space-y-1">
-          <FaqItem
-            id="can-lose-points"
-            question="Can children lose points for misbehaving?"
-          >
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    heading: "Consequences & discipline",
+    items: [
+      {
+        id: "can-lose-points",
+        question: "Can children lose points for misbehaving?",
+        content: (
+          <>
             <p>
               Yes — but with important caveats. PointPals allows you to remove a marble as a
               consequence, and the research supports this when used thoughtfully.
@@ -252,12 +264,14 @@ function FaqPage() {
               </Link>{" "}
               for the full evidence.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="child-refuses"
-            question="What if my child refuses to do a chore?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "child-refuses",
+        question: "What if my child refuses to do a chore?",
+        content: (
+          <>
             <p>
               Start with connection, not consequences. Ask what&rsquo;s going on — is the task too
               hard? Too boring? Is there something else on their mind?
@@ -271,12 +285,14 @@ function FaqPage() {
               to <em>enforce</em> compliance. A child who feels capable and connected is far more
               likely to help than one who feels controlled.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="child-loses-interest"
-            question="What if my child loses interest in the system?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "child-loses-interest",
+        question: "What if my child loses interest in the system?",
+        content: (
+          <>
             <p>
               This is normal, especially after the initial novelty wears off. A few things to try:
             </p>
@@ -289,17 +305,19 @@ function FaqPage() {
             <p>
               Interest naturally ebbs and flows. That&rsquo;s not failure — it&rsquo;s family life.
             </p>
-          </FaqItem>
-        </Accordion>
-      </section>
-
-      <section>
-        <h2 className="font-display text-2xl font-bold mb-4">Practical questions</h2>
-        <Accordion type="multiple" className="space-y-1">
-          <FaqItem
-            id="cost"
-            question="How much does PointPals cost?"
-          >
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    heading: "Practical questions",
+    items: [
+      {
+        id: "cost",
+        question: "How much does PointPals cost?",
+        content: (
+          <>
             <p>
               PointPals is free for your first {14} days — no payment details required to start.
               After the trial, it&rsquo;s a simple subscription. You can cancel anytime.
@@ -308,12 +326,14 @@ function FaqPage() {
               We don&rsquo;t have ads, upsells, or hidden fees. A subscription supports ongoing
               development, new features, and keeping the app safe for families.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="data"
-            question="Is my family's data safe?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "data",
+        question: "Is my family's data safe?",
+        content: (
+          <>
             <p>
               Yes. PointPals uses industry-standard encryption and secure authentication. We never
               share or sell your data. Your family&rsquo;s information belongs to your family.
@@ -329,12 +349,14 @@ function FaqPage() {
               </Link>{" "}
               for full details.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="offline"
-            question="Does PointPals work offline?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "offline",
+        question: "Does PointPals work offline?",
+        content: (
+          <>
             <p>
               PointPals works best with an internet connection so points sync across all family
               devices. Some core features (viewing progress, awarding points) may work with
@@ -343,23 +365,27 @@ function FaqPage() {
             <p>
               We&rsquo;re exploring improved offline support for future updates.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="nz-made"
-            question="Is PointPals really made in New Zealand?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "nz-made",
+        question: "Is PointPals really made in New Zealand?",
+        content: (
+          <>
             <p>
               Yes. PointPals is proudly designed and built in Aotearoa, New Zealand. Our small team
               is based here, and the app is developed with Kiwi families in mind — though it works
               just as well anywhere in the world.
             </p>
-          </FaqItem>
-
-          <FaqItem
-            id="contact"
-            question="How can I get help or give feedback?"
-          >
+          </>
+        ),
+      },
+      {
+        id: "contact",
+        question: "How can I get help or give feedback?",
+        content: (
+          <>
             <p>
               Email us at{" "}
               <a href="mailto:support@pointpals.co.nz" className="underline hover:text-foreground">
@@ -368,34 +394,132 @@ function FaqPage() {
               . We read every message and genuinely value your input — PointPals is better because
               of the families who use it.
             </p>
-          </FaqItem>
-        </Accordion>
-      </section>
-    </article>
+          </>
+        ),
+      },
+    ],
+  },
+];
+
+const TINTS = [
+  { border: "var(--pastel-blush)", bg: "color-mix(in oklab, var(--pastel-blush) 22%, white)" },
+  { border: "var(--pastel-sky)", bg: "color-mix(in oklab, var(--pastel-sky) 22%, white)" },
+  { border: "var(--pastel-sage)", bg: "color-mix(in oklab, var(--pastel-sage) 22%, white)" },
+  { border: "var(--pastel-butter)", bg: "color-mix(in oklab, var(--pastel-butter) 25%, white)" },
+  { border: "var(--pastel-lilac)", bg: "color-mix(in oklab, var(--pastel-lilac) 22%, white)" },
+  { border: "var(--pastel-foam)", bg: "color-mix(in oklab, var(--pastel-foam) 22%, white)" },
+];
+
+function FaqPage() {
+  const allItems = SECTIONS.flatMap((s) => s.items);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openItem = allItems.find((i) => i.id === openId) ?? null;
+
+  return (
+    <PublicPageLayout wide>
+      <article className="mx-auto max-w-2xl md:max-w-6xl space-y-10">
+        <header>
+          <img
+            src={faqHero}
+            alt="A jar of marbles on a wooden shelf with question mark bubbles floating above"
+            width={1536}
+            height={768}
+            className="w-full h-auto rounded-3xl shadow-sm mb-6 md:max-h-[420px] md:object-cover"
+          />
+          <h1 className="font-display text-4xl font-bold">Frequently Asked Questions</h1>
+          <p className="mt-3 text-muted-foreground leading-relaxed">
+            Everything you&rsquo;ve wondered about PointPals — how it works, why it works, and how
+            to get the most out of it.
+          </p>
+        </header>
+
+        {SECTIONS.map((section, sIdx) => (
+          <section key={section.heading} className="space-y-4">
+            <h2 className="font-display text-2xl font-bold">{section.heading}</h2>
+
+            {/* Mobile: accordion */}
+            <Accordion type="multiple" className="space-y-1 md:hidden">
+              {section.items.map((item) => (
+                <AccordionItem
+                  key={item.id}
+                  value={item.id}
+                  className="border-0 rounded-2xl bg-card/50 px-5 data-[state=open]:bg-card/80 transition-colors"
+                >
+                  <AccordionTrigger className="py-4 hover:no-underline cursor-pointer">
+                    <span className="font-display text-lg font-bold text-left">{item.question}</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 leading-relaxed text-foreground/90 pb-4">
+                      {item.content}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+
+            {/* Desktop: scrapbook card grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {section.items.map((item, i) => {
+                const tint = TINTS[(sIdx * 2 + i) % TINTS.length];
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setOpenId(item.id)}
+                    className="group text-left flex flex-col justify-between bg-card rounded-[1.75rem] p-6 shadow-[0_16px_40px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[180px]"
+                    style={{
+                      borderBottom: `8px solid ${tint.border}`,
+                      borderRight: `8px solid ${tint.border}`,
+                    }}
+                    aria-label={`Read answer: ${item.question}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full font-display text-xl font-bold text-foreground"
+                        style={{ background: tint.bg }}
+                      >
+                        ?
+                      </span>
+                      <h3 className="font-display text-lg font-bold leading-snug text-foreground">
+                        {item.question}
+                      </h3>
+                    </div>
+                    <span
+                      className="mt-6 inline-flex items-center gap-1 text-xs font-bold tracking-widest uppercase"
+                      style={{ color: tint.border }}
+                    >
+                      Read answer →
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+
+        {/* Desktop answer dialog */}
+        <Dialog open={!!openItem} onOpenChange={(o) => !o && setOpenId(null)}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            {openItem && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display text-2xl md:text-3xl font-bold text-left">
+                    {openItem.question}
+                  </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Answer to: {openItem.question}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 leading-relaxed text-foreground/90 mt-2">
+                  {openItem.content}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </article>
     </PublicPageLayout>
   );
 }
 
-function FaqItem({
-  id,
-  question,
-  children,
-}: {
-  id: string;
-  question: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <AccordionItem
-      value={id}
-      className="border-0 rounded-2xl bg-card/50 px-5 data-[state=open]:bg-card/80 transition-colors"
-    >
-      <AccordionTrigger className="py-4 hover:no-underline cursor-pointer">
-        <span className="font-display text-lg font-bold text-left">{question}</span>
-      </AccordionTrigger>
-      <AccordionContent>
-        <div className="space-y-3 leading-relaxed text-foreground/90 pb-4">{children}</div>
-      </AccordionContent>
-    </AccordionItem>
-  );
-}
