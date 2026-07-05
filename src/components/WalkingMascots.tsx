@@ -10,9 +10,9 @@ import brambleAsset from "@/assets/companions/bramble.png.asset.json";
  */
 
 const MASCOTS = [
-  { src: sunnyAsset.url, alt: "Sunny", dur: "38s", delay: "0s" },
-  { src: pipAsset.url, alt: "Pip", dur: "46s", delay: "-16s" },
-  { src: brambleAsset.url, alt: "Bramble", dur: "54s", delay: "-32s" },
+  { src: sunnyAsset.url, alt: "Sunny", dur: "24s", delay: "0s", size: 128 },
+  { src: pipAsset.url, alt: "Pip", dur: "28s", delay: "-8s", size: 112 },
+  { src: brambleAsset.url, alt: "Bramble", dur: "32s", delay: "-18s", size: 136 },
 ];
 
 const BUBBLE_COLORS = ["#EC4899", "#F59E0B", "#10B981", "#60A5FA", "#A78BFA"];
@@ -55,23 +55,23 @@ export const WalkingMascots = memo(function WalkingMascots({
       {MASCOTS.map((m, i) => (
         <div
           key={i}
-          className="absolute bottom-2 sm:bottom-4"
+          className="absolute bottom-4 sm:bottom-8"
           style={{
-            width: 88,
-            height: 88,
+            width: m.size,
+            height: m.size,
             animation: `pp-walk ${m.dur} linear infinite`,
             animationDelay: m.delay,
           }}
         >
           <div
-            style={{ animation: "pp-bob 1s ease-in-out infinite" }}
+            style={{ animation: `pp-bob ${0.8 + i * 0.15}s ease-in-out infinite` }}
             className="w-full h-full"
           >
             <img
               src={m.src}
               alt={m.alt}
               draggable={false}
-              className="w-full h-full object-contain select-none drop-shadow-[0_10px_18px_rgba(236,72,153,0.35)]"
+              className="w-full h-full object-contain select-none drop-shadow-[0_14px_22px_rgba(236,72,153,0.3)]"
             />
           </div>
         </div>
