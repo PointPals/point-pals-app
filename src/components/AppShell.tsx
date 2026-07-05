@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Home, Library, Sparkles, Gift, Settings } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import logoUrl from "@/assets/brand/pointpals-logo.png";
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
@@ -21,10 +22,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="max-w-4xl mx-auto px-5 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="block">
-            <div className="text-3xl font-display font-extrabold tracking-tight text-foreground">
-              PointPals
-            </div>
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mt-0.5">
+            <img
+              src={logoUrl}
+              alt="PointPals"
+              width={200}
+              height={80}
+              className="h-12 sm:h-14 w-auto select-none"
+              draggable={false}
+            />
+            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mt-1">
               {household.name}
             </div>
           </Link>
