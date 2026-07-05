@@ -14,13 +14,426 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chores: {
+        Row: {
+          color: string
+          created_at: string
+          household_id: string
+          icon: string
+          id: string
+          name: string
+          points: number
+          recurrence: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          household_id: string
+          icon: string
+          id?: string
+          name: string
+          points?: number
+          recurrence?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          household_id?: string
+          icon?: string
+          id?: string
+          name?: string
+          points?: number
+          recurrence?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chores_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_members: {
+        Row: {
+          created_at: string
+          household_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          billing_model: string
+          created_at: string
+          currency: string
+          current_period_end: string | null
+          id: string
+          name: string
+          onboarded: boolean
+          reward_target: number
+          shared_pool: number
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_model?: string
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          id?: string
+          name?: string
+          onboarded?: boolean
+          reward_target?: number
+          shared_pool?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_model?: string
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          id?: string
+          name?: string
+          onboarded?: boolean
+          reward_target?: number
+          shared_pool?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      icon_generations: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          prompt: string | null
+          storage_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          prompt?: string | null
+          storage_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          prompt?: string | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icon_generations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids: {
+        Row: {
+          avatar_key: string | null
+          color: string
+          created_at: string
+          household_id: string
+          id: string
+          name: string
+          points: number
+        }
+        Insert: {
+          avatar_key?: string | null
+          color?: string
+          created_at?: string
+          household_id: string
+          id?: string
+          name: string
+          points?: number
+        }
+        Update: {
+          avatar_key?: string | null
+          color?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          name?: string
+          points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_post_kids: {
+        Row: {
+          kid_id: string
+          post_id: string
+        }
+        Insert: {
+          kid_id: string
+          post_id: string
+        }
+        Update: {
+          kid_id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_post_kids_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_post_kids_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "memory_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_posts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          household_id: string
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          household_id: string
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          household_id?: string
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_posts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_events: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          household_id: string
+          id: string
+          item_icon: string
+          item_name: string
+          kid_id: string
+          points: number
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          item_icon: string
+          item_name: string
+          kid_id: string
+          points: number
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          item_icon?: string
+          item_name?: string
+          kid_id?: string
+          points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "point_events_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_proposals: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          name: string
+          proposed_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          name: string
+          proposed_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          name?: string
+          proposed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_proposals_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_proposals_proposed_by_fkey"
+            columns: ["proposed_by"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_votes: {
+        Row: {
+          kid_id: string
+          proposal_id: string
+        }
+        Insert: {
+          kid_id: string
+          proposal_id: string
+        }
+        Update: {
+          kid_id?: string
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_votes_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_votes_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "reward_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          color: string
+          created_at: string
+          household_id: string
+          icon: string
+          id: string
+          is_positive: boolean
+          name: string
+          points: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          household_id: string
+          icon: string
+          id?: string
+          is_positive?: boolean
+          name: string
+          points?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          household_id?: string
+          icon?: string
+          id?: string
+          is_positive?: boolean
+          name?: string
+          points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_member: { Args: { hid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
