@@ -111,7 +111,7 @@ function AboutPage() {
             polished performance ever could.
           </p>
           <div className="rounded-2xl bg-sage/25 p-4 text-sm">
-            <strong>What this means for PointPals:</strong> The points are not the point. The
+            <strong>What this means for PointPals:</strong> The points are not the point. The{" "}
             <em>relationship</em> is the point. The app is a tool for connection — a shared project,
             a conversation starter, a way to notice and celebrate effort together. If the points ever
             replace genuine warmth, you're using it wrong.
