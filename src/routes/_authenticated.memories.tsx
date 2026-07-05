@@ -975,6 +975,173 @@ function formatDuration(sec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// ─── Collage grid + Lightbox ──────────────────────────────────────────────
+
+function MediaCollage({
+  media,
+  alt,
+  onOpen,
+}: {
+  media: MemoryMedia[];
+  alt: string;
+  onOpen: (index: number) => void;
+}) {
+  if (media.length === 1) {
+    const m = media[0];
+    return m.kind === "video" ? (
+      <video src={m.url} controls playsInline className="w-full max-h-[70vh] bg-foreground/5" />
+    ) : (
+      <button
+        onClick={() => onOpen(0)}
+        className="block w-full"
+        aria-label="Open photo"
+      >
+        <img src={m.url} alt={alt} className="w-full max-h-[70vh] object-cover" loading="lazy" />
+      </button>
+    );
+  }
+
+  // 2-item: side by side. 3-item: 1 large + 2 stacked. 4+: 2x2 with "+N more" overlay.
+  const visible = media.slice(0, 4);
+  const extra = media.length - visible.length;
+
+  const Tile = ({ item, index, className }: { item: MemoryMedia; index: number; className?: string }) => (
+    <button
+      onClick={() => onOpen(index)}
+      className={`relative overflow-hidden bg-foreground/5 ${className ?? ""}`}
+      aria-label={`Open item ${index + 1}`}
+    >
+      {item.kind === "video" ? (
+        <>
+          <video src={item.url} className="w-full h-full object-cover" muted playsInline />
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="h-10 w-10 rounded-full bg-foreground/70 text-background flex items-center justify-center">
+              <Play className="h-4 w-4 ml-0.5" />
+            </span>
+          </span>
+        </>
+      ) : (
+        <img src={item.url} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+      )}
+      {index === 3 && extra > 0 && (
+        <span className="absolute inset-0 bg-foreground/50 text-background flex items-center justify-center text-xl font-bold">
+          +{extra}
+        </span>
+      )}
+    </button>
+  );
+
+  if (media.length === 2) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5 max-h-[60vh]">
+        <Tile item={visible[0]} index={0} className="aspect-square" />
+        <Tile item={visible[1]} index={1} className="aspect-square" />
+      </div>
+    );
+  }
+
+  if (media.length === 3) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5" style={{ aspectRatio: "1 / 1" }}>
+        <Tile item={visible[0]} index={0} className="row-span-2 h-full" />
+        <Tile item={visible[1]} index={1} className="h-full" />
+        <Tile item={visible[2]} index={2} className="h-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-0.5">
+      {visible.map((item, i) => (
+        <Tile key={i} item={item} index={i} className="aspect-square" />
+      ))}
+    </div>
+  );
+}
+
+function Lightbox({
+  media,
+  startIndex,
+  onClose,
+}: {
+  media: MemoryMedia[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [idx, setIdx] = useState(startIndex);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") setIdx((i) => Math.min(media.length - 1, i + 1));
+      if (e.key === "ArrowLeft") setIdx((i) => Math.max(0, i - 1));
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [media.length, onClose]);
+
+  const current = media[idx];
+  if (!current) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      {idx > 0 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIdx((i) => Math.max(0, i - 1));
+          }}
+          aria-label="Previous"
+          className="absolute left-4 h-11 w-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
+      {idx < media.length - 1 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIdx((i) => Math.min(media.length - 1, i + 1));
+          }}
+          aria-label="Next"
+          className="absolute right-4 h-11 w-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+      <div onClick={(e) => e.stopPropagation()} className="max-w-full max-h-full flex flex-col items-center gap-3">
+        {current.kind === "video" ? (
+          <video src={current.url} controls autoPlay playsInline className="max-w-full max-h-[85vh]" />
+        ) : (
+          <img src={current.url} alt={`Item ${idx + 1}`} className="max-w-full max-h-[85vh] object-contain" />
+        )}
+        {media.length > 1 && (
+          <div className="text-white/70 text-xs font-semibold">
+            {idx + 1} / {media.length}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function formatDateTime(ts: number) {
   const d = new Date(ts);
   const date = d.toLocaleDateString("en-NZ", { day: "numeric", month: "short", year: "numeric" });
