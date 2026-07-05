@@ -43,7 +43,32 @@ STRIPE_PRICE_USD=price_...     (optional)
    - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
    - Copy the Signing Secret and set it as `STRIPE_WEBHOOK_SECRET`
 
-## Step 4: Upload Icon PNGs
+## Step 4: Extended Family + Kid Sharing (Phase 1)
+
+### 4a. Run the Migration
+
+Open `supabase/migrations/20260705000001_extended_family.sql` in the Supabase SQL Editor and run it.
+
+This adds:
+- **New roles**: `viewer` (read-only) and `contributor` (read + award points/memories)
+- **`kid_shares` table**: share a kid across households while keeping the same point pool
+- **`household_invites` table**: invite extended family with an 8-character code
+- **Role-aware RLS**: viewers see the dashboard but can't edit; contributors can award points
+- **`accept_invite(code)` RPC**: callable from the frontend to join a household
+
+### 4b. Deploy Edge Function
+
+```bash
+npx supabase functions deploy generate-invite
+```
+
+No secrets required for this function.
+
+### 4c. Frontend Work Needed (for Lovable)
+
+See `lovable-prompt.md` for the corresponding frontend changes.
+
+## Step 5: Upload Icon PNGs
 
 The app references icons at `{SUPABASE_URL}/storage/v1/object/public/assets/{icon-name}.png`.
 You need to upload the PNG icons to the `assets` bucket. Common icons include:
