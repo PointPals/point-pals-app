@@ -166,12 +166,27 @@ Deno.serve(async (req) => {
         const customerId = inv.customer as string;
         const { email } = await adminEmailForCustomer(customerId);
         if (email) {
+          // {{month}} → billing month name from current_period_start on the sub.
+          let monthName = "";
+          try {
+            const subId = (inv.subscription as string) ?? null;
+            if (subId) {
+              const sub = await stripe.subscriptions.retrieve(subId);
+              if (sub.current_period_start) {
+                monthName = new Date(sub.current_period_start * 1000)
+                  .toLocaleString("en-US", { month: "long", timeZone: "UTC" });
+              }
+            }
+          } catch (e) {
+            console.error("[stripe-webhook] month lookup failed:", e);
+          }
           await sendResendTemplate("subscriptionRenewal", email, {
             amount: inv.amount_paid ? (inv.amount_paid / 100).toFixed(2) : "",
             currency: (inv.currency ?? "usd").toUpperCase(),
             period_end: inv.period_end
               ? new Date(inv.period_end * 1000).toISOString().slice(0, 10)
               : "",
+            month: monthName,
           });
         }
         break;
