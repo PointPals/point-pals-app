@@ -589,3 +589,12 @@
     bottom: calc(5.25rem + env(safe-area-inset-bottom));
   }
 }
+
+/* Shimmering glimmer sweep across the hero "game" word. */
+@keyframes pp-game-glimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -100% 0; }
+}
+.game-glimmer {
+  animation: pp-game-glimmer 3.2s ease-in-out infinite;
+}
