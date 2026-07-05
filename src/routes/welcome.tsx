@@ -11,17 +11,17 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
   head: () => ({
     meta: [
-      { title: "PointPals — Family chores & habits, made kind" },
+      { title: "PointPals - Family chores & habits, made kind" },
       {
         name: "description",
         content:
           "PointPals turns everyday chores into habits worth cheering for. Points fill a shared family jar; kids collect companion avatars along the way.",
       },
       { name: "theme-color", content: "#F3E1A0" },
-      { property: "og:title", content: "PointPals — Family chores & habits, made kind" },
+      { property: "og:title", content: "PointPals - Family chores & habits, made kind" },
       {
         property: "og:description",
-        content: "A warm, pastel family chore & behaviour tracker — not a boring points list.",
+        content: "A warm, pastel family chore & behaviour tracker - not a boring points list.",
       },
       { property: "og:type", content: "website" },
       { property: "og:image", content: heroAsset.url },
@@ -30,9 +30,9 @@ export const Route = createFileRoute("/welcome")({
   }),
 });
 
-// Public marketing page (§8) — separate from the authenticated in-app
+// Public marketing page (§8) - separate from the authenticated in-app
 // experience, no auth required, no app chrome (AppShell hides its header/nav
-// for this route — see components/AppShell.tsx). Kept light and fast: no
+// for this route - see components/AppShell.tsx). Kept light and fast: no
 // canvas jar animation, no client-only state, just the pitch.
 function WelcomePage() {
   return (
@@ -56,7 +56,7 @@ function WelcomePage() {
         <div className="max-w-2xl">
           <div className="rounded-3xl bg-white/55 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
-              <Sparkles className="h-3.5 w-3.5" /> Now with photo memories
+              <Sparkles className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
             </div>
             <h1 className="mt-4 font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-tight">
               Chores that feel
@@ -79,7 +79,7 @@ function WelcomePage() {
             </h1>
             <p className="mt-5 text-lg text-foreground/80 max-w-xl">
               PointPals turns everyday chores and good behaviour into points the whole family fills a
-              shared jar with together — then celebrates by choosing a reward as a team.
+              shared jar with together - then celebrates by choosing a reward as a team.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
               <Link
@@ -125,18 +125,18 @@ function WelcomePage() {
         <div className="grid sm:grid-cols-3 gap-5">
           <FeatureCard
             icon={<Sparkles className="h-5 w-5" />}
-            title="Tap to award points"
-            body="Tap a kid's avatar, pick a chore or a kind moment — a chime plays and their points bounce up instantly."
+            title="Catch kindness in the moment"
+            body="A quick tap to notice the good stuff — tidying up without being asked, helping a sibling, trying something hard. The chime says 'I see you.'"
           />
           <FeatureCard
             icon={<Gift className="h-5 w-5" />}
-            title="Fill the family jar"
-            body="Every point drops a marble into a shared glass jar. Watch it fill together, then pick a reward as a family."
+            title="Work toward something together"
+            body="Every point drops a marble into a shared jar. The family picks the reward together — a park outing, movie night, something everyone's excited about."
           />
           <FeatureCard
             icon={<Heart className="h-5 w-5" />}
-            title="Keep the memories"
-            body="Snap a photo of the moment, tag who was there — a family memory wall alongside the points."
+            title="Build a family story"
+            body="Snap a photo of the moment — the proud grin after making the bed, the marble jar nearly full. Tag who was there and watch your family's wall grow."
           />
         </div>
       </section>
@@ -144,10 +144,10 @@ function WelcomePage() {
       {/* honesty section */}
       <section className="max-w-2xl mx-auto px-6 pb-16 text-center">
         <p className="text-sm text-muted-foreground">
-          We're upfront that PointPals uses external rewards to help routines stick — and that the
-          goal is the habit, not permanent dependence on points.{" "}
+          PointPals is grounded in positive parenting and token-economy research: external rewards
+          help routines stick, and the goal is always the habit itself.{" "}
           <Link to="/about" className="underline hover:text-foreground">
-            Read the research behind it
+            Read the research
           </Link>
           .
         </p>
