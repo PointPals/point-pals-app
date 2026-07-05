@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RewardsRouteImport } from './routes/rewards'
+import { Route as RefundsRouteImport } from './routes/refunds'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as MemoriesRouteImport } from './routes/memories'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as AboutRouteImport } from './routes/about'
@@ -33,9 +36,24 @@ const RewardsRoute = RewardsRouteImport.update({
   path: '/rewards',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefundsRoute = RefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoriesRoute = MemoriesRouteImport.update({
+  id: '/memories',
+  path: '/memories',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LibraryRoute = LibraryRouteImport.update({
@@ -64,7 +82,10 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
+  '/memories': typeof MemoriesRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
@@ -74,7 +95,10 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
+  '/memories': typeof MemoriesRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
@@ -85,17 +109,54 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
+  '/memories': typeof MemoriesRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/collection' | '/library' | '/onboarding' | '/rewards'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/collection'
+    | '/library'
+    | '/memories'
+    | '/onboarding'
+    | '/privacy'
+    | '/refunds'
+    | '/rewards'
+    | '/settings'
+    | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/collection' | '/library' | '/onboarding' | '/rewards'
-  id: '__root__' | '/' | '/collection' | '/library' | '/onboarding' | '/rewards'
+  to:
+    | '/'
+    | '/about'
+    | '/collection'
+    | '/library'
+    | '/memories'
+    | '/onboarding'
+    | '/privacy'
+    | '/refunds'
+    | '/rewards'
+    | '/settings'
+    | '/terms'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/collection'
+    | '/library'
+    | '/memories'
+    | '/onboarding'
+    | '/privacy'
+    | '/refunds'
+    | '/rewards'
+    | '/settings'
+    | '/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -103,7 +164,10 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   CollectionRoute: typeof CollectionRoute
   LibraryRoute: typeof LibraryRoute
+  MemoriesRoute: typeof MemoriesRoute
   OnboardingRoute: typeof OnboardingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  RefundsRoute: typeof RefundsRoute
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   TermsRoute: typeof TermsRoute
@@ -132,11 +196,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RewardsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refunds': {
+      id: '/refunds'
+      path: '/refunds'
+      fullPath: '/refunds'
+      preLoaderRoute: typeof RefundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memories': {
+      id: '/memories'
+      path: '/memories'
+      fullPath: '/memories'
+      preLoaderRoute: typeof MemoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/library': {
@@ -175,7 +260,10 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   CollectionRoute: CollectionRoute,
   LibraryRoute: LibraryRoute,
+  MemoriesRoute: MemoriesRoute,
   OnboardingRoute: OnboardingRoute,
+  PrivacyRoute: PrivacyRoute,
+  RefundsRoute: RefundsRoute,
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   TermsRoute: TermsRoute,

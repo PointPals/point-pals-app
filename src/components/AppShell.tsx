@@ -1,11 +1,12 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Home, Library, Sparkles, Gift, Settings } from "lucide-react";
+import { Home, Library, Camera, Sparkles, Gift, Settings } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
   { to: "/library", label: "Library", icon: Library },
+  { to: "/memories", label: "Memories", icon: Camera },
   { to: "/collection", label: "Collection", icon: Sparkles },
   { to: "/rewards", label: "Rewards", icon: Gift },
   { to: "/settings", label: "Settings", icon: Settings },
