@@ -1,0 +1,27 @@
+{
+  "name": "PointPals — Family chores & habits",
+  "short_name": "PointPals",
+  "description": "Turn everyday chores into habits worth cheering for. Points fill a shared family jar.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF7EC",
+  "theme_color": "#F3E1A0",
+  "categories": ["lifestyle", "productivity", "education"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
