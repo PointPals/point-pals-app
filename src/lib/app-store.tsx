@@ -79,7 +79,7 @@ type Ctx = {
   setSubscriptionStatus: (s: Household["subscriptionStatus"]) => void;
   completeOnboarding: () => void;
   resetHousehold: () => void;
-  addKid: (name: string, color: PastelKey) => void;
+  addKid: (name: string, color: PastelKey, companionId?: string) => void;
   removeKid: (id: string) => void;
   exportData: () => string;
 };
@@ -89,7 +89,7 @@ const AppCtx = createContext<Ctx | null>(null);
 const uid = () => Math.random().toString(36).slice(2, 10);
 const dayKey = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
-const STORAGE_KEY = "pointpals.state.v1";
+const STORAGE_KEY = "pointpals.state.v2";
 
 type Persisted = {
   household: Household;
@@ -278,8 +278,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     resetHousehold: () => {
       setState(initialState());
     },
-    addKid: (name, color) =>
-      setState((s) => ({ ...s, kids: [...s.kids, { id: uid(), name, color, points: 0 }] })),
+    addKid: (name, color, companionId) =>
+      setState((s) => ({ ...s, kids: [...s.kids, { id: uid(), name, color, points: 0, companionId }] })),
     removeKid: (id) =>
       setState((s) => ({
         ...s,

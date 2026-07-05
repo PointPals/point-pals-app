@@ -169,9 +169,9 @@ function HomePage() {
               const kid = kids.find((k) => k.id === e.kidId);
               return (
                 <li key={e.id} className="card-soft flex items-center gap-3 px-4 py-3">
-                  {isIconKey(e.itemIcon) ? (
+                  {isIconKey(e.itemIcon) || e.itemIcon.startsWith("http") || e.itemIcon.startsWith("/") ? (
                     <img
-                      src={iconUrl(e.itemIcon)}
+                      src={isIconKey(e.itemIcon) ? iconUrl(e.itemIcon) : e.itemIcon}
                       alt=""
                       aria-hidden
                       className="w-10 h-10 rounded-xl object-contain"

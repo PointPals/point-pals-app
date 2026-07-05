@@ -1,6 +1,6 @@
 import type { PastelKey } from "@/lib/mock-data";
 import { PASTEL_HEX } from "@/lib/mock-data";
-import { companionImageUrl } from "@/lib/companion-assets";
+import { companionImageUrl, companionArtUrl } from "@/lib/companion-assets";
 
 // Each kid is shown as their chosen companion avatar (§2). The real product
 // swaps in AI-generated mascot art from Supabase Storage; until that bucket is
@@ -34,12 +34,14 @@ export function CompanionAvatar({
   seed,
   color,
   size = 60,
+  companionId,
 }: {
   seed: string;
   color: PastelKey;
   size?: number;
+  companionId?: string;
 }) {
-  const url = companionImageUrl(seed);
+  const url = (companionId && companionArtUrl(companionId)) || companionImageUrl(seed);
   if (url) {
     return (
       <img

@@ -12,24 +12,18 @@
 
 // Companion mascot art — real AI-generated plush illustrations, served from
 // the Lovable CDN via .asset.json pointers.
-import sunny from "@/assets/companions/sunny.png.asset.json";
-import bramble from "@/assets/companions/bramble.png.asset.json";
-import pip from "@/assets/companions/pip.png.asset.json";
-import marlow from "@/assets/companions/marlow.png.asset.json";
-import coda from "@/assets/companions/coda.png.asset.json";
-import fern from "@/assets/companions/fern.png.asset.json";
-import ziggy from "@/assets/companions/ziggy.png.asset.json";
-import ridge from "@/assets/companions/ridge.png.asset.json";
+import { SUPABASE_ASSET_BASE } from "./mock-data";
 
+// Real mascot art served from the Supabase Storage `assets` bucket.
 const COMPANION_URLS: Record<string, string> = {
-  sunny: sunny.url,
-  bramble: bramble.url,
-  pip: pip.url,
-  marlow: marlow.url,
-  coda: coda.url,
-  fern: fern.url,
-  ziggy: ziggy.url,
-  ridge: ridge.url,
+  sunny: `${SUPABASE_ASSET_BASE}/Sunny.png`,
+  bramble: `${SUPABASE_ASSET_BASE}/Bramble.png`,
+  pip: `${SUPABASE_ASSET_BASE}/Pip.png`,
+  marlow: `${SUPABASE_ASSET_BASE}/Marlow.png`,
+  coda: `${SUPABASE_ASSET_BASE}/Coda.png`,
+  fern: `${SUPABASE_ASSET_BASE}/Fern.png`,
+  ziggy: `${SUPABASE_ASSET_BASE}/Ziggy.png`,
+  ridge: `${SUPABASE_ASSET_BASE}/Ridge.png`,
 };
 
 // Returns the real mascot image URL for a companion id.

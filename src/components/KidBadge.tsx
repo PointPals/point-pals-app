@@ -45,7 +45,7 @@ export function KidBadge({
             shadow-[0_6px_14px_-6px_rgba(120,110,90,0.35)]`}
           style={{ width: dim, height: dim, backgroundColor: PASTEL_HEX[kid.color] }}
         >
-          <CompanionAvatar seed={kid.id} color={kid.color} size={dim} />
+          <CompanionAvatar seed={kid.id} color={kid.color} size={dim} companionId={kid.companionId} />
         </div>
 
         {/* streak flame */}

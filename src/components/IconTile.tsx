@@ -41,9 +41,9 @@ export function IconTile({
             shadow-[0_6px_16px_-6px_rgba(120,110,90,0.35)]`}
           style={{ backgroundColor: bg }}
         >
-          {isIconKey(icon) ? (
+          {isIconKey(icon) || icon.startsWith("http") || icon.startsWith("/") ? (
             <img
-              src={iconUrl(icon)}
+              src={isIconKey(icon) ? iconUrl(icon) : icon}
               alt=""
               aria-hidden
               className="w-[86%] h-[86%] object-contain select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(60,47,38,0.15)]"

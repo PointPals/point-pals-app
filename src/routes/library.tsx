@@ -4,6 +4,8 @@ import { useApp } from "@/lib/app-store";
 import { IconTile } from "@/components/IconTile";
 import { KidChartCard } from "@/components/KidChartCard";
 import type { PastelKey } from "@/lib/mock-data";
+import { COMPANIONS } from "@/lib/mock-data";
+import { companionArtUrl } from "@/lib/companion-assets";
 import { Trash2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/library")({
@@ -187,42 +189,92 @@ function ItemManager({
   );
 }
 
-function AddKidForm({ onAdd }: { onAdd: (name: string, color: PastelKey) => void }) {
+function AddKidForm({
+  onAdd,
+}: {
+  onAdd: (name: string, color: PastelKey, companionId?: string) => void;
+}) {
   const [name, setName] = useState("");
   const [color, setColor] = useState<PastelKey>("sky");
+  const [companionId, setCompanionId] = useState<string>(COMPANIONS[0].id);
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onAdd(name.trim(), color);
+        onAdd(name.trim(), color, companionId);
         setName("");
       }}
-      className="card-soft p-4 flex flex-wrap gap-3 items-end"
+      className="card-soft p-4 space-y-4"
     >
-      <div className="flex-1 min-w-[180px]">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kid's name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
-        />
-      </div>
-      <div className="flex gap-2">
-        {PALETTE.map((c) => (
-          <button
-            type="button"
-            key={c}
-            onClick={() => setColor(c)}
-            className={`w-8 h-8 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
-            style={{ backgroundColor: `var(--pastel-${c})` }}
-            aria-label={c}
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="flex-1 min-w-[180px]">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Kid's name
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
           />
-        ))}
+        </div>
+        <div className="flex gap-2">
+          {PALETTE.map((c) => (
+            <button
+              type="button"
+              key={c}
+              onClick={() => setColor(c)}
+              className={`w-8 h-8 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
+              style={{ backgroundColor: `var(--pastel-${c})` }}
+              aria-label={c}
+            />
+          ))}
+        </div>
       </div>
-      <button className="rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold">
-        Add kid
-      </button>
+
+      <div>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Pick a mascot
+        </label>
+        <div className="mt-2 grid grid-cols-4 sm:grid-cols-8 gap-2">
+          {COMPANIONS.map((c) => {
+            const url = companionArtUrl(c.id);
+            const selected = companionId === c.id;
+            return (
+              <button
+                type="button"
+                key={c.id}
+                onClick={() => setCompanionId(c.id)}
+                className={`aspect-square rounded-2xl overflow-hidden flex items-center justify-center transition ${
+                  selected
+                    ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-105"
+                    : "hover:scale-105 opacity-80"
+                }`}
+                style={{ backgroundColor: `var(--pastel-${c.color})` }}
+                aria-label={c.name}
+                title={`${c.name} — ${c.trait}`}
+              >
+                {url ? (
+                  <img
+                    src={url}
+                    alt=""
+                    className="w-full h-full object-cover pointer-events-none"
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="text-2xl">{c.symbol}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button className="rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold">
+          Add kid
+        </button>
+      </div>
     </form>
   );
 }
