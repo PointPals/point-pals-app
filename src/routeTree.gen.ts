@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RewardsRouteImport } from './routes/rewards'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LibraryRoute = LibraryRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
+  '/onboarding': typeof OnboardingRoute
   '/rewards': typeof RewardsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
+  '/onboarding': typeof OnboardingRoute
   '/rewards': typeof RewardsRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/collection': typeof CollectionRoute
   '/library': typeof LibraryRoute
+  '/onboarding': typeof OnboardingRoute
   '/rewards': typeof RewardsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/collection' | '/library' | '/rewards'
+  fullPaths: '/' | '/collection' | '/library' | '/onboarding' | '/rewards'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/collection' | '/library' | '/rewards'
-  id: '__root__' | '/' | '/collection' | '/library' | '/rewards'
+  to: '/' | '/collection' | '/library' | '/onboarding' | '/rewards'
+  id: '__root__' | '/' | '/collection' | '/library' | '/onboarding' | '/rewards'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CollectionRoute: typeof CollectionRoute
   LibraryRoute: typeof LibraryRoute
+  OnboardingRoute: typeof OnboardingRoute
   RewardsRoute: typeof RewardsRoute
 }
 
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/rewards'
       fullPath: '/rewards'
       preLoaderRoute: typeof RewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/library': {
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CollectionRoute: CollectionRoute,
   LibraryRoute: LibraryRoute,
+  OnboardingRoute: OnboardingRoute,
   RewardsRoute: RewardsRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,5 +1,6 @@
 import type { Companion, PastelKey } from "@/lib/mock-data";
 import { PASTEL_HEX } from "@/lib/mock-data";
+import { companionArtUrl } from "@/lib/companion-assets";
 
 // Pixar-plush-inspired SVG stand-in. Vector so all 8 look consistent
 // without depending on AI image generation for the prototype.
@@ -12,6 +13,27 @@ export function PlushCompanion({
   locked?: boolean;
   size?: number;
 }) {
+  const artUrl = companionArtUrl(companion.id);
+  if (artUrl) {
+    return (
+      <img
+        src={artUrl}
+        alt={companion.name}
+        width={size}
+        height={size}
+        loading="lazy"
+        className="drop-shadow-[0_10px_16px_rgba(120,110,90,0.15)] select-none pointer-events-none"
+        style={{
+          width: size,
+          height: size,
+          objectFit: "contain",
+          filter: locked ? "grayscale(1) opacity(0.55)" : undefined,
+        }}
+        draggable={false}
+      />
+    );
+  }
+
   const bodyFill = locked ? "#D4CFC5" : PASTEL_HEX[companion.color];
   const accent = locked ? "#B8B3A8" : shift(companion.color);
   const eyeFill = locked ? "#7A7568" : "#3C2F26";
