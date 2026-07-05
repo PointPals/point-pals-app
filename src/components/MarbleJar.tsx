@@ -225,7 +225,11 @@ export function MarbleJar({
 
     // Reconcile marbles against the desired set. Diff by stable id so we know
     // which marbles are genuinely new (→ drop) vs which vanished (→ dissolve).
-    const desired = buildDesired(events, kids, target, perMarble, cap);
+    // When callers don't supply real events (marketing hero), synthesize a
+    // stable set from `value` so the jar still fills honestly.
+    const desired = events && kids
+      ? buildDesired(events, kids, target, perMarble, cap)
+      : buildSynthetic(value, target, perMarble, cap);
     const desiredIds = new Set(desired.map((d) => d.id));
     const currentIds = new Set(marbles.current.map((m) => m.id));
 
