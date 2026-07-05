@@ -8,6 +8,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Global tactile tap feedback for interactive controls. */
+@utility tap {
+  transition: transform 120ms ease-out;
+  &:active { transform: scale(0.96); }
+}
+
+/* Gentle wave on mount for mascot greetings. */
+@keyframes pp-wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+@utility animate-wave {
+  animation: pp-wave 1.6s ease-in-out;
+  transform-origin: 70% 70%;
+}
+@keyframes pp-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@utility animate-float {
+  animation: pp-float 3.2s ease-in-out infinite;
+}
+
 /*
  * PointPals — soft pastel design system.
  * Zain (display) + Nunito Sans (body). No pure black; warm charcoal for text.
