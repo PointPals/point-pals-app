@@ -1,7 +1,8 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Home, Library, Camera, Gift, Settings } from "lucide-react";
+import { Home, Library, Camera, Gift, Settings, ChevronLeft } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
 
 // Bottom nav = the app's four screens (§6): Home, Library, Memories, Rewards.
@@ -16,6 +17,7 @@ const NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { household } = useApp();
+  const { goBack } = useBackNav();
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
 
   // Chrome-free routes: marketing page + auth pages.
@@ -24,12 +26,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
+  // Sub-pages (settings, about, legal, onboarding…) get a back chevron in the
+  // mobile header instead of the logo — a PWA shell has no browser back button.
+  const showBack = !isRootTab(pathname);
+
   return (
-    <div className="min-h-screen pb-24 md:pb-6 md:pl-56">
+    <div className="min-h-screen pp-app-pad md:pl-56">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border bg-card/60 backdrop-blur px-4 py-6 z-30">
         <Link to="/" className="block mb-6">
-          <img src={logoUrl} alt="PointPals" width={180} height={72} className="h-10 w-auto select-none" draggable={false} />
+          <img
+            src={logoUrl}
+            alt="PointPals"
+            width={180}
+            height={72}
+            className="h-10 w-auto select-none"
+            draggable={false}
+          />
         </Link>
         <nav className="flex flex-col gap-1">
           {NAV.map(({ to, label, icon: Icon }) => {
@@ -39,7 +52,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={to}
                 to={to}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
-                  active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  active
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -52,7 +67,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             to="/settings"
             className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
-              pathname.startsWith("/settings") ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              pathname.startsWith("/settings")
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             <Settings className="w-4 h-4" />
@@ -63,19 +80,30 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="max-w-4xl mx-auto px-5 pt-6 pb-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="block md:hidden">
-            <img
-              src={logoUrl}
-              alt="PointPals"
-              width={200}
-              height={80}
-              className="h-12 sm:h-14 w-auto select-none"
-              draggable={false}
-            />
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mt-1">
-              {household.name}
-            </div>
-          </Link>
+          {showBack ? (
+            <button
+              onClick={goBack}
+              className="md:hidden tap flex items-center gap-1 -ml-1 text-foreground"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="font-display text-xl font-bold">{pageTitle(pathname)}</span>
+            </button>
+          ) : (
+            <Link to="/" className="block md:hidden">
+              <img
+                src={logoUrl}
+                alt="PointPals"
+                width={200}
+                height={80}
+                className="h-12 sm:h-14 w-auto select-none"
+                draggable={false}
+              />
+              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mt-1">
+                {household.name}
+              </div>
+            </Link>
+          )}
           <div className="hidden md:block">
             <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               {household.name}
@@ -121,8 +149,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="max-w-4xl mx-auto px-5">{children}</main>
 
-      <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
-        <div className="flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-border shadow-[0_10px_30px_-8px_rgba(120,110,90,0.25)] p-1.5">
+      <nav className="pp-bottom-nav md:hidden fixed left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border shadow-[0_10px_30px_-8px_rgba(120,110,90,0.25)] p-1.5">
           {NAV.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (

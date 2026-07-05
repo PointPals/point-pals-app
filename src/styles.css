@@ -353,3 +353,19 @@
   .animate-toast-in,
   .animate-pop-in { animation: none !important; }
 }
+
+/* PWA safe-area handling (§2a): keep the floating bottom nav clear of the
+   iPhone home indicator, and pad the scroll content so nothing hides behind it. */
+@layer utilities {
+  .pp-app-pad {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 768px) {
+    .pp-app-pad {
+      padding-bottom: 1.5rem;
+    }
+  }
+  .pp-bottom-nav {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
