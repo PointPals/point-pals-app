@@ -6,13 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 // server can't read it, so gating server-side would loop-redirect on refresh.
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
-      throw redirect({
-        to: "/welcome",
-        search: { next: location.pathname === "/" ? undefined : location.pathname },
-      });
+      throw redirect({ to: "/welcome" });
     }
     return { user: data.user };
   },
