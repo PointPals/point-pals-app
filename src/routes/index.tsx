@@ -1,49 +1,82 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useApp } from "@/lib/app-store";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useApp, type AwardBatch } from "@/lib/app-store";
+import { primeAudio, playChime, haptic } from "@/lib/feedback";
 import { KidBadge } from "@/components/KidBadge";
 import { IconTile } from "@/components/IconTile";
-import { PlushCompanion } from "@/components/PlushCompanion";
-import { COMPANIONS } from "@/lib/mock-data";
+import { FamilyJarCard } from "@/components/FamilyJarCard";
+import { WeeklyRecap } from "@/components/WeeklyRecap";
+import { EmptyState } from "@/components/EmptyState";
 import { iconUrl, isIconKey } from "@/lib/icons";
-
-import { ArrowRight, Check } from "lucide-react";
+import { Undo2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
 function HomePage() {
-  const { kids, chores, skills, history, awardPoints, household, unlockedCompanionIds } = useApp();
+  const { kids, chores, skills, history, awardPoints, undoBatch, streakByKid, hydrated } = useApp();
   const [selectedKids, setSelectedKids] = useState<string[]>([]);
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work">("chores");
-  const [flash, setFlash] = useState<{ id: number; text: string } | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ batch: AwardBatch; text: string } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setMounted(true), []);
 
   const positive = useMemo(() => skills.filter((s) => s.isPositive), [skills]);
   const needsWork = useMemo(() => skills.filter((s) => !s.isPositive), [skills]);
-  const nextCompanion = COMPANIONS.find((c) => !unlockedCompanionIds.includes(c.id));
 
-  const toggleKid = (id: string) =>
+  const toggleKid = (id: string) => {
+    primeAudio(); // unlock audio on first user gesture (iOS/Safari)
+    haptic("light");
     setSelectedKids((p) => (p.includes(id) ? p.filter((k) => k !== id) : [...p, id]));
+  };
+
+  const flashHint = (text: string) => {
+    setHint(text);
+    setTimeout(() => setHint(null), 1400);
+  };
 
   const award = (item: { name: string; icon: string; points: number }) => {
     if (selectedKids.length === 0) {
-      setFlash({ id: Date.now(), text: "Pick a kid first ✨" });
-      setTimeout(() => setFlash(null), 1400);
+      flashHint("Pick a kid first ✨");
+      haptic("warning");
       return;
     }
-    awardPoints(selectedKids, item);
-    setFlash({
-      id: Date.now(),
-      text: `${item.points > 0 ? "+" : ""}${item.points} · ${item.name}`,
-    });
-    setTimeout(() => setFlash(null), 1400);
+    const batch = awardPoints(selectedKids, item);
+    const positiveAward = item.points >= 0;
+    playChime(positiveAward ? "positive" : "needs-work");
+    haptic(positiveAward ? "success" : "medium");
+
+    const text = `${item.points > 0 ? "+" : ""}${item.points} ${item.name}`;
+    setToast({ batch, text });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 5000);
   };
+
+  const undo = () => {
+    if (!toast) return;
+    undoBatch(toast.batch);
+    haptic("light");
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(null);
+  };
+
+  const noItems = chores.length === 0 && skills.length === 0;
+  const brandNew = hydrated && kids.length === 0;
+
+  if (brandNew) {
+    return <EmptyState variant="no-kids" />;
+  }
+
+  const activeList = tab === "chores" ? chores : tab === "positive" ? positive : needsWork;
 
   return (
     <div className="space-y-8">
+      {/* Marble jar hero */}
+      <FamilyJarCard size={230} />
+
       {/* Kids row */}
       <section>
         <div className="flex items-center justify-between mb-3">
@@ -64,6 +97,7 @@ function HomePage() {
               kid={kid}
               size="lg"
               selected={selectedKids.includes(kid.id)}
+              streak={streakByKid[kid.id] ?? 0}
               onClick={() => toggleKid(kid.id)}
             />
           ))}
@@ -80,7 +114,7 @@ function HomePage() {
         </p>
       </section>
 
-      {/* Tabs */}
+      {/* Tabs + tile grid */}
       <section>
         <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1 mb-4">
           {[
@@ -100,105 +134,94 @@ function HomePage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-5 justify-items-center">
-          {tab === "chores" &&
-            chores.map((c) => (
+        {noItems ? (
+          <EmptyState variant="no-items" />
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-5 justify-items-center">
+            {activeList.map((item) => (
               <IconTile
-                key={c.id}
-                icon={c.icon}
-                label={c.name}
-                color={c.color}
-                points={c.points}
-                onClick={() => award({ name: c.name, icon: c.icon, points: c.points })}
+                key={item.id}
+                icon={item.icon}
+                label={item.name}
+                color={item.color}
+                points={item.points}
+                muted={tab === "needs-work"}
+                onClick={() => award({ name: item.name, icon: item.icon, points: item.points })}
               />
             ))}
-          {tab === "positive" &&
-            positive.map((s) => (
-              <IconTile
-                key={s.id}
-                icon={s.icon}
-                label={s.name}
-                color={s.color}
-                points={s.points}
-                onClick={() => award({ name: s.name, icon: s.icon, points: s.points })}
-              />
-            ))}
-          {tab === "needs-work" &&
-            needsWork.map((s) => (
-              <IconTile
-                key={s.id}
-                icon={s.icon}
-                label={s.name}
-                color={s.color}
-                points={s.points}
-                muted
-                onClick={() => award({ name: s.name, icon: s.icon, points: s.points })}
-              />
-            ))}
-        </div>
-      </section>
-
-      {/* Next companion teaser */}
-      {nextCompanion && (
-        <section className="card-soft p-5 flex items-center gap-4">
-          <PlushCompanion companion={nextCompanion} locked size={72} />
-          <div className="flex-1">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Next companion</div>
-            <div className="font-display text-xl font-bold">Mystery friend</div>
-            <div className="text-sm text-muted-foreground">
-              Unlocks at <span className="font-semibold text-foreground">{nextCompanion.unlockAt}</span> family points
-              — {Math.max(0, nextCompanion.unlockAt - household.sharedPool)} to go.
-            </div>
           </div>
-          <Link to="/collection" className="text-sm font-semibold flex items-center gap-1 hover:underline">
-            View <ArrowRight className="w-4 h-4" />
-          </Link>
-        </section>
-      )}
-
-      {/* Recent activity */}
-      <section>
-        <h2 className="font-display text-xl font-bold mb-3">Recent activity</h2>
-        <ul className="space-y-2">
-          {history.slice(0, 8).map((e) => {
-            const kid = kids.find((k) => k.id === e.kidId);
-            return (
-              <li
-                key={e.id}
-                className="card-soft flex items-center gap-3 px-4 py-3"
-              >
-                {isIconKey(e.itemIcon) ? (
-                  <img src={iconUrl(e.itemIcon)} alt="" aria-hidden className="w-10 h-10 rounded-xl object-contain" />
-                ) : (
-                  <span className="text-2xl">{e.itemIcon}</span>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate">{e.itemName}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {kid?.name}{mounted ? ` · ${timeAgo(e.at)}` : ""}
-                  </div>
-                </div>
-                <span
-                  className={`font-display font-bold ${e.points < 0 ? "text-destructive" : "text-foreground"}`}
-                >
-                  {e.points > 0 ? "+" : ""}{e.points}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        )}
       </section>
 
-      {/* Award flash toast */}
-      {flash && (
+      {/* Weekly recap */}
+      <WeeklyRecap />
+
+      {/* Today's feed — live, most-recent-first */}
+      <section>
+        <h2 className="font-display text-xl font-bold mb-3">Today's feed</h2>
+        {history.length === 0 ? (
+          <p className="text-sm text-muted-foreground card-soft px-4 py-6 text-center">
+            Awards show up here as they happen.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {history.slice(0, 10).map((e) => {
+              const kid = kids.find((k) => k.id === e.kidId);
+              return (
+                <li key={e.id} className="card-soft flex items-center gap-3 px-4 py-3">
+                  {isIconKey(e.itemIcon) ? (
+                    <img
+                      src={iconUrl(e.itemIcon)}
+                      alt=""
+                      aria-hidden
+                      className="w-10 h-10 rounded-xl object-contain"
+                    />
+                  ) : (
+                    <span className="text-2xl">{e.itemIcon}</span>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">{e.itemName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {kid?.name ?? "—"}
+                      {mounted ? ` · ${timeAgo(e.at)}` : ""}
+                    </div>
+                  </div>
+                  <span
+                    className={`font-display font-bold ${e.points < 0 ? "text-destructive" : "text-foreground"}`}
+                  >
+                    {e.points > 0 ? "+" : ""}
+                    {e.points}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* Transient "pick a kid" hint */}
+      {hint && (
         <div
-          key={flash.id}
+          key={hint}
           className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-pop-in"
         >
-          <div className="flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-3 shadow-xl font-display text-lg font-bold">
-            <Check className="w-5 h-5" />
-            {flash.text}
+          <div className="rounded-full bg-foreground text-background px-5 py-3 shadow-xl font-display text-lg font-bold">
+            {hint}
+          </div>
+        </div>
+      )}
+
+      {/* Undo toast (§2) */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 z-50 animate-toast-in">
+          <div className="flex items-center gap-3 rounded-full bg-foreground text-background pl-5 pr-2 py-2 shadow-xl">
+            <span className="font-semibold text-sm whitespace-nowrap">{toast.text}</span>
+            <button
+              onClick={undo}
+              className="flex items-center gap-1.5 rounded-full bg-background/15 hover:bg-background/25 px-3 py-1.5 text-sm font-bold transition"
+            >
+              <Undo2 className="w-4 h-4" /> Undo
+            </button>
           </div>
         </div>
       )}
