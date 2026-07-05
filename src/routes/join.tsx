@@ -60,13 +60,14 @@ function JoinPage() {
       return;
     }
 
-    if (result?.ok) {
+    const resultData = result as { ok?: boolean; error?: string } | null;
+    if (resultData?.ok) {
       setStatus("success");
       setMessage("You've joined the household! Redirecting…");
       setTimeout(() => navigate({ to: "/" }), 2000);
     } else {
       setStatus("error");
-      setMessage(result?.error ?? "Could not accept invite. The code may be expired or invalid.");
+      setMessage(resultData?.error ?? "Could not accept invite. The code may be expired or invalid.");
     }
   };
 

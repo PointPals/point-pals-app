@@ -5,7 +5,7 @@ import { IconTile } from "@/components/IconTile";
 import { KidChartCard } from "@/components/KidChartCard";
 import { CompanionPicker } from "@/components/CompanionPicker";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
-import type { PastelKey } from "@/lib/mock-data";
+import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
 import { ICON_KEYS } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,7 +143,7 @@ function ChoreManager({
   removeChore,
 }: {
   chores: { id: string; name: string; icon: string; color: PastelKey; points: number; tags: string[] }[];
-  addChore: (c: { name: string; icon: string; color: PastelKey; points: number; recurrence: string; tags?: string[] }) => void;
+  addChore: (c: Omit<Chore, "id">) => void;
   updateChore: (id: string, patch: ItemPatch) => void;
   removeChore: (id: string) => void;
 }) {
