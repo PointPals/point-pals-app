@@ -7,7 +7,7 @@ import { FamilyJarCard } from "@/components/FamilyJarCard";
 import { playFanfare, haptic, playChime } from "@/lib/feedback";
 import { Gift, Target, History, Trophy, Check, PartyPopper, Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/rewards")({
+export const Route = createFileRoute("/_authenticated/rewards")({
   component: RewardsPage,
   head: () => ({
     meta: [

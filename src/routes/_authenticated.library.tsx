@@ -12,7 +12,7 @@ import { ICON_KEYS } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Sparkles, Pencil, X, Check, Wand2 } from "lucide-react";
 
-export const Route = createFileRoute("/library")({
+export const Route = createFileRoute("/_authenticated/library")({
   component: LibraryPage,
   head: () => ({
     meta: [

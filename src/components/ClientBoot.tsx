@@ -65,27 +65,16 @@ export function ClientBoot() {
     }
   }, []);
 
-  // Auth guard: redirect unauthenticated users to /welcome for private routes.
+  // Auth redirects are handled by the `_authenticated/` layout's beforeLoad.
+  // Here we only listen for explicit SIGNED_OUT to push the user back to /welcome
+  // even from a public page that shouldn't feel "still logged in".
   useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-      const authed = !!data.session;
-      if (!authed && !isPublic(pathname)) {
-        navigate({ to: "/welcome" });
-      }
-    };
-    void check();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
+      if (event === "SIGNED_OUT" && !isPublic(pathname)) {
         navigate({ to: "/welcome" });
       }
     });
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
+    return () => sub.subscription.unsubscribe();
   }, [pathname, navigate]);
 
   // Bounce authed-but-no-household users to the "create or join" chooser.

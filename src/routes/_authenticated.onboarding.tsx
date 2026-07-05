@@ -6,7 +6,7 @@ import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { CompanionPicker } from "@/components/CompanionPicker";
 import { ArrowRight, ArrowLeft, Check, Sparkles, X } from "lucide-react";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
   head: () => ({
     meta: [{ title: "Welcome — PointPals" }],

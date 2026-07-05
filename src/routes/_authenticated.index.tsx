@@ -21,7 +21,7 @@ const APP_STATE_KEY = "pointpals.state.v2";
 
 type HomeSearch = { entered?: boolean };
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   component: HomePage,
   validateSearch: (search: Record<string, unknown>): HomeSearch => ({
     entered: search.entered === true || search.entered === "true" ? true : undefined,

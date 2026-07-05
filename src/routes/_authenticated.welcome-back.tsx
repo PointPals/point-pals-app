@@ -4,7 +4,7 @@ import { Sparkles, Users, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 
-export const Route = createFileRoute("/welcome-back")({
+export const Route = createFileRoute("/_authenticated/welcome-back")({
   component: WelcomeBackPage,
   head: () => ({
     meta: [

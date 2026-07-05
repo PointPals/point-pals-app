@@ -29,7 +29,7 @@ import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { trackParent } from "@/lib/analytics";
 
-export const Route = createFileRoute("/memories")({
+export const Route = createFileRoute("/_authenticated/memories")({
   component: MemoriesPage,
   head: () => ({
     meta: [
