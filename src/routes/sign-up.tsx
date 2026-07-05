@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sendTrialWelcome } from "@/lib/emails.functions";
 import { useApp } from "@/lib/app-store";
+import { PublicLogo } from "@/components/PublicLogo";
 
 export const Route = createFileRoute("/sign-up")({
   component: SignUpPage,
@@ -63,6 +64,7 @@ function SignUpPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
+      <PublicLogo fixed />
       <div className="card-soft p-6 w-full max-w-sm">
         <h1 className="font-display text-2xl font-bold">Start free trial</h1>
         <p className="text-sm text-muted-foreground mt-1">14 days free — no card required.</p>

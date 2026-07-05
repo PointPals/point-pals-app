@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { submitContactForm } from "@/lib/emails.functions";
+import { PublicLogo } from "@/components/PublicLogo";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -46,6 +47,7 @@ function ContactPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-16 bg-[linear-gradient(180deg,#FFF6E4_0%,#FCE7F3_100%)]">
+      <PublicLogo fixed />
       <div className="card-soft p-7 w-full max-w-lg">
         <h1 className="font-display text-3xl font-bold">Get in touch</h1>
         <p className="text-sm text-muted-foreground mt-2">

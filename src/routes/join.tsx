@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 import { CheckCircle, XCircle, Loader2, LogIn, UserPlus } from "lucide-react";
+import { PublicLogo } from "@/components/PublicLogo";
 
 export const Route = createFileRoute("/join")({
   component: JoinPage,
@@ -76,6 +77,7 @@ function JoinPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
+      <PublicLogo fixed />
       <div className="max-w-sm w-full text-center space-y-6">
         <h1 className="font-display text-3xl font-bold">Join a household</h1>
         <p className="text-sm text-muted-foreground">

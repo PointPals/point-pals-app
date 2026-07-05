@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { PublicLogo } from "@/components/PublicLogo";
 
 const PAGES = [
   { to: "/about", label: "Research" },
@@ -33,12 +34,7 @@ export function PublicPageLayout({
     >
       {/* Thin nav bar */}
       <nav className="max-w-4xl mx-auto px-5 py-4 flex items-center justify-between">
-        <Link
-          to="/"
-          className="font-display text-lg font-bold hover:opacity-80 transition"
-        >
-          PointPals
-        </Link>
+        <PublicLogo />
         <Link
           to="/welcome"
           className="text-sm text-muted-foreground hover:text-foreground transition underline underline-offset-2"
