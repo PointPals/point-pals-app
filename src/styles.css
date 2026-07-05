@@ -35,6 +35,48 @@
   animation: pp-float 3.2s ease-in-out infinite;
 }
 
+/* Marching mascots — walk right, wrap, and bob. */
+@keyframes pp-walk {
+  0%   { transform: translateX(-10%); }
+  100% { transform: translateX(110%); }
+}
+@keyframes pp-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-10px) rotate(2deg); }
+}
+@keyframes pp-legs {
+  0%, 100% { transform: rotate(-18deg); }
+  50%      { transform: rotate(18deg); }
+}
+/* +N points bubbling up and arcing toward the jar. */
+@keyframes pp-point-up {
+  0%   { transform: translate(0,0) scale(0.6); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(var(--pp-x, 40vw), -60vh) scale(1); opacity: 0; }
+}
+/* Jar fill sweeps up and resets, marbles rise with it. */
+@keyframes pp-jar-fill {
+  0%   { transform: translateY(100%); }
+  92%  { transform: translateY(6%); }
+  96%  { transform: translateY(6%); }
+  100% { transform: translateY(100%); }
+}
+@keyframes pp-marble-rise {
+  0%   { transform: translateY(120%) rotate(0); opacity: 0; }
+  10%  { opacity: 1; }
+  92%  { transform: translateY(var(--pp-top, -80%)) rotate(360deg); opacity: 1; }
+  100% { transform: translateY(var(--pp-top, -80%)) rotate(360deg); opacity: 0; }
+}
+@keyframes pp-sparkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.9); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+@keyframes pp-drift {
+  0%   { transform: translate(0,0); }
+  50%  { transform: translate(20px,-14px); }
+  100% { transform: translate(0,0); }
+}
+
 /*
  * PointPals — soft pastel design system.
  * Zain (display) + Nunito Sans (body). No pure black; warm charcoal for text.

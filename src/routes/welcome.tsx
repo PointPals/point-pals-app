@@ -5,6 +5,7 @@ import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { formatPrice, BILLING_CONFIG } from "@/lib/entitlements";
 import heroAsset from "@/assets/brand/pp-hero.asset.json";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
+import { AnimatedHeroScene } from "@/components/AnimatedHeroScene";
 
 export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
@@ -36,14 +37,7 @@ export const Route = createFileRoute("/welcome")({
 function WelcomePage() {
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(1200px 700px at 15% 0%, color-mix(in oklab, var(--pastel-butter) 55%, white), transparent 60%), radial-gradient(1000px 700px at 95% 15%, color-mix(in oklab, var(--pastel-blush) 55%, white), transparent 60%), linear-gradient(180deg, #FEF9F5, #FEF3EA)",
-        }}
-      />
+      <AnimatedHeroScene />
       {/* header */}
       <header className="max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between">
         <Link to="/" className="flex items-center">
@@ -58,13 +52,13 @@ function WelcomePage() {
       </header>
 
       {/* hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-8 pb-12">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-          <div className="text-center lg:text-left">
+      <section className="max-w-6xl mx-auto px-6 pt-8 pb-12 min-h-[80vh] flex items-center">
+        <div className="max-w-2xl">
+          <div className="rounded-3xl bg-white/55 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
               <Sparkles className="h-3.5 w-3.5" /> Now with photo memories
             </div>
-            <h1 className="mt-5 font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-tight">
+            <h1 className="mt-4 font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-tight">
               Chores that feel
               <br />
               like a{" "}
@@ -83,11 +77,11 @@ function WelcomePage() {
               <br />
               not a fight.
             </h1>
-            <p className="mt-5 text-lg text-muted-foreground max-w-xl lg:mx-0 mx-auto">
+            <p className="mt-5 text-lg text-foreground/80 max-w-xl">
               PointPals turns everyday chores and good behaviour into points the whole family fills a
               shared jar with together — then celebrates by choosing a reward as a team.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-3">
+            <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
               <Link
                 to="/sign-up"
                 className="tap inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-7 py-4 text-base font-semibold text-background hover:opacity-90 transition shadow-[0_10px_30px_-8px_rgba(236,72,153,0.5)]"
@@ -101,35 +95,15 @@ function WelcomePage() {
                 Log in
               </Link>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-foreground/60">
               Free for {BILLING_CONFIG.trialDays} days, then {formatPrice()}. Cancel anytime.
             </p>
-          </div>
-
-          <div className="relative">
-            <div
-              aria-hidden
-              className="absolute -inset-6 rounded-[3rem] blur-3xl opacity-70"
-              style={{
-                background:
-                  "radial-gradient(closest-side, color-mix(in oklab, var(--pastel-blush) 60%, white), transparent)",
-              }}
-            />
-            <div className="relative animate-float">
-              <img
-                src={heroAsset.url}
-                alt="PointPals mascots celebrating around a jar of glowing marbles"
-                width={1600}
-                height={1024}
-                className="w-full h-auto rounded-[2rem] shadow-[0_30px_80px_-20px_rgba(236,72,153,0.35)]"
-              />
-            </div>
           </div>
         </div>
       </section>
 
       {/* companion strip */}
-      <section className="max-w-3xl mx-auto px-6 pb-4">
+      <section className="relative max-w-3xl mx-auto px-6 pb-4">
         <div className="flex items-center justify-center gap-4">
           {(["blush", "sky", "sage", "lilac"] as const).map((c, i) => (
             <div
@@ -147,7 +121,7 @@ function WelcomePage() {
       </section>
 
       {/* how it works */}
-      <section className="max-w-4xl mx-auto px-6 py-14">
+      <section className="relative max-w-4xl mx-auto px-6 py-14">
         <div className="grid sm:grid-cols-3 gap-5">
           <FeatureCard
             icon={<Sparkles className="h-5 w-5" />}
