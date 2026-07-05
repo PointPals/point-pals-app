@@ -21,6 +21,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedWelcomeBackRouteImport } from './routes/_authenticated.welcome-back'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
@@ -90,41 +91,45 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/_authenticated/',
-  path: '/',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedWelcomeBackRoute =
   AuthenticatedWelcomeBackRouteImport.update({
-    id: '/_authenticated/welcome-back',
+    id: '/welcome-back',
     path: '/welcome-back',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/_authenticated/settings',
+  id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedRewardsRoute = AuthenticatedRewardsRouteImport.update({
-  id: '/_authenticated/rewards',
+  id: '/rewards',
   path: '/rewards',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/_authenticated/onboarding',
+  id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMemoriesRoute = AuthenticatedMemoriesRouteImport.update({
-  id: '/_authenticated/memories',
+  id: '/memories',
   path: '/memories',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
-  id: '/_authenticated/library',
+  id: '/library',
   path: '/library',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const ApiPublicHooksEmailCronRoute = ApiPublicHooksEmailCronRouteImport.update({
   id: '/api/public/hooks/email-cron',
@@ -133,6 +138,7 @@ const ApiPublicHooksEmailCronRoute = ApiPublicHooksEmailCronRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof AuthenticatedIndexRoute
   '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
@@ -151,7 +157,6 @@ export interface FileRoutesByFullPath {
   '/rewards': typeof AuthenticatedRewardsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/welcome-back': typeof AuthenticatedWelcomeBackRoute
-  '/': typeof AuthenticatedIndexRoute
   '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
 export interface FileRoutesByTo {
@@ -178,6 +183,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
@@ -202,6 +208,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/about'
     | '/blog'
     | '/contact'
@@ -220,7 +227,6 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/welcome-back'
-    | '/'
     | '/api/public/hooks/email-cron'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -246,6 +252,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-cron'
   id:
     | '__root__'
+    | '/_authenticated'
     | '/about'
     | '/blog'
     | '/contact'
@@ -269,6 +276,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
   BlogRoute: typeof BlogRoute
   ContactRoute: typeof ContactRoute
@@ -281,13 +289,6 @@ export interface RootRouteChildren {
   SignUpRoute: typeof SignUpRoute
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
-  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
-  AuthenticatedMemoriesRoute: typeof AuthenticatedMemoriesRoute
-  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
-  AuthenticatedRewardsRoute: typeof AuthenticatedRewardsRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedWelcomeBackRoute: typeof AuthenticatedWelcomeBackRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   ApiPublicHooksEmailCronRoute: typeof ApiPublicHooksEmailCronRoute
 }
 
@@ -377,54 +378,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/': {
       id: '/_authenticated/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/welcome-back': {
       id: '/_authenticated/welcome-back'
       path: '/welcome-back'
       fullPath: '/welcome-back'
       preLoaderRoute: typeof AuthenticatedWelcomeBackRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/rewards': {
       id: '/_authenticated/rewards'
       path: '/rewards'
       fullPath: '/rewards'
       preLoaderRoute: typeof AuthenticatedRewardsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/memories': {
       id: '/_authenticated/memories'
       path: '/memories'
       fullPath: '/memories'
       preLoaderRoute: typeof AuthenticatedMemoriesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/library': {
       id: '/_authenticated/library'
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof AuthenticatedLibraryRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/hooks/email-cron': {
       id: '/api/public/hooks/email-cron'
@@ -436,7 +444,32 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
+  AuthenticatedMemoriesRoute: typeof AuthenticatedMemoriesRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedRewardsRoute: typeof AuthenticatedRewardsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedWelcomeBackRoute: typeof AuthenticatedWelcomeBackRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
+  AuthenticatedMemoriesRoute: AuthenticatedMemoriesRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedRewardsRoute: AuthenticatedRewardsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedWelcomeBackRoute: AuthenticatedWelcomeBackRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
   BlogRoute: BlogRoute,
   ContactRoute: ContactRoute,
@@ -449,13 +482,6 @@ const rootRouteChildren: RootRouteChildren = {
   SignUpRoute: SignUpRoute,
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
-  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
-  AuthenticatedMemoriesRoute: AuthenticatedMemoriesRoute,
-  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
-  AuthenticatedRewardsRoute: AuthenticatedRewardsRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedWelcomeBackRoute: AuthenticatedWelcomeBackRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   ApiPublicHooksEmailCronRoute: ApiPublicHooksEmailCronRoute,
 }
 export const routeTree = rootRouteImport
