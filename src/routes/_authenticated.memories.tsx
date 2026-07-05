@@ -111,8 +111,9 @@ function Composer({
   householdId: string;
   kids: { id: string; name: string; color: string; companionId?: string }[];
 }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{ url: string; isVideo: boolean }[]>([]);
+  const [pickError, setPickError] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [taggedIds, setTaggedIds] = useState<string[]>([]);
   const [showTagSheet, setShowTagSheet] = useState(false);
@@ -139,20 +140,52 @@ function Composer({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationRef = useRef(0);
 
-  const pickFile = useCallback(
-    (f: File | null) => {
-      if (preview) URL.revokeObjectURL(preview);
-      setFile(f);
-      setPreview(f ? URL.createObjectURL(f) : null);
+  const addFiles = useCallback(
+    (incoming: File[]) => {
+      if (incoming.length === 0) return;
+      setPickError(null);
+      setFiles((prev) => {
+        const room = MAX_MEDIA_PER_POST - prev.length;
+        if (room <= 0) {
+          setPickError(`Up to ${MAX_MEDIA_PER_POST} photos or videos per memory.`);
+          return prev;
+        }
+        const accepted = incoming.slice(0, room);
+        if (incoming.length > room) {
+          setPickError(`Only the first ${MAX_MEDIA_PER_POST} were added.`);
+        }
+        const newPreviews = accepted.map((f) => ({
+          url: URL.createObjectURL(f),
+          isVideo: f.type.startsWith("video/"),
+        }));
+        setPreviews((p) => [...p, ...newPreviews]);
+        return [...prev, ...accepted];
+      });
     },
-    [preview],
+    [],
   );
+
+  const removeFileAt = (idx: number) => {
+    setPreviews((p) => {
+      const url = p[idx]?.url;
+      if (url) URL.revokeObjectURL(url);
+      return p.filter((_, i) => i !== idx);
+    });
+    setFiles((f) => f.filter((_, i) => i !== idx));
+  };
+
+  const clearFiles = () => {
+    previews.forEach((p) => URL.revokeObjectURL(p.url));
+    setPreviews([]);
+    setFiles([]);
+  };
 
   const toggleTag = (id: string) =>
     setTaggedIds((p) => (p.includes(id) ? p.filter((k) => k !== id) : [...p, id]));
 
   const reset = () => {
-    pickFile(null);
+    clearFiles();
+    setPickError(null);
     setCaption("");
     setTaggedIds([]);
     setAudioBlob(null);
@@ -179,7 +212,7 @@ function Composer({
     void startRecording();
   };
 
-  const canPost = file !== null || caption.trim().length > 0 || (audioBlob !== null && keepAudio);
+  const canPost = files.length > 0 || caption.trim().length > 0 || (audioBlob !== null && keepAudio);
 
   // ── Voice recording (v2): the child narrates the photo; the recording is
   // transcribed straight into the caption for the parent to tidy — or leave
@@ -264,7 +297,7 @@ function Composer({
     try {
       await addMemory(
         householdId,
-        file,
+        files,
         caption.trim(),
         taggedIds,
         keepAudio && audioBlob ? audioBlob : undefined,
@@ -273,7 +306,8 @@ function Composer({
         tagged: taggedIds.length,
         has_caption: caption.trim() !== "",
         has_audio: keepAudio && !!audioBlob,
-        has_media: !!file,
+        has_media: files.length > 0,
+        media_count: files.length,
       });
       reset();
     } catch {
@@ -283,8 +317,6 @@ function Composer({
     }
   };
 
-  const isVideo = file?.type.startsWith("video/") ?? false;
-
   return (
     <section className="card-soft p-4 space-y-3">
       {/* Hidden file inputs */}
@@ -292,8 +324,12 @@ function Composer({
         ref={inputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
-        onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          addFiles(Array.from(e.target.files ?? []));
+          if (inputRef.current) inputRef.current.value = "";
+        }}
       />
       <input
         ref={cameraRef}
@@ -301,7 +337,10 @@ function Composer({
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          addFiles(Array.from(e.target.files ?? []));
+          if (cameraRef.current) cameraRef.current.value = "";
+        }}
       />
       <input
         ref={videoRef}
@@ -309,7 +348,10 @@ function Composer({
         accept="video/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          addFiles(Array.from(e.target.files ?? []));
+          if (videoRef.current) videoRef.current.value = "";
+        }}
       />
 
       {!expanded ? (
@@ -361,30 +403,38 @@ function Composer({
         </div>
       ) : (
         <div className="space-y-3">
-          {file && (
-            <div className="relative">
-              {preview &&
-                (isVideo ? (
-                  <video
-                    src={preview}
-                    controls
-                    playsInline
-                    className="w-full max-h-72 rounded-2xl bg-foreground/5"
-                  />
-                ) : (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="w-full max-h-72 object-cover rounded-2xl"
-                  />
+          {previews.length > 0 && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                {previews.map((p, i) => (
+                  <div
+                    key={p.url}
+                    className="relative aspect-square rounded-xl overflow-hidden bg-foreground/5"
+                  >
+                    {p.isVideo ? (
+                      <video src={p.url} className="w-full h-full object-cover" muted playsInline />
+                    ) : (
+                      <img src={p.url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                    )}
+                    {p.isVideo && (
+                      <span className="absolute bottom-1 left-1 rounded-full bg-foreground/70 text-background px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-0.5">
+                        <Video className="h-2.5 w-2.5" />
+                      </span>
+                    )}
+                    <button
+                      onClick={() => removeFileAt(i)}
+                      aria-label={`Remove item ${i + 1}`}
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-foreground/70 text-background flex items-center justify-center hover:bg-foreground transition"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
                 ))}
-              <button
-                onClick={() => pickFile(null)}
-                aria-label="Remove media"
-                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-foreground/60 text-background flex items-center justify-center hover:bg-foreground transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {previews.length}/{MAX_MEDIA_PER_POST} attached
+                {pickError && <span className="ml-2 text-destructive">{pickError}</span>}
+              </div>
             </div>
           )}
 
