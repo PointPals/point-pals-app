@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Home, Library, Sparkles, Gift } from "lucide-react";
+import { Home, Library, Sparkles, Gift, Settings } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 
 const NAV = [
@@ -8,6 +8,7 @@ const NAV = [
   { to: "/library", label: "Library", icon: Library },
   { to: "/collection", label: "Collection", icon: Sparkles },
   { to: "/rewards", label: "Rewards", icon: Gift },
+  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -28,10 +29,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </Link>
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Family pool</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Family pool
+            </div>
             <div className="font-display text-2xl font-bold leading-none mt-1">
               {household.sharedPool}
-              <span className="text-muted-foreground text-base font-sans font-normal"> / {household.rewardTarget}</span>
+              <span className="text-muted-foreground text-base font-sans font-normal">
+                {" "}
+                / {household.rewardTarget}
+              </span>
             </div>
           </div>
         </div>
@@ -40,7 +46,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${pct}%`,
-              background: "linear-gradient(90deg, var(--pastel-butter), var(--pastel-blush), var(--pastel-lilac))",
+              background:
+                "linear-gradient(90deg, var(--pastel-butter), var(--pastel-blush), var(--pastel-lilac))",
             }}
           />
         </div>
