@@ -126,7 +126,7 @@ function BlogPage() {
     <article className="mx-auto max-w-2xl md:max-w-6xl space-y-8">
       <header>
         <img
-          src={blogHero}
+          src="https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/Marble_jar_blog_header.jpeg"
           alt="An open notebook and marble jar on a soft peach blanket with crayons scattered around"
           width={1536}
           height={768}
