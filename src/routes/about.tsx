@@ -211,21 +211,6 @@ function AboutPage() {
             <span className="not-italic text-xs">— Frances Jensen, <em>The Teenage Brain</em></span>
           </blockquote>
 
-          <h3 className="font-display text-lg font-bold mt-4 mb-2">
-            The clicker analogy is stronger than you'd think
-          </h3>
-          <p>
-            In operant conditioning, a clicker works because <strong>timing beats magnitude</strong>.
-            A small, consistent, immediately-delivered signal shapes behaviour more effectively than a
-            large, delayed, emotionally-charged consequence. The dull chime and marble disappearance
-            in PointPals are that signal. They say "that behaviour just cost a marble" in the same
-            neutral, predictable way a clicker says "that behaviour earned a treat."
-          </p>
-          <p>
-            The difference? A clicker marks the behaviour you <em>want</em>. The marble loss marks
-            the behaviour you need to redirect. The mechanism is the same — immediate, consistent,
-            and emotionally clean.
-          </p>
 
           <h3 className="font-display text-lg font-bold mt-4 mb-2">
             The system protects the relationship
