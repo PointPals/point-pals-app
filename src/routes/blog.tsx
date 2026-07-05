@@ -40,6 +40,33 @@ export const Route = createFileRoute("/blog")({
         content:
           "Research, tips, and stories about family habits, chores, rewards, and positive parenting from the PointPals team.",
       },
+      { property: "og:title", content: "PointPals Blog — research & parenting tips" },
+      {
+        property: "og:description",
+        content:
+          "Real-world reward systems, chore science, and screen-free parenting ideas from the PointPals team.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://pointpals.lovable.app/blog" },
+    ],
+    links: [{ rel: "canonical", href: "https://pointpals.lovable.app/blog" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "PointPals Blog",
+          description:
+            "Research, tips, and stories about family habits, chores, rewards, and positive parenting.",
+          url: "https://pointpals.lovable.app/blog",
+          isPartOf: {
+            "@type": "WebSite",
+            name: "PointPals",
+            url: "https://pointpals.lovable.app",
+          },
+        }),
+      },
     ],
   }),
 });

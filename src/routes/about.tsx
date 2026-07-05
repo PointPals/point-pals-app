@@ -18,7 +18,16 @@ export const Route = createFileRoute("/about")({
         content:
           "How real-world rewards help modern families build routines — grounded in attachment theory, chore research, and an honest look at motivation science.",
       },
+      { property: "og:title", content: "Why PointPals works — the research" },
+      {
+        property: "og:description",
+        content:
+          "Attachment theory, chore-capability research, and the honest science of rewards — the evidence PointPals is built on.",
+      },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: "https://pointpals.lovable.app/about" },
     ],
+    links: [{ rel: "canonical", href: "https://pointpals.lovable.app/about" }],
   }),
 });
 
@@ -55,6 +64,7 @@ function AboutPage() {
         </p>
       </header>
 
+      <h2 className="sr-only">The research behind PointPals</h2>
       <Accordion type="multiple" className="space-y-1">
         <SectionAccordion
           id="crisis"

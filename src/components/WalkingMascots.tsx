@@ -86,7 +86,7 @@ export const WalkingMascots = memo(function WalkingMascots({
           >
             <img
               src={m.src}
-              alt={m.alt}
+              alt=""
               draggable={false}
               className="w-full h-full object-contain select-none drop-shadow-[0_12px_18px_rgba(236,72,153,0.35)] sm:drop-shadow-[0_18px_28px_rgba(236,72,153,0.35)]"
             />

@@ -95,8 +95,12 @@ function HomePage() {
 
   return (
     <div className="space-y-6">
+      {/* Visually-hidden h1 anchors the page for screen readers and SEO —
+       * the visual hero is the marble jar rather than a headline. */}
+      <h1 className="sr-only">Our Family Jar</h1>
       {/* Kid row — tap to open the award modal */}
-      <section>
+      <section aria-labelledby="kids-heading">
+        <h2 id="kids-heading" className="sr-only">Kids</h2>
         <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1 justify-center sm:justify-start">
           {kids.map((kid) => (
             <KidBadge
@@ -125,10 +129,16 @@ function HomePage() {
       </section>
 
       {/* The marble jar — the page's dominant visual (§3) */}
-      <FamilyJarCard size={330} />
+      <section aria-labelledby="jar-heading">
+        <h2 id="jar-heading" className="sr-only">Family Jar</h2>
+        <FamilyJarCard size={330} />
+      </section>
 
       {/* Collapsed recent-activity log — quick context, not the photo wall */}
-      <RecentActivity />
+      <section aria-labelledby="activity-heading">
+        <h2 id="activity-heading" className="sr-only">Recent Activity</h2>
+        <RecentActivity />
+      </section>
 
       {/* "Add to Home Screen" banner (shows only when installable, 2+ sessions) */}
       <InstallPrompt />

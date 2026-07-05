@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link to="/" className="block mb-6">
           <img
             src={logoUrl}
-            alt="PointPals"
+            alt="PointPals logo"
             width={180}
             height={72}
             className="h-10 w-auto select-none"
@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/" className="block md:hidden">
               <img
                 src={logoUrl}
-                alt="PointPals"
+                alt="PointPals logo"
                 width={200}
                 height={80}
                 className="h-12 sm:h-14 w-auto select-none"
