@@ -527,8 +527,7 @@ function SkillManager({
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
-  const [aiPanel, setAiPanel] = useState(false);
-  const { household } = useApp();
+  const [icon, setIcon] = useState<string | null>(null);
 
   const clampPoints = (n: number) => Math.max(pointsMin, Math.min(pointsMax, n));
 
@@ -537,10 +536,11 @@ function SkillManager({
     if (!name.trim()) return;
     setBusy(true);
     await new Promise((r) => setTimeout(r, 300));
-    addSkill(name.trim(), clampPoints(points), color);
+    addSkill(name.trim(), clampPoints(points), color, icon ?? undefined);
     setName("");
     setPoints(defaultPoints);
     setColor("sky");
+    setIcon(null);
     setBusy(false);
   };
 
@@ -585,26 +585,11 @@ function SkillManager({
             disabled={busy || !name.trim()}
             className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
           >
-            <Sparkles className="w-4 h-4" />
             {busy ? "Adding…" : addLabel}
-          </button>
-          <button
-            type="button"
-            onClick={() => setAiPanel(!aiPanel)}
-            className="tap rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold flex items-center gap-2 hover:bg-muted transition"
-          >
-            <Wand2 className="w-4 h-4" />
-            AI icon
           </button>
         </div>
 
-        {aiPanel && (
-          <AiIconPanel
-            householdId={household.id}
-            onSelect={() => setAiPanel(false)}
-            onClose={() => setAiPanel(false)}
-          />
-        )}
+        <IconPickerGrid selected={icon} onSelect={setIcon} />
 
         <div className="flex gap-2">
           {PALETTE.map((c) => (
