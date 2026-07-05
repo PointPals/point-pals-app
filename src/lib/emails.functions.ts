@@ -59,13 +59,6 @@ export const submitContactForm = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => contactSchema.parse(input))
   .handler(async ({ data }) => {
     const { sendTemplate, SUPPORT_INBOX } = await import("./emails.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    await supabaseAdmin.from("support_messages").insert({
-      name: data.name,
-      email: data.email,
-      message: data.message,
-    });
 
     // Autoreply to the sender
     await sendTemplate({
