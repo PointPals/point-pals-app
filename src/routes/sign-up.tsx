@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { sendTrialWelcome } from "@/lib/emails.functions";
 
 export const Route = createFileRoute("/sign-up")({
   component: SignUpPage,
@@ -50,6 +51,8 @@ function SignUpPage() {
       setErr(hhErr.message);
       return;
     }
+    // Fire-and-forget trial-welcome email (template 01).
+    sendTrialWelcome().catch(() => {});
     navigate({ to: "/onboarding" });
   };
 

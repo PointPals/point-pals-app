@@ -134,6 +134,13 @@ export type Database = {
           created_at: string
           currency: string
           current_period_end: string | null
+          email_cancelled_sent_at: string | null
+          email_payment_confirmed_at: string | null
+          email_tip_day3_sent_at: string | null
+          email_tip_day7_sent_at: string | null
+          email_tip_month1_sent_at: string | null
+          email_trial_ending_sent_at: string | null
+          email_trial_welcome_sent_at: string | null
           id: string
           name: string
           onboarded: boolean
@@ -150,6 +157,13 @@ export type Database = {
           created_at?: string
           currency?: string
           current_period_end?: string | null
+          email_cancelled_sent_at?: string | null
+          email_payment_confirmed_at?: string | null
+          email_tip_day3_sent_at?: string | null
+          email_tip_day7_sent_at?: string | null
+          email_tip_month1_sent_at?: string | null
+          email_trial_ending_sent_at?: string | null
+          email_trial_welcome_sent_at?: string | null
           id?: string
           name?: string
           onboarded?: boolean
@@ -166,6 +180,13 @@ export type Database = {
           created_at?: string
           currency?: string
           current_period_end?: string | null
+          email_cancelled_sent_at?: string | null
+          email_payment_confirmed_at?: string | null
+          email_tip_day3_sent_at?: string | null
+          email_tip_day7_sent_at?: string | null
+          email_tip_month1_sent_at?: string | null
+          email_trial_ending_sent_at?: string | null
+          email_trial_welcome_sent_at?: string | null
           id?: string
           name?: string
           onboarded?: boolean
@@ -539,6 +560,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      support_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

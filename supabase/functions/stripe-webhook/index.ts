@@ -14,6 +14,70 @@
 import Stripe from "https://esm.sh/stripe@16?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ---- Resend template sender (mirror of src/lib/emails.server.ts) --------
+const RESEND_TEMPLATES = {
+  paymentConfirmation:   "1948c765-325d-420e-aabd-a5c9c05a7946",
+  subscriptionRenewal:   "188f5f1c-2e98-41c3-b34b-dc85e6d79c01",
+  paymentFailed:         "7521fc1b-69a3-4311-ba6b-3791525fde2e",
+  subscriptionCancelled: "0b599576-fda3-4f54-a16d-26290f0fb6e3",
+} as const;
+type TemplateKey = keyof typeof RESEND_TEMPLATES;
+
+async function sendResendTemplate(
+  key: TemplateKey,
+  to: string,
+  data: Record<string, unknown> = {},
+): Promise<void> {
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  const resendKey  = Deno.env.get("RESEND_API_KEY");
+  if (!lovableKey || !resendKey) {
+    console.error(`[stripe-webhook] Missing LOVABLE_API_KEY/RESEND_API_KEY, skipping ${key}`);
+    return;
+  }
+  try {
+    const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": resendKey,
+      },
+      body: JSON.stringify({
+        from: "PointPals <hello@pointpals.co.nz>",
+        to: [to],
+        template_id: RESEND_TEMPLATES[key],
+        data,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`[stripe-webhook] Resend ${key} failed ${res.status}: ${await res.text()}`);
+    }
+  } catch (e) {
+    console.error(`[stripe-webhook] Resend ${key} threw:`, e);
+  }
+}
+
+async function adminEmailForCustomer(customerId: string): Promise<{ email: string | null; householdId: string | null }> {
+  const { data: hh } = await admin
+    .from("households")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  const householdId = hh?.id ?? null;
+  if (!householdId) return { email: null, householdId: null };
+  const { data: mem } = await admin
+    .from("household_members")
+    .select("user_id")
+    .eq("household_id", householdId)
+    .eq("role", "admin")
+    .limit(1);
+  const userId = mem?.[0]?.user_id;
+  if (!userId) return { email: null, householdId };
+  const { data: u } = await admin.auth.admin.getUserById(userId);
+  return { email: u?.user?.email ?? null, householdId };
+}
+// -------------------------------------------------------------------------
+
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-06-20",
   httpClient: Stripe.createFetchHttpClient(),
@@ -73,6 +137,43 @@ Deno.serve(async (req) => {
             })
             .eq("id", householdId);
         }
+        // Template 05 — payment confirmation (first subscription charge / one-off buy).
+        const to = s.customer_details?.email ?? s.customer_email ?? null;
+        if (to && householdId) {
+          const { data: hh } = await admin
+            .from("households")
+            .select("email_payment_confirmed_at")
+            .eq("id", householdId)
+            .maybeSingle();
+          if (!hh?.email_payment_confirmed_at) {
+            await sendResendTemplate("paymentConfirmation", to, {
+              amount: s.amount_total ? (s.amount_total / 100).toFixed(2) : "",
+              currency: (s.currency ?? "usd").toUpperCase(),
+            });
+            await admin
+              .from("households")
+              .update({ email_payment_confirmed_at: new Date().toISOString() })
+              .eq("id", householdId);
+          }
+        }
+        break;
+      }
+      case "invoice.paid": {
+        // Template 06 — subscription renewal. Only fire on recurring cycles,
+        // not the very first invoice (that's covered by payment confirmation).
+        const inv = event.data.object as Stripe.Invoice;
+        if (inv.billing_reason !== "subscription_cycle") break;
+        const customerId = inv.customer as string;
+        const { email } = await adminEmailForCustomer(customerId);
+        if (email) {
+          await sendResendTemplate("subscriptionRenewal", email, {
+            amount: inv.amount_paid ? (inv.amount_paid / 100).toFixed(2) : "",
+            currency: (inv.currency ?? "usd").toUpperCase(),
+            period_end: inv.period_end
+              ? new Date(inv.period_end * 1000).toISOString().slice(0, 10)
+              : "",
+          });
+        }
         break;
       }
       case "customer.subscription.updated":
@@ -85,11 +186,35 @@ Deno.serve(async (req) => {
             ? new Date(sub.current_period_end * 1000).toISOString()
             : null,
         });
+        if (event.type === "customer.subscription.deleted") {
+          const { email, householdId } = await adminEmailForCustomer(sub.customer as string);
+          if (email && householdId) {
+            const { data: hh } = await admin
+              .from("households")
+              .select("email_cancelled_sent_at")
+              .eq("id", householdId)
+              .maybeSingle();
+            if (!hh?.email_cancelled_sent_at) {
+              await sendResendTemplate("subscriptionCancelled", email);
+              await admin
+                .from("households")
+                .update({ email_cancelled_sent_at: new Date().toISOString() })
+                .eq("id", householdId);
+            }
+          }
+        }
         break;
       }
       case "invoice.payment_failed": {
         const inv = event.data.object as Stripe.Invoice;
         await updateByCustomer(inv.customer as string, { subscription_status: "past_due" });
+        const { email } = await adminEmailForCustomer(inv.customer as string);
+        if (email) {
+          await sendResendTemplate("paymentFailed", email, {
+            amount: inv.amount_due ? (inv.amount_due / 100).toFixed(2) : "",
+            currency: (inv.currency ?? "usd").toUpperCase(),
+          });
+        }
         break;
       }
       default:
