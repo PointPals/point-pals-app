@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { Sparkles, Heart, Gift, ArrowRight } from "lucide-react";
+import { BadgeCheck, Sparkles, Heart, Gift, ArrowRight } from "lucide-react";
 import { formatPrice, BILLING_CONFIG } from "@/lib/entitlements";
 import heroAsset from "@/assets/brand/pp-hero.asset.json";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
@@ -92,12 +92,10 @@ function WelcomePage() {
         <div className="relative z-10">
           <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 border border-butter px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
-              <Sparkles className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
+              <BadgeCheck className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
             </div>
             <h1 className="mt-4 font-display text-[2.5rem] sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Chores that feel
-              <br />
-              like a <GameWord />,
+              Chores that feel like a <GameWord />,
               <br />
               not a fight.
             </h1>
