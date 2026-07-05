@@ -106,7 +106,11 @@ export const Route = createFileRoute("/api/public/hooks/email-cron")({
 
           const res = await sendTemplate({ templateKey: toSend.key, to });
           if (res.ok) {
-            await supabaseAdmin.from("households").update({ [toSend.column]: nowIso }).eq("id", h.id);
+            const patch: Record<string, string> = { [toSend.column]: nowIso };
+            await supabaseAdmin
+              .from("households")
+              .update(patch as never)
+              .eq("id", h.id);
             summary.sent.push(`${toSend.key}:${h.id}`);
           } else {
             summary.failed.push(`${toSend.key}:${h.id}:${res.error ?? ""}`);

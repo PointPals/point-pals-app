@@ -23,6 +23,7 @@ import { Route as MemoriesRouteImport } from './routes/memories'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksEmailCronRouteImport } from './routes/api/public/hooks/email-cron'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -94,6 +95,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksEmailCronRoute = ApiPublicHooksEmailCronRouteImport.update({
+  id: '/api/public/hooks/email-cron',
+  path: '/api/public/hooks/email-cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/terms'
     | '/welcome'
+    | '/api/public/hooks/email-cron'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/terms'
     | '/welcome'
+    | '/api/public/hooks/email-cron'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/terms'
     | '/welcome'
+    | '/api/public/hooks/email-cron'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   SignUpRoute: typeof SignUpRoute
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
+  ApiPublicHooksEmailCronRoute: typeof ApiPublicHooksEmailCronRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/email-cron': {
+      id: '/api/public/hooks/email-cron'
+      path: '/api/public/hooks/email-cron'
+      fullPath: '/api/public/hooks/email-cron'
+      preLoaderRoute: typeof ApiPublicHooksEmailCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignUpRoute: SignUpRoute,
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
+  ApiPublicHooksEmailCronRoute: ApiPublicHooksEmailCronRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
