@@ -28,6 +28,7 @@ import {
   Trash,
   BarChart3,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -476,6 +477,23 @@ function SettingsPage() {
               <Trash2 className="h-4 w-4" /> Delete all data
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* Sign out */}
+      <section className="space-y-3">
+        <SectionTitle icon={<LogOut className="h-4 w-4" />}>Account</SectionTitle>
+        <div className="card-soft p-5 space-y-3">
+          <p className="text-sm text-muted-foreground">Sign out of PointPals on this device.</p>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/welcome" });
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </button>
         </div>
       </section>
 

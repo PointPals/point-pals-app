@@ -4,7 +4,15 @@ import { useApp } from "@/lib/app-store";
 import { PASTEL_HEX, type PastelKey, COMPANIONS } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { CompanionPicker } from "@/components/CompanionPicker";
-import { ArrowRight, ArrowLeft, Check, Sparkles, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Sparkles,
+  X,
+  Users,
+  Heart,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
@@ -19,7 +27,7 @@ const PALETTE: PastelKey[] = ["sky", "butter", "sage", "blush", "lilac", "sand",
 // avatars, and sets a first reward target — so a new household never lands on a
 // blank dashboard.
 function Onboarding() {
-  const { setHouseholdName, addKid, setRewardTarget, completeOnboarding, kids, household } =
+  const { setHouseholdName, addKid, setRewardTarget, completeOnboarding, kids, household, removeKid } =
     useApp();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -97,11 +105,22 @@ function Onboarding() {
           <p className="mt-1 text-center text-sm text-muted-foreground">
             Each one gets a companion avatar. You can add more later.
           </p>
+          <p className="mt-2 text-center text-[13px] text-muted-foreground italic flex items-center justify-center gap-1">
+            <Users className="h-3.5 w-3.5" />
+            Adult chores also available — parents can add themselves as a "kid" so the whole family fills the jar together.
+          </p>
 
           {kids.length > 0 && (
             <div className="mt-5 flex flex-wrap justify-center gap-4">
               {kids.map((k) => (
-                <div key={k.id} className="flex flex-col items-center gap-1">
+                <div key={k.id} className="flex flex-col items-center gap-1 relative">
+                  <button
+                    onClick={() => removeKid(k.id)}
+                    className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs shadow-sm hover:scale-110 transition"
+                    aria-label={`Remove ${k.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                   <div
                     className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full"
                     style={{ backgroundColor: PASTEL_HEX[k.color] }}

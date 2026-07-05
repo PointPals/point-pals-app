@@ -239,6 +239,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   // Live-mode bootstrap: sign-in → fetch bundle → subscribe realtime.
   // ---------------------------------------------------------------------------
+  const seedDefaultsIfEmpty = async (hid: string) => {
+    // If chores or skills are empty for this household, seed from defaults.
+    const { data: existingChores } = await supabase
+      .from("chores")
+      .select("id")
+      .eq("household_id", hid)
+      .limit(1);
+    const { data: existingSkills } = await supabase
+      .from("skills")
+      .select("id")
+      .eq("household_id", hid)
+      .limit(1);
+    const { INITIAL_CHORES, INITIAL_SKILLS } = await import("./mock-data");
+
+    if (!existingChores?.length) {
+      for (const c of INITIAL_CHORES) {
+        await supabase.from("chores").insert({
+          id: uid(),
+          household_id: hid,
+          name: c.name,
+          icon: c.icon,
+          color: c.color,
+          points: c.points,
+          recurrence: c.recurrence,
+          tags: c.tags ?? [],
+          assigned_kid_ids: null,
+        } as never);
+      }
+    }
+    if (!existingSkills?.length) {
+      for (const sk of INITIAL_SKILLS) {
+        await supabase.from("skills").insert({
+          id: uid(),
+          household_id: hid,
+          name: sk.name,
+          icon: sk.icon,
+          color: sk.color,
+          points: sk.points,
+          is_positive: sk.isPositive,
+          assigned_kid_ids: null,
+        } as never);
+      }
+    }
+  };
+
   const bootLive = async (userId: string) => {
     userIdRef.current = userId;
     const hid = await fetchPrimaryHouseholdId(userId);
@@ -248,6 +293,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
     setNeedsHousehold(false);
+
+    // Seed defaults when this household has nothing yet (first run)
+    await seedDefaultsIfEmpty(hid);
+
     const bundle = await fetchHouseholdBundle(hid);
     if (!bundle) return;
     householdIdRef.current = hid;
