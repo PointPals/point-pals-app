@@ -17,6 +17,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { household } = useApp();
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
 
+  // The public marketing page (§8) is chrome-free: no household header, no
+  // bottom nav — it isn't part of the authenticated in-app experience.
+  if (pathname.startsWith("/welcome")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen pb-24">
       <header className="max-w-4xl mx-auto px-5 pt-6 pb-4">

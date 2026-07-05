@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useApp, type AwardBatch } from "@/lib/app-store";
 import { primeAudio, playChime, haptic } from "@/lib/feedback";
@@ -8,8 +8,21 @@ import { FamilyJarCard } from "@/components/FamilyJarCard";
 import { EmptyState } from "@/components/EmptyState";
 import { Undo2 } from "lucide-react";
 
+// The app has no real auth/session system yet (§8 landing page is built without
+// one), so "has this device ever used the app" is approximated by the presence
+// of the persisted app-store key (see lib/app-store.tsx STORAGE_KEY). A truly
+// first-time visitor is sent to the marketing page at /welcome; `?entered=1`
+// (set by /welcome's "Log in" and "Start free trial" links) always bypasses
+// this so nobody gets bounced back and forth.
+const APP_STATE_KEY = "pointpals.state.v2";
+
+type HomeSearch = { entered?: boolean };
+
 export const Route = createFileRoute("/")({
   component: HomePage,
+  validateSearch: (search: Record<string, unknown>): HomeSearch => ({
+    entered: search.entered === true || search.entered === "true" ? true : undefined,
+  }),
 });
 
 // Home (§3) — deliberately minimal: the kid row (tap → award modal) and the
@@ -17,11 +30,25 @@ export const Route = createFileRoute("/")({
 // exclusively inside the AwardModal. The old text feed moved to /memories.
 function HomePage() {
   const { kids, awardPoints, undoBatch, streakByKid, hydrated } = useApp();
+  const { entered } = Route.useSearch();
+  const navigate = useNavigate();
   const [activeKidId, setActiveKidId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ batch: AwardBatch; text: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setMounted(true), []);
+
+  // First-time-visitor redirect to the marketing page (§8).
+  useEffect(() => {
+    if (entered) return;
+    try {
+      if (window.localStorage.getItem(APP_STATE_KEY) === null) {
+        void navigate({ to: "/welcome" });
+      }
+    } catch {
+      /* storage blocked — treat as a returning visitor, stay on the app */
+    }
+  }, [entered, navigate]);
 
   const activeKid = kids.find((k) => k.id === activeKidId) ?? null;
 
