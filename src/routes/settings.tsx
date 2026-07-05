@@ -504,6 +504,24 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
   );
 }
 
+function RoleBadge({ role }: { role: HouseholdRole }) {
+  if (!role) return null;
+  const styles: Record<Exclude<HouseholdRole, null>, string> = {
+    admin: "bg-foreground text-background",
+    parent: "bg-lilac text-lilac-foreground",
+    contributor: "bg-sage text-sage-foreground",
+    viewer: "bg-muted text-muted-foreground",
+  };
+  const label = role.charAt(0).toUpperCase() + role.slice(1);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styles[role]}`}
+    >
+      {role === "admin" && <ShieldCheck className="w-3 h-3" />} {label}
+    </span>
+  );
+}
+
 function ToggleRow({
   icon,
   label,
