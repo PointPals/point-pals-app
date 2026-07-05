@@ -67,8 +67,8 @@ function LibraryPage() {
 
       {!canEdit && role && (
         <div className="card-soft px-4 py-3 text-sm border border-butter/60 bg-butter/20">
-          <strong className="font-semibold">View only.</strong>{" "}
-          Only admins and parents can edit chores, skills, and the family roster. Ask a household admin to change your role.
+          <strong className="font-semibold">View only.</strong> Only admins and parents can edit
+          chores, skills, and the family roster. Ask a household admin to change your role.
         </div>
       )}
 
@@ -91,45 +91,48 @@ function LibraryPage() {
         ))}
       </div>
 
-      <div className={canEdit ? "" : "pointer-events-none opacity-60 select-none"} aria-disabled={!canEdit}>
-      {tab === "chores" && (
-        <ChoreManager
-          chores={chores}
-          addChore={addChore}
-          updateChore={updateChore}
-          removeChore={removeChore}
-        />
-      )}
-      {tab === "positive" && (
-        <SkillManager
-          skills={skills.filter((s) => s.isPositive)}
-          addSkill={(name, points, color) =>
-            addSkill({ name, icon: pickIconForName(name), color, points, isPositive: true })
-          }
-          updateSkill={updateSkill}
-          removeSkill={removeSkill}
-          addLabel="Add positive skill"
-          pointsMin={1}
-          pointsMax={20}
-          defaultPoints={2}
-        />
-      )}
-      {tab === "needs-work" && (
-        <SkillManager
-          skills={skills.filter((s) => !s.isPositive)}
-          addSkill={(name, points, color) =>
-            addSkill({ name, icon: pickIconForName(name), color, points, isPositive: false })
-          }
-          updateSkill={updateSkill}
-          removeSkill={removeSkill}
-          addLabel="Add behaviour"
-          muted
-          pointsMin={-20}
-          pointsMax={-1}
-          defaultPoints={-1}
-        />
-      )}
-      {tab === "family" && <FamilyTab />}
+      <div
+        className={canEdit ? "" : "pointer-events-none opacity-60 select-none"}
+        aria-disabled={!canEdit}
+      >
+        {tab === "chores" && (
+          <ChoreManager
+            chores={chores}
+            addChore={addChore}
+            updateChore={updateChore}
+            removeChore={removeChore}
+          />
+        )}
+        {tab === "positive" && (
+          <SkillManager
+            skills={skills.filter((s) => s.isPositive)}
+            addSkill={(name, points, color) =>
+              addSkill({ name, icon: pickIconForName(name), color, points, isPositive: true })
+            }
+            updateSkill={updateSkill}
+            removeSkill={removeSkill}
+            addLabel="Add positive skill"
+            pointsMin={1}
+            pointsMax={20}
+            defaultPoints={2}
+          />
+        )}
+        {tab === "needs-work" && (
+          <SkillManager
+            skills={skills.filter((s) => !s.isPositive)}
+            addSkill={(name, points, color) =>
+              addSkill({ name, icon: pickIconForName(name), color, points, isPositive: false })
+            }
+            updateSkill={updateSkill}
+            removeSkill={removeSkill}
+            addLabel="Add behaviour"
+            muted
+            pointsMin={-20}
+            pointsMax={-1}
+            defaultPoints={-1}
+          />
+        )}
+        {tab === "family" && <FamilyTab />}
       </div>
     </div>
   );
@@ -146,7 +149,101 @@ type ChoreItem = {
   tags: string[];
 };
 
-type ItemPatch = { name?: string; points?: number; color?: PastelKey; tags?: string[] };
+type ItemPatch = {
+  name?: string;
+  points?: number;
+  color?: PastelKey;
+  tags?: string[];
+  assignedKidIds?: string[] | null;
+};
+
+// Mini avatar stack shown on narrowed chores/skills in the list view, so a
+// parent can tell at a glance which items are limited without opening each one.
+// Universal items (no allow-list) get nothing extra.
+function AssignedStack({ assignedKidIds }: { assignedKidIds?: string[] | null }) {
+  const { kids } = useApp();
+  if (!assignedKidIds?.length) return null;
+  const assigned = kids.filter((k) => assignedKidIds.includes(k.id));
+  if (assigned.length === 0) return null;
+  return (
+    <span
+      className="absolute -top-1 -left-1 flex -space-x-1.5"
+      title={`Only for ${assigned.map((k) => k.name).join(", ")}`}
+    >
+      {assigned.slice(0, 3).map((k) => (
+        <span
+          key={k.id}
+          className="h-5 w-5 rounded-full border-2 border-card overflow-hidden flex items-center justify-center shadow-sm"
+          style={{ backgroundColor: PASTEL_HEX[k.color] }}
+        >
+          <CompanionAvatar seed={k.id} color={k.color} size={16} companionId={k.companionId} />
+        </span>
+      ))}
+      {assigned.length > 3 && (
+        <span className="h-5 w-5 rounded-full border-2 border-card bg-muted text-[9px] font-bold flex items-center justify-center">
+          +{assigned.length - 3}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// "Applies to" chip row inside the edit panel. All kids ticked = universal and
+// saves as null (so kids added to the household later are included); only a
+// deliberate deselection produces an explicit static allow-list.
+function AppliesToChips({
+  selected,
+  onToggle,
+}: {
+  selected: string[];
+  onToggle: (kidId: string) => void;
+}) {
+  const { kids } = useApp();
+  if (kids.length === 0) return null;
+  return (
+    <div>
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        Applies to
+      </label>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {kids.map((k) => {
+          const on = selected.includes(k.id);
+          return (
+            <button
+              type="button"
+              key={k.id}
+              onClick={() => onToggle(k.id)}
+              aria-pressed={on}
+              className={`tap inline-flex items-center gap-1.5 rounded-full pl-1 pr-3 py-1 text-sm font-semibold border transition ${
+                on
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-input text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <span
+                className="h-6 w-6 rounded-full overflow-hidden flex items-center justify-center"
+                style={{ backgroundColor: PASTEL_HEX[k.color] }}
+              >
+                <CompanionAvatar
+                  seed={k.id}
+                  color={k.color}
+                  size={20}
+                  companionId={k.companionId}
+                />
+              </span>
+              {k.name}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-muted-foreground mt-1.5">
+        {selected.length === 0
+          ? "Pick at least one kid."
+          : "Everyone ticked = applies to the whole family, including kids you add later."}
+      </p>
+    </div>
+  );
+}
 
 function ChoreManager({
   chores,
@@ -154,7 +251,15 @@ function ChoreManager({
   updateChore,
   removeChore,
 }: {
-  chores: { id: string; name: string; icon: string; color: PastelKey; points: number; tags: string[] }[];
+  chores: {
+    id: string;
+    name: string;
+    icon: string;
+    color: PastelKey;
+    points: number;
+    tags: string[];
+    assignedKidIds?: string[] | null;
+  }[];
   addChore: (c: Omit<Chore, "id">) => void;
   updateChore: (id: string, patch: ItemPatch) => void;
   removeChore: (id: string) => void;
@@ -167,6 +272,7 @@ function ChoreManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
   const [aiPanel, setAiPanel] = useState(false);
+  const { household } = useApp();
 
   const clampPoints = (n: number) => Math.max(1, Math.min(20, n));
 
@@ -253,7 +359,7 @@ function ChoreManager({
         {/* AI icon generation panel */}
         {aiPanel && (
           <AiIconPanel
-            householdId={useApp().household.id}
+            householdId={household.id}
             onSelect={(iconUrl) => {
               // icon will be used by caller after add
               setAiPanel(false);
@@ -313,6 +419,7 @@ function ChoreManager({
               >
                 <Pencil className="w-3.5 h-3.5" />
               </span>
+              <AssignedStack assignedKidIds={it.assignedKidIds} />
               {it.tags && it.tags.length > 0 && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-wider text-muted-foreground bg-card/90 px-1.5 py-0.5 rounded-full border border-border whitespace-nowrap">
                   {it.tags[0]}
@@ -323,30 +430,31 @@ function ChoreManager({
         ))}
       </div>
 
-      {editingId && (() => {
-        const item = chores.find((i) => i.id === editingId);
-        if (!item) return null;
-        return (
-          <div ref={editPanelRef}>
-            <EditPanel
-              item={item}
-              pointsMin={1}
-              pointsMax={20}
-              onSave={(patch) => {
-                updateChore(editingId, patch);
-                setEditingId(null);
-              }}
-              onDelete={() => {
-                if (item && window.confirm(`Delete "${item.name}"?`)) {
-                  removeChore(editingId);
+      {editingId &&
+        (() => {
+          const item = chores.find((i) => i.id === editingId);
+          if (!item) return null;
+          return (
+            <div ref={editPanelRef}>
+              <EditPanel
+                item={item}
+                pointsMin={1}
+                pointsMax={20}
+                onSave={(patch) => {
+                  updateChore(editingId, patch);
                   setEditingId(null);
-                }
-              }}
-              onCancel={() => setEditingId(null)}
-            />
-          </div>
-        );
-      })()}
+                }}
+                onDelete={() => {
+                  if (item && window.confirm(`Delete "${item.name}"?`)) {
+                    removeChore(editingId);
+                    setEditingId(null);
+                  }
+                }}
+                onCancel={() => setEditingId(null)}
+              />
+            </div>
+          );
+        })()}
     </div>
   );
 }
@@ -359,6 +467,7 @@ type SkillItem = {
   icon: string;
   color: PastelKey;
   points: number;
+  assignedKidIds?: string[] | null;
 };
 
 function SkillManager({
@@ -389,6 +498,7 @@ function SkillManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
   const [aiPanel, setAiPanel] = useState(false);
+  const { household } = useApp();
 
   const clampPoints = (n: number) => Math.max(pointsMin, Math.min(pointsMax, n));
 
@@ -460,7 +570,7 @@ function SkillManager({
 
         {aiPanel && (
           <AiIconPanel
-            householdId={useApp().household.id}
+            householdId={household.id}
             onSelect={() => setAiPanel(false)}
             onClose={() => setAiPanel(false)}
           />
@@ -507,36 +617,38 @@ function SkillManager({
               >
                 <Pencil className="w-3.5 h-3.5" />
               </span>
+              <AssignedStack assignedKidIds={it.assignedKidIds} />
             </div>
           </div>
         ))}
       </div>
 
-      {editingId && (() => {
-        const item = skills.find((i) => i.id === editingId);
-        if (!item) return null;
-        return (
-          <div ref={editPanelRef}>
-            <EditPanel
-              item={item}
-              pointsMin={pointsMin}
-              pointsMax={pointsMax}
-              onSave={(patch) => {
-                updateSkill(editingId, patch);
-                setEditingId(null);
-              }}
-              onDelete={() => {
-                if (item && window.confirm(`Delete "${item.name}"?`)) {
-                  removeSkill(editingId);
+      {editingId &&
+        (() => {
+          const item = skills.find((i) => i.id === editingId);
+          if (!item) return null;
+          return (
+            <div ref={editPanelRef}>
+              <EditPanel
+                item={item}
+                pointsMin={pointsMin}
+                pointsMax={pointsMax}
+                onSave={(patch) => {
+                  updateSkill(editingId, patch);
                   setEditingId(null);
-                }
-              }}
-              onCancel={() => setEditingId(null)}
-              tags={false}
-            />
-          </div>
-        );
-      })()}
+                }}
+                onDelete={() => {
+                  if (item && window.confirm(`Delete "${item.name}"?`)) {
+                    removeSkill(editingId);
+                    setEditingId(null);
+                  }
+                }}
+                onCancel={() => setEditingId(null)}
+                tags={false}
+              />
+            </div>
+          );
+        })()}
     </div>
   );
 }
@@ -603,20 +715,12 @@ function AiIconPanel({
           disabled={generating || !prompt.trim()}
           className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
         >
-          {generating ? (
-            <span className="animate-spin">⟳</span>
-          ) : (
-            <Wand2 className="w-3.5 h-3.5" />
-          )}
+          {generating ? <span className="animate-spin">⟳</span> : <Wand2 className="w-3.5 h-3.5" />}
           {generating ? "Generating…" : "Generate"}
         </button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      {result && (
-        <p className="text-xs text-sage-foreground">
-          Icon generated! (path: {result})
-        </p>
-      )}
+      {result && <p className="text-xs text-sage-foreground">Icon generated! (path: {result})</p>}
     </div>
   );
 }
@@ -632,7 +736,15 @@ function EditPanel({
   onCancel,
   tags: showTags = true,
 }: {
-  item: { id: string; name: string; icon: string; color: PastelKey; points: number; tags?: string[] };
+  item: {
+    id: string;
+    name: string;
+    icon: string;
+    color: PastelKey;
+    points: number;
+    tags?: string[];
+    assignedKidIds?: string[] | null;
+  };
   pointsMin: number;
   pointsMax: number;
   onSave: (patch: ItemPatch) => void;
@@ -640,17 +752,24 @@ function EditPanel({
   onCancel: () => void;
   tags?: boolean;
 }) {
+  const { kids } = useApp();
+  const allKidIds = kids.map((k) => k.id);
+  // No allow-list = universal = every chip ticked.
+  const initialAssigned = item.assignedKidIds?.length ? item.assignedKidIds : allKidIds;
   const [name, setName] = useState(item.name);
   const [points, setPoints] = useState(item.points);
   const [color, setColor] = useState<PastelKey>(item.color);
   const [tagsStr, setTagsStr] = useState((item.tags ?? []).join(", "));
+  const [assigned, setAssigned] = useState<string[]>(initialAssigned);
 
   useEffect(() => {
     setName(item.name);
     setPoints(item.points);
     setColor(item.color);
     setTagsStr((item.tags ?? []).join(", "));
-  }, [item.id, item.name, item.points, item.color, item.tags]);
+    setAssigned(item.assignedKidIds?.length ? item.assignedKidIds : kids.map((k) => k.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id, item.name, item.points, item.color, item.tags, item.assignedKidIds]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
@@ -716,6 +835,15 @@ function EditPanel({
         </div>
       )}
 
+      <AppliesToChips
+        selected={assigned}
+        onToggle={(kidId) =>
+          setAssigned((prev) =>
+            prev.includes(kidId) ? prev.filter((k) => k !== kidId) : [...prev, kidId],
+          )
+        }
+      />
+
       <div>
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Colour
@@ -750,7 +878,7 @@ function EditPanel({
           </button>
           <button
             onClick={() => {
-              if (!name.trim()) return;
+              if (!name.trim() || assigned.length === 0) return;
               const patch: ItemPatch = { name: name.trim(), points: clamp(points), color };
               if (showTags) {
                 patch.tags = tagsStr
@@ -758,9 +886,15 @@ function EditPanel({
                   .map((t) => t.trim())
                   .filter(Boolean);
               }
+              // "Everyone still ticked" persists as null (universal), NOT as an
+              // explicit list of today's kids — otherwise a chore nobody meant
+              // to narrow would skip any kid added to the household later.
+              patch.assignedKidIds = allKidIds.every((id) => assigned.includes(id))
+                ? null
+                : assigned;
               onSave(patch);
             }}
-            disabled={!name.trim()}
+            disabled={!name.trim() || assigned.length === 0}
             className="tap inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
           >
             <Check className="w-4 h-4" /> Save changes
@@ -871,7 +1005,7 @@ function CorrectionSection({
       !window.confirm(
         `Change ${kid.name}'s points by ${delta > 0 ? "+" : ""}${delta} to ${next}?${
           reason ? ` Reason: "${reason}"` : ""
-        }`
+        }`,
       )
     )
       return;
@@ -887,7 +1021,8 @@ function CorrectionSection({
         <Pencil className="w-4 h-4" /> Correction tool
       </h3>
       <p className="text-xs text-muted-foreground">
-        Adjust a kid's currentPoints directly. Use for offline work that wasn't tracked or to fix mistakes. All corrections are logged.
+        Adjust a kid's currentPoints directly. Use for offline work that wasn't tracked or to fix
+        mistakes. All corrections are logged.
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {kids.map((k) => {
@@ -896,7 +1031,9 @@ function CorrectionSection({
             <div key={k.id} className="flex items-center gap-2">
               <span
                 className="w-5 h-5 rounded-full shrink-0"
-                style={{ backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc" }}
+                style={{
+                  backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
+                }}
               />
               {editing ? (
                 <div className="flex-1 flex items-center gap-1 min-w-0">
@@ -908,10 +1045,18 @@ function CorrectionSection({
                     placeholder="+/-"
                     autoFocus
                   />
-                  <button onClick={() => confirm(k.id)} className="tap p-1 text-sage-foreground" title="Apply">
+                  <button
+                    onClick={() => confirm(k.id)}
+                    className="tap p-1 text-sage-foreground"
+                    title="Apply"
+                  >
                     <Check className="w-4 h-4" />
                   </button>
-                  <button onClick={() => setOpenId(null)} className="tap p-1 text-muted-foreground" title="Cancel">
+                  <button
+                    onClick={() => setOpenId(null)}
+                    className="tap p-1 text-muted-foreground"
+                    title="Cancel"
+                  >
                     <X className="w-4 h-4" />
                   </button>
                 </div>

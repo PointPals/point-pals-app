@@ -6,7 +6,7 @@ import { CheckCircle, XCircle, Loader2, LogIn, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/join")({
   component: JoinPage,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { code?: string } => ({
     code: typeof search.code === "string" ? search.code : undefined,
   }),
   head: () => ({

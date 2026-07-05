@@ -38,7 +38,8 @@ export function mapChore(row: DbChore): Chore {
     color: (row.color as PastelKey) ?? "sky",
     points: row.points,
     recurrence: (row.recurrence as Chore["recurrence"]) ?? "none",
-    tags: [], // tags column not present in DB yet — local-only, resets on reload
+    tags: (row as { tags?: string[] | null }).tags ?? [],
+    assignedKidIds: (row as { assigned_kid_ids?: string[] | null }).assigned_kid_ids ?? null,
   };
 }
 
@@ -50,6 +51,7 @@ export function mapSkill(row: DbSkill): Skill {
     color: (row.color as PastelKey) ?? "sky",
     points: row.points,
     isPositive: row.is_positive,
+    assignedKidIds: (row as { assigned_kid_ids?: string[] | null }).assigned_kid_ids ?? null,
   };
 }
 
@@ -59,8 +61,7 @@ export function mapHousehold(row: DbHousehold): Household {
     name: row.name,
     sharedPool: row.shared_pool,
     rewardTarget: row.reward_target,
-    subscriptionStatus:
-      (row.subscription_status as Household["subscriptionStatus"]) ?? "trialing",
+    subscriptionStatus: (row.subscription_status as Household["subscriptionStatus"]) ?? "trialing",
     trialEndsAt: row.trial_ends_at ? new Date(row.trial_ends_at).getTime() : null,
     onboarded: row.onboarded,
   };
@@ -88,9 +89,7 @@ export type HouseholdBundle = {
 };
 
 /** Fetch the household for the current user, plus everything hanging off it. */
-export async function fetchHouseholdBundle(
-  householdId: string,
-): Promise<HouseholdBundle | null> {
+export async function fetchHouseholdBundle(householdId: string): Promise<HouseholdBundle | null> {
   const [hh, kids, chores, skills, events, proposals, votes] = await Promise.all([
     supabase.from("households").select("*").eq("id", householdId).maybeSingle(),
     supabase.from("kids").select("*").eq("household_id", householdId),
