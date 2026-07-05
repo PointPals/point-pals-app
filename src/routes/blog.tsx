@@ -81,7 +81,7 @@ const POSTS = [
       "screen-free rewards for kids, reward ideas for kids, chore rewards, non-screen rewards, family reward system, positive parenting",
     title: "50+ Screen-Free Reward Ideas for Kids (That Actually Work)",
     image:
-      "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/family_reading.jpeg",
+      "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/screen-free-activities.jpeg",
     content: <ScreenFreeRewardsPost />,
   },
   {
