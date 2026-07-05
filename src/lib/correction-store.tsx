@@ -63,7 +63,7 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
       setRewardHistory((prev) => [entry, ...prev]);
 
       if (live) {
-        void supabase.from("reward_history").insert({
+        void (supabase.from("reward_history") as any).insert({
           id: entry.id,
           household_id: household.id,
           reward_name: rewardName,
