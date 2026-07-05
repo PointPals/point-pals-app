@@ -522,6 +522,7 @@ export const COMPANIONS: Companion[] = [
 ];
 
 export const INITIAL_HOUSEHOLD = {
+  id: "local",
   name: "The Harper Family",
   sharedPool: 74,
   rewardTarget: 100,
