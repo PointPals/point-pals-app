@@ -696,6 +696,7 @@ function MemoryCard({
     remote: boolean;
     kind?: "image" | "video";
     audioUrl?: string;
+    media: MemoryMedia[];
   };
   kids: { id: string; name: string; color: string; companionId?: string }[];
   canEdit: boolean;
@@ -708,10 +709,19 @@ function MemoryCard({
   const [commentText, setCommentText] = useState("");
   const [feedbackLoaded, setFeedbackLoaded] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   // Seesaw-style overflow: first two tagged kids inline, the rest behind a
   // tappable "and N more" that expands in place (never a new screen).
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Prefer the multi-item list; fall back to the single legacy url for older posts.
+  const media: MemoryMedia[] =
+    memory.media && memory.media.length > 0
+      ? memory.media
+      : memory.url
+        ? [{ url: memory.url, kind: memory.kind ?? "image" }]
+        : [];
 
   const tagged = kids.filter((k) => memory.kidIds.includes(k.id));
   const shown = tagsExpanded ? tagged : tagged.slice(0, 2);
@@ -846,22 +856,20 @@ function MemoryCard({
       </div>
 
       {/* Media (image, video, or none for caption/voice-only posts) */}
-      {memory.url &&
-        (memory.kind === "video" ? (
-          <video
-            src={memory.url}
-            controls
-            playsInline
-            className="w-full max-h-[70vh] bg-foreground/5"
-          />
-        ) : (
-          <img
-            src={memory.url}
-            alt={memory.caption || "Family memory"}
-            className="w-full max-h-[70vh] object-cover"
-            loading="lazy"
-          />
-        ))}
+      {media.length > 0 && (
+        <MediaCollage
+          media={media}
+          alt={memory.caption || "Family memory"}
+          onOpen={(i) => setLightboxIdx(i)}
+        />
+      )}
+      {lightboxIdx !== null && (
+        <Lightbox
+          media={media}
+          startIndex={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+        />
+      )}
 
       {/* Caption */}
       {memory.caption && (
