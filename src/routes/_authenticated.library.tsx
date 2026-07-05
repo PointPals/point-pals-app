@@ -10,7 +10,7 @@ import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
 import { ICON_KEYS, iconUrl } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Sparkles, Pencil, X, Check, Wand2 } from "lucide-react";
+import { Trash2, Pencil, X, Check, Wand2 } from "lucide-react";
 
 // Grid of built-in illustrated icons, styled like the ClassDojo picker.
 // Selecting one overrides the auto icon that would otherwise be derived from
