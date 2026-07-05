@@ -14,7 +14,6 @@ import {
   INITIAL_HOUSEHOLD,
   INITIAL_HISTORY,
   INITIAL_PROPOSALS,
-  COMPANIONS,
   type Kid,
   type Chore,
   type Skill,
@@ -59,7 +58,6 @@ type Ctx = {
   skills: Skill[];
   history: PointEvent[];
   proposals: RewardProposal[];
-  unlockedCompanionIds: string[];
   streakByKid: Record<string, number>;
   hydrated: boolean;
   awardPoints: (
@@ -182,11 +180,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const { household, kids, chores, skills, history, proposals } = state;
 
-  const unlockedCompanionIds = useMemo(
-    () => COMPANIONS.filter((c) => household.sharedPool >= c.unlockAt).map((c) => c.id),
-    [household.sharedPool],
-  );
-
   const streakByKid = useMemo(() => computeStreaks(kids, chores, history), [kids, chores, history]);
 
   const value: Ctx = {
@@ -196,7 +189,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     skills,
     history,
     proposals,
-    unlockedCompanionIds,
     streakByKid,
     hydrated,
     awardPoints: (kidIds, item) => {
@@ -279,7 +271,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setState(initialState());
     },
     addKid: (name, color, companionId) =>
-      setState((s) => ({ ...s, kids: [...s.kids, { id: uid(), name, color, points: 0, companionId }] })),
+      setState((s) => ({
+        ...s,
+        kids: [...s.kids, { id: uid(), name, color, points: 0, companionId }],
+      })),
     removeKid: (id) =>
       setState((s) => ({
         ...s,

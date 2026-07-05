@@ -1,21 +1,28 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Home, Library, Sparkles, Gift, Settings } from "lucide-react";
+import { Home, Library, Camera, Gift, Settings } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
 
+// Bottom nav = the app's four screens (§6): Home, Library, Memories, Rewards.
+// Settings lives behind the gear in the header — parent config, not a tab.
 const NAV = [
   { to: "/", label: "Home", icon: Home },
   { to: "/library", label: "Library", icon: Library },
-  { to: "/collection", label: "Collection", icon: Sparkles },
+  { to: "/memories", label: "Memories", icon: Camera },
   { to: "/rewards", label: "Rewards", icon: Gift },
-  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { household } = useApp();
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
+
+  // The public marketing page (§8) is chrome-free: no household header, no
+  // bottom nav — it isn't part of the authenticated in-app experience.
+  if (pathname.startsWith("/welcome")) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen pb-24">
@@ -34,17 +41,30 @@ export function AppShell({ children }: { children: ReactNode }) {
               {household.name}
             </div>
           </Link>
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Family pool
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Family pool
+              </div>
+              <div className="font-display text-2xl font-bold leading-none mt-1">
+                {household.sharedPool}
+                <span className="text-muted-foreground text-base font-sans font-normal">
+                  {" "}
+                  / {household.rewardTarget}
+                </span>
+              </div>
             </div>
-            <div className="font-display text-2xl font-bold leading-none mt-1">
-              {household.sharedPool}
-              <span className="text-muted-foreground text-base font-sans font-normal">
-                {" "}
-                / {household.rewardTarget}
-              </span>
-            </div>
+            <Link
+              to="/settings"
+              aria-label="Settings"
+              className={`h-10 w-10 rounded-full border border-border flex items-center justify-center transition ${
+                pathname.startsWith("/settings")
+                  ? "bg-foreground text-background"
+                  : "bg-card/80 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Settings className="w-4.5 h-4.5" />
+            </Link>
           </div>
         </div>
         <div className="mt-3 h-2.5 rounded-full bg-muted overflow-hidden">
