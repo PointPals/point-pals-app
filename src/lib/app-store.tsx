@@ -601,8 +601,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const dbPatch: Database["public"]["Tables"]["kids"]["Update"] = {};
         if (patch.name !== undefined) dbPatch.name = patch.name;
         if (patch.color !== undefined) dbPatch.color = patch.color;
-        if (patch.currentPoints !== undefined) dbPatch.current_points = patch.currentPoints;
-        if (patch.allTimePoints !== undefined) dbPatch.all_time_points = patch.allTimePoints;
+        if (patch.currentPoints !== undefined) (dbPatch as any).current_points = patch.currentPoints;
+        if (patch.allTimePoints !== undefined) (dbPatch as any).all_time_points = patch.allTimePoints;
         if (patch.companionId !== undefined) dbPatch.avatar_key = patch.companionId;
         if (Object.keys(dbPatch).length) {
           void dbWrite(async () => await supabase.from("kids").update(dbPatch).eq("id", id));
