@@ -30,7 +30,22 @@ supabase db push          # applies supabase/migrations/0001_init.sql, 0002_rls.
 Schema highlights: `households` carries the entitlement fields
 (`subscription_status`, `stripe_customer_id`, …); `icon_generations` is the
 rate-limit ledger; RLS is member-scoped and billing columns are service-role
-only.
+only (`0004_billing_guard.sql` adds a BEFORE-UPDATE trigger enforcing this).
+
+### Regenerate the client types (blocked here)
+
+`src/integrations/supabase/types.ts` is still the empty placeholder — it can
+only be generated against the live project, which this environment cannot
+reach. After the migrations above are applied, run:
+
+```bash
+supabase gen types typescript --project-id tcpbvcgvtwrqsrzerwwr \
+  > src/integrations/supabase/types.ts
+```
+
+and commit the result. Until then, `src/lib/memories.ts` casts the client
+(`supabase as unknown as SupabaseClient`) because the `memories` table isn't
+in the generated types; that cast can be removed once types are regenerated.
 
 ## 3. Stripe (§5)
 
