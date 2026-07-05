@@ -42,6 +42,11 @@ Deno.serve(async (req) => {
     const priceId = priceIdFor(currency);
     if (!priceId) return json({ error: `No Stripe price configured for ${currency}` }, 400);
 
+    // Founders coupon — auto-apply when configured. `discounts` and
+    // `allow_promotion_codes` are mutually exclusive in Stripe Checkout, so
+    // we only enable one path at a time.
+    const founderCoupon = Deno.env.get("STRIPE_COUPON_ID") || undefined;
+
     // Look up or create the Stripe customer for this household.
     const { data: household } = await admin
       .from("households")
@@ -65,14 +70,20 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      allow_promotion_codes: true,
+      ...(founderCoupon
+        ? { discounts: [{ coupon: founderCoupon }] }
+        : { allow_promotion_codes: true }),
       currency: currency.toLowerCase(),
       client_reference_id: householdId,
       subscription_data:
         model === "subscription"
           ? { metadata: { household_id: householdId } }
           : undefined,
-      metadata: { household_id: householdId, model },
+      metadata: {
+        household_id: householdId,
+        model,
+        ...(founderCoupon ? { founder_coupon: founderCoupon } : {}),
+      },
     });
 
     return json({ url: session.url });
