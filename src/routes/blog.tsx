@@ -7,6 +7,14 @@ import imgChoresFun from "@/assets/marketing/blog-chores-fun.jpg";
 import imgMarbleJar from "@/assets/marketing/blog-marble-jar.jpg";
 import imgScreenTime from "@/assets/marketing/blog-screen-time.jpg";
 import imgAgeChores from "@/assets/marketing/blog-age-chores.jpg";
+import sunnyImg from "@/assets/companions/sunny.png.asset.json";
+import pipImg from "@/assets/companions/pip.png.asset.json";
+import brambleImg from "@/assets/companions/bramble.png.asset.json";
+import fernImg from "@/assets/companions/fern.png.asset.json";
+import marlowImg from "@/assets/companions/marlow.png.asset.json";
+import codaImg from "@/assets/companions/coda.png.asset.json";
+import ridgeImg from "@/assets/companions/ridge.png.asset.json";
+import ziggyImg from "@/assets/companions/ziggy.png.asset.json";
 import {
   Accordion,
   AccordionItem,
@@ -310,14 +318,14 @@ function ResearchPost() {
 /* ── Blog Post 2: Meet the PointPals Characters ── */
 function CharactersPost() {
   const characters = [
-    { name: "Sunny", symbol: "a glowing heart", tag: "kindness, empathy and helpful behaviour", verb: "celebrates", color: "warm, cheerful and encouraging" },
-    { name: "Pip", symbol: "a book", tag: "curiosity, reading and learning", verb: "perfect for", color: "curious and thoughtful" },
-    { name: "Bramble", symbol: "a star", tag: "effort, encouragement and little wins", verb: "represents", color: "calm and steady" },
-    { name: "Fern", symbol: "a leaf", tag: "growth, calm and care", verb: "represents", color: "soft and nature-inspired" },
-    { name: "Marlow", symbol: "helping hands", tag: "teamwork, service and family contribution", verb: "is all about", color: "warm and collaborative" },
-    { name: "Coda", symbol: "a footprint", tag: "progress, movement and taking the next step", verb: "represents", color: "encouraging" },
-    { name: "Ridge", symbol: "a mountain", tag: "resilience, courage and doing hard things", verb: "represents", color: "strong and steady" },
-    { name: "Ziggy", symbol: "a paintbrush", tag: "imagination, play and self-expression", verb: "represents", color: "playful and creative" },
+    { name: "Sunny", img: sunnyImg.url, symbol: "a glowing heart", tag: "kindness, empathy and helpful behaviour", verb: "celebrates", color: "warm, cheerful and encouraging" },
+    { name: "Pip", img: pipImg.url, symbol: "a book", tag: "curiosity, reading and learning", verb: "perfect for", color: "curious and thoughtful" },
+    { name: "Bramble", img: brambleImg.url, symbol: "a star", tag: "effort, encouragement and little wins", verb: "represents", color: "calm and steady" },
+    { name: "Fern", img: fernImg.url, symbol: "a leaf", tag: "growth, calm and care", verb: "represents", color: "soft and nature-inspired" },
+    { name: "Marlow", img: marlowImg.url, symbol: "helping hands", tag: "teamwork, service and family contribution", verb: "is all about", color: "warm and collaborative" },
+    { name: "Coda", img: codaImg.url, symbol: "a footprint", tag: "progress, movement and taking the next step", verb: "represents", color: "encouraging" },
+    { name: "Ridge", img: ridgeImg.url, symbol: "a mountain", tag: "resilience, courage and doing hard things", verb: "represents", color: "strong and steady" },
+    { name: "Ziggy", img: ziggyImg.url, symbol: "a paintbrush", tag: "imagination, play and self-expression", verb: "represents", color: "playful and creative" },
   ];
 
   return (
@@ -336,15 +344,22 @@ function CharactersPost() {
       </p>
 
       {characters.map((c) => (
-        <div key={c.name} className="rounded-2xl bg-muted/40 p-4 my-4">
-          <h4 className="font-display text-lg font-bold">{c.name}</h4>
-          <p className="text-sm text-muted-foreground mt-1">
-            {c.name}&rsquo;s symbol is {c.symbol}, making them the PointPal of {c.tag}. {c.name} is {c.color}.
-          </p>
-          <p className="text-xs font-display font-bold mt-2 text-muted-foreground">
-            {c.name}&rsquo;s message:
-          </p>
-          <p className="text-sm italic">
+        <div key={c.name} className="rounded-2xl bg-muted/40 p-4 my-4 flex gap-4 items-start">
+          <img
+            src={c.img}
+            alt={`${c.name} — PointPals character`}
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-contain shrink-0 bg-background/60"
+            loading="lazy"
+          />
+          <div className="flex-1 min-w-0">
+            <h4 className="font-display text-lg font-bold">{c.name}</h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              {c.name}&rsquo;s symbol is {c.symbol}, making them the PointPal of {c.tag}. {c.name} is {c.color}.
+            </p>
+            <p className="text-xs font-display font-bold mt-2 text-muted-foreground">
+              {c.name}&rsquo;s message:
+            </p>
+            <p className="text-sm italic">
             {c.name === "Sunny" && "Small acts of kindness can brighten the whole family."}
             {c.name === "Pip" && "Every skill starts with one small try."}
             {c.name === "Bramble" && "Every small win deserves a star."}
@@ -353,7 +368,8 @@ function CharactersPost() {
             {c.name === "Coda" && "You do not have to do everything. Just take the next step."}
             {c.name === "Ridge" && "Hard things get easier when you keep climbing."}
             {c.name === "Ziggy" && "A little creativity makes everyday life more fun."}
-          </p>
+            </p>
+          </div>
         </div>
       ))}
 
