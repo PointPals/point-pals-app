@@ -44,7 +44,7 @@ create policy assets_insert on storage.objects
   );
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 3. Support messages: require auth + enforce user_id + rate limit
+-- 3. Support messages: require auth + enforce user_id
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- Current policy allows ANY anon user to insert with check (true).
 -- This permits unlimited spam with forged emails.
@@ -63,6 +63,61 @@ create policy "authenticated users can submit support messages"
   );
 
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- 4. Assets bucket: restrict object listing to authenticated users only
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- The assets bucket is public (files accessible via CDN URLs), but the SELECT
+-- policy allowed anon to LIST all objects (bucket enumeration). Files still
+-- work via direct CDN URLs without this policy.
+
+drop policy if exists assets_select on storage.objects;
+create policy assets_select on storage.objects
+  for select to authenticated
+  using (bucket_id = 'assets');
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 5. Revoke public EXECUTE on SECURITY DEFINER functions
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+DO $$
+DECLARE
+  func RECORD;
+BEGIN
+  FOR func IN
+    SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true
+      AND has_function_privilege('public', p.oid, 'EXECUTE')
+  LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION public.%I(%s) FROM public, anon;', func.proname, func.args);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION public.%I(%s) TO authenticated;', func.proname, func.args);
+  END LOOP;
+END $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 6. Add SET search_path to any SECURITY DEFINER function missing it
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+DO $$
+DECLARE
+  func RECORD;
+  def TEXT;
+BEGIN
+  FOR func IN
+    SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args,
+           p.oid
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true
+  LOOP
+    def := pg_get_functiondef(func.oid);
+    IF def !~* 'SET search_path' THEN
+      EXECUTE format('ALTER FUNCTION public.%I(%s) SET search_path = public;', func.proname, func.args);
+    END IF;
+  END LOOP;
+END $$;
 -- 4. Revoke public EXECUTE on SECURITY DEFINER functions
 -- ═══════════════════════════════════════════════════════════════════════════════
 
