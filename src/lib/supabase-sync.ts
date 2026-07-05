@@ -24,8 +24,8 @@ export function mapKid(row: DbKid): Kid {
     id: row.id,
     name: row.name,
     color: (row.color as PastelKey) ?? "sky",
-    currentPoints: row.current_points ?? row.points,
-    allTimePoints: row.all_time_points ?? row.points,
+    currentPoints: (row as any).current_points ?? row.points,
+    allTimePoints: (row as any).all_time_points ?? row.points,
     companionId: row.avatar_key ?? undefined,
   };
 }
