@@ -6,6 +6,8 @@ import heroAsset from "@/assets/brand/pp-hero.asset.json";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
 import { HeroJarScene } from "@/components/HeroJarScene";
 import { WalkingMascots } from "@/components/WalkingMascots";
+import { HeroBackground } from "@/components/HeroBackground";
+import { ThemeTune } from "@/components/ThemeTune";
 
 export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
@@ -67,9 +69,14 @@ function WelcomePage() {
       }}
     >
       {/* header */}
-      <header className="max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between">
+      <header className="relative z-30 max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src={logoUrl} alt="PointPals" className="h-10 w-auto select-none" draggable={false} />
+          <img
+            src={logoUrl}
+            alt="PointPals — family chores & behaviour, made kind"
+            className="h-20 sm:h-28 lg:h-32 w-auto select-none drop-shadow-[0_10px_20px_rgba(236,72,153,0.35)]"
+            draggable={false}
+          />
         </Link>
         <Link
           to="/sign-in"
@@ -81,6 +88,7 @@ function WelcomePage() {
 
       {/* hero */}
       <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-12 grid lg:grid-cols-2 gap-8 items-center">
+        <HeroBackground />
         <div className="relative z-10">
           <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
@@ -190,6 +198,7 @@ function WelcomePage() {
           Support
         </a>
       </footer>
+      <ThemeTune />
     </div>
   );
 }

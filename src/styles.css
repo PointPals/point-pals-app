@@ -98,6 +98,22 @@
   100% { transform: translate(28vw, -62vh) scale(0.5); opacity: 0; }
 }
 
+/* Background drifting marbles — slow parallax float across the hero. */
+@keyframes pp-drift-bg {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  50%  { transform: translate(40px, -30px) rotate(180deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
+@keyframes pp-tumble {
+  0%   { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(24px) rotate(360deg); }
+}
+/* Big background jar breathes gently. */
+@keyframes pp-jar-breathe {
+  0%, 100% { transform: scale(1) rotate(-1deg); opacity: 0.18; }
+  50%      { transform: scale(1.03) rotate(1deg); opacity: 0.26; }
+}
+
 /*
  * PointPals — soft pastel design system.
  * Zain (display) + Nunito Sans (body). No pure black; warm charcoal for text.

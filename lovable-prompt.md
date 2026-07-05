@@ -92,7 +92,76 @@ The billing flow is fully scaffolded but needs Stripe connected.
 2. Deploy the edge functions (Lovable should auto-detect `supabase/functions/stripe-checkout/` etc.)
 3. The `Paywall` component in `src/components/Paywall.tsx` uses `startCheckout("household_local")` — replace `"household_local"` with the real household ID from the app store: `household.id`
 
-## Priority 5 — Responsive Desktop Layout
+## Priority 5 — Extended Family + Kid Sharing (Phase 1)
+
+A migration + edge function has been deployed for this. The frontend needs:
+
+### 5a. Invite Page in Settings
+
+In the Settings route (`settings.tsx`), add a section called **"Extended Family"**:
+
+- Show current household members with their roles (admin, parent, viewer, contributor)
+- An "Invite family" button (only visible to admin role)
+  - Clicking it opens a modal/dialog asking: "Who are you inviting?" with two options:
+    - **Viewer** (can see the dashboard, memories, and progress — good for grandparents)
+    - **Contributor** (can also award points and add memories — good for babysitters, aunties)
+  - After selecting, call the `generate-invite` edge function:
+    ```ts
+    const res = await supabase.functions.invoke('generate-invite', {
+      body: { household_id: household.id, role: 'viewer' },
+    })
+    // res.url = "https://pointpals.app/join?code=ABC123"
+    ```
+  - Show the generated link with a "Copy link" button
+- List active invite codes (with expiry dates) so the admin can see what's pending
+- Revoke invite: DELETE from `household_invites` where `id = ...`
+
+### 5b. Join Page (`/join?code=X`)
+
+Create a new route at `/join` that:
+- Reads the `code` query parameter from the URL
+- Shows a friendly "You've been invited to join a family on PointPals!" landing
+- If the user is already signed in:
+  - Call `supabase.rpc('accept_invite', { invite_code: code })`
+  - On success: redirect to `/` (they'll see the invited household's dashboard)
+  - On error (expired/already member): show the error message
+- If the user is NOT signed in:
+  - Show "Sign up free" and "Log in" buttons
+  - After sign-in/sign-up, redirect back to `/join?code=CODE` (so the accept happens after auth)
+
+### 5c. Role-Conscious UI
+
+When a user is a **viewer**:
+- The home page still shows the marble jar, kids' avatars, and point totals
+- The library page shows chores and skills but in read-only mode — no "Add" buttons
+- The memories page shows the gallery but hides the upload button
+- The settings page hides all editing controls
+- Show a small badge next to their name: "Viewer"
+
+When a user is a **contributor**:
+- Everything a viewer can see
+- PLUS: can tap to award points (the big tap target on home page)
+- PLUS: can upload photos to memories
+- BUT cannot add/remove kids, chores, skills, or change settings
+- Badge: "Contributor"
+
+### 5d. Shared Kids Display
+
+When a user belongs to a household that has shared kids (via `kid_shares`):
+- The kids appear in the dashboard alongside the household's own kids
+- Their avatars show a small "shared" indicator (a chain link icon or similar)
+- The point pool is shared — the marble jar and all stats reflect the same values
+
+To query shared kids:
+```ts
+// Own kids
+const ownKids = await supabase.from('kids').select('*').eq('household_id', household.id)
+// Shared kids
+const sharedKidIds = await supabase.from('kid_shares').select('kid_id').eq('household_id', household.id)
+const sharedKids = await supabase.from('kids').select('*').in('id', sharedKidIds.map(s => s.kid_id))
+```
+
+## Priority 6 — Responsive Desktop Layout
 
 **What to build:**
 The app is currently mobile-only (floating pill nav, `max-w-4xl` centered content).
