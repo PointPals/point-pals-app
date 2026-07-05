@@ -6,7 +6,11 @@
 // Capacitor wrapper would need native equivalents for — in a native shell the
 // SW simply isn't used and the app runs the same.
 
-const CACHE = "pointpals-v1";
+// Cache name is versioned per deploy (§2d): ClientBoot registers this worker as
+// /sw.js?v=<build id>, so a new deploy = a new SW URL = a new cache, and the
+// activate handler below prunes every older "pointpals-*" cache.
+const VERSION = new URL(self.location.href).searchParams.get("v") || "v1";
+const CACHE = "pointpals-" + VERSION;
 const PRECACHE = ["/", "/manifest.webmanifest", "/icon.svg", "/favicon.ico"];
 
 self.addEventListener("install", (event) => {

@@ -12,4 +12,12 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    define: {
+      // A fresh id per build (§2d): the service worker is registered with this
+      // as a ?v= query, so its URL changes every deploy and returning users
+      // pick up a new cache instead of stale assets.
+      __PP_BUILD_ID__: JSON.stringify(String(Date.now())),
+    },
+  },
 });
