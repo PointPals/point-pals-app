@@ -18,17 +18,52 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { household } = useApp();
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
 
-  // The public marketing page (§8) is chrome-free: no household header, no
-  // bottom nav — it isn't part of the authenticated in-app experience.
-  if (pathname.startsWith("/welcome")) {
+  // Chrome-free routes: marketing page + auth pages.
+  const CHROME_FREE = ["/welcome", "/sign-in", "/sign-up", "/reset-password"];
+  if (CHROME_FREE.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return <>{children}</>;
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 md:pb-6 md:pl-56">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border bg-card/60 backdrop-blur px-4 py-6 z-30">
+        <Link to="/" className="block mb-6">
+          <img src={logoUrl} alt="PointPals" width={180} height={72} className="h-10 w-auto select-none" draggable={false} />
+        </Link>
+        <nav className="flex flex-col gap-1">
+          {NAV.map(({ to, label, icon: Icon }) => {
+            const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
+                  active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="mt-auto">
+          <Link
+            to="/settings"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
+              pathname.startsWith("/settings") ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </Link>
+        </div>
+      </aside>
+
       <header className="max-w-4xl mx-auto px-5 pt-6 pb-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="block">
+          <Link to="/" className="block md:hidden">
             <img
               src={logoUrl}
               alt="PointPals"
@@ -41,6 +76,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               {household.name}
             </div>
           </Link>
+          <div className="hidden md:block">
+            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {household.name}
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -57,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               to="/settings"
               aria-label="Settings"
-              className={`h-10 w-10 rounded-full border border-border flex items-center justify-center transition ${
+              className={`md:hidden h-10 w-10 rounded-full border border-border flex items-center justify-center transition ${
                 pathname.startsWith("/settings")
                   ? "bg-foreground text-background"
                   : "bg-card/80 text-muted-foreground hover:text-foreground"
@@ -81,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="max-w-4xl mx-auto px-5">{children}</main>
 
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+      <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
         <div className="flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-border shadow-[0_10px_30px_-8px_rgba(120,110,90,0.25)] p-1.5">
           {NAV.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
