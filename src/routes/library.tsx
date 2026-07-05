@@ -946,6 +946,7 @@ function CorrectionSection({
       )}
     </section>
   );
+}
 
 function KidForm({
   initial,
