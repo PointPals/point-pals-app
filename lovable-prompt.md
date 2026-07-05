@@ -1,28 +1,74 @@
 # Lovable Prompt — PointPals Remaining Work
 
-## Important Context
+## Read This First
 
-Claude Code (VS Code agent) has just built marketing content pages + a security hardening migration. The SQL migrations have been applied to Supabase (including the security fix). Edge functions exist as files. What's listed below are the remaining frontend gaps that need Lovable.
+> [!IMPORTANT]
+> Migration `20260706000001_rewards_points_memories_overhaul.sql` **must be applied** before the app builds correctly. It adds the split-points columns (`current_points`, `all_time_points`) on `kids`, the `reward_history` table, memory likes/comments, `audio_path` on `memory_posts`, and `household_settings`. The frontend code already depends on these columns/tables.
 
-**Most recent commit:** `3f49528` — "Add marketing pages: updated About, new FAQ and Blog with accordion layouts"
-- About page with marble-loss evidence section (10 cited sources, accordion layout)
-- FAQ page with 15 questions across 4 categories
-- Blog page with 6 full SEO-tagged posts
-- PublicPageLayout component (warm gradient + nav + footer for public pages)
+## What's Already Built (don't rebuild)
 
-## What's Already Done (don't rebuild)
+- **Points split architecture** — `currentPoints` and `allTimePoints` wired across all components (`app-store.tsx`, `supabase-sync.ts`, `FamilyJarCard`, `KidChartCard`, `AwardModal`, etc.).
+- **Rewards page rewrite** (`src/routes/rewards.tsx`) — no voting flow; parents set a reward directly and the family works toward it. Reward history is logged via `correction-store.tsx` and the `reward_history` table.
+- **Memories page rewrite** (`src/routes/memories.tsx`) — single-screen composer, voice recording, Seesaw-style cards, likes/comments, and tagged kids.
+- **Correction tool** (`src/routes/library.tsx` Family tab) — manual `currentPoints` adjustment with reason logging.
+- **CorrectionProvider** — wired into `src/routes/__root.tsx` and consumed by `useCorrection()`.
+- **AuthAttacher pattern** (`src/integrations/supabase/auth-attacher.ts`) — attaches the Supabase bearer token to server-function calls.
+- **Marketing content pages** — `/about`, `/faq`, `/blog` with `PublicPageLayout.tsx` chrome-free wrapper.
+- **Welcome page** (`src/routes/welcome.tsx`) — animated hero jar, mascots, pricing, public nav.
+- **Edge functions** — `stripe-checkout`, `stripe-portal`, `stripe-webhook`, `generate-icon`, `generate-invite` exist at `supabase/functions/`.
+- **Core library files** — `app-store.tsx`, `correction-store.tsx`, `entitlements.ts`, `billing.ts`, `settings.ts`, `memories.ts`, `feedback.ts`, `analytics.ts`, `supabase-sync.ts`.
+- **Core components** — `AwardModal.tsx`, `MarbleJar.tsx`, `Confetti.tsx`, `Paywall.tsx`, `FamilyJarCard.tsx`, `KidChartCard.tsx`, `KidBadge.tsx`, `IconTile.tsx`, `CompanionAvatar.tsx`, `CompanionPicker.tsx`, `EmptyState.tsx`, `RecentActivity.tsx`, `InstallPrompt.tsx`, `ThemeTune.tsx`, `ClientBoot.tsx`, `HeroJarScene.tsx`, `WalkingMascots.tsx`, `HeroBackground.tsx`.
+- **Core routes** — `index.tsx` (home), `library.tsx`, `memories.tsx`, `rewards.tsx`, `settings.tsx`, `onboarding.tsx`, `welcome.tsx`, `welcome-back.tsx`, `about.tsx`, `faq.tsx`, `blog.tsx`, `contact.tsx`, `privacy.tsx`, `terms.tsx`, `refunds.tsx`, `sign-in.tsx`, `sign-up.tsx`, `reset-password.tsx`, `join.tsx`.
 
-- **Marketing content pages** (already built, needs polish):
-  - `/about` — accordion layout, marble-loss evidence section
-  - `/faq` — 15 Q&A items in accordions
-  - `/blog` — 6 full posts in accordion, clickable index strip
-  - `PublicPageLayout.tsx` — shared chrome-free wrapper
-- SQL migration `20260705000000_pointpals_full_schema.sql` — APPLIED to Supabase (all 11 tables, RLS, storage buckets, triggers)
-- SQL migration `20260705000003_security_hardening.sql` — APPLIED to Supabase (fixes all 8 security findings)
-- Edge functions: `stripe-checkout`, `stripe-portal`, `stripe-webhook`, `generate-icon` — exist at `supabase/functions/` but NOT deployed yet
-- All `lib/` files: `app-store.tsx`, `entitlements.ts`, `billing.ts`, `settings.ts`, `memories.ts`, `feedback.ts`, `analytics.ts`
-- All components: `AwardModal.tsx`, `MarbleJar.tsx`, `Confetti.tsx`, `Paywall.tsx`, `FamilyJarCard.tsx`, `KidBadge.tsx`, `IconTile.tsx`, `CompanionAvatar.tsx`
-- Routes: `index.tsx` (home), `library.tsx`, `memories.tsx`, `welcome.tsx`, `settings.tsx`, `onboarding.tsx`, `rewards.tsx`, `about.tsx`, `faq.tsx`, `blog.tsx`
+## Key Schema Changes
+
+The latest migration (`20260706000001`) introduced these database changes:
+
+- **`public.kids`** — added `current_points` and `all_time_points` (both `integer not null default 0`). Existing `points` values were seeded into both new columns.
+- **`public.reward_history`** — new table tracking achieved rewards: `reward_name`, `target_points`, `achieved_at`, `contributing_kid_ids`.
+- **`public.memory_likes`** — new table for memory post likes (`post_id`, `user_id`).
+- **`public.memory_comments`** — new table for memory post comments (`post_id`, `user_id`, `body`).
+- **`public.memory_posts`** — added `audio_path` text column for voice recordings.
+- **`public.household_settings`** — new table for extended-family prefs: `ext_family_can_award_needs_work`, `ext_family_can_post_memories`.
+- **`public.point_events`** — added `trg_check_viewer_point_event` trigger to enforce the `ext_family_can_award_needs_work` setting for viewer roles.
+- **`public.household_members`** role model includes `viewer`, `contributor`, `parent`, `admin`.
+
+## Key DB Types
+
+Because `src/integrations/supabase/types.ts` is auto-generated, the following types are now expected to exist after the migration is applied:
+
+- `Database["public"]["Tables"]["kids"]["Row"]` — includes `current_points`, `all_time_points`, `points`, `avatar_key`, `color`, `name`, `household_id`, `id`, `created_at`.
+- `Database["public"]["Tables"]["reward_history"]["Row"]` — includes `id`, `household_id`, `reward_name`, `target_points`, `achieved_at`, `contributing_kid_ids`.
+- `Database["public"]["Tables"]["memory_likes"]["Row"]` — includes `post_id`, `user_id`, `created_at`.
+- `Database["public"]["Tables"]["memory_comments"]["Row"]` — includes `id`, `post_id`, `user_id`, `body`, `created_at`.
+- `Database["public"]["Tables"]["household_settings"]["Row"]` — includes `household_id`, `ext_family_can_award_needs_work`, `ext_family_can_post_memories`, `updated_at`.
+
+The codebase already reads/writes these fields. If the migration has not been applied, the TypeScript check will fail and runtime queries will fail.
+
+## Key Components Reference
+
+| Component | File | Purpose |
+|------|------|------|
+| `AppShell` | `src/components/AppShell.tsx` | Mobile pill nav / app chrome, wraps authenticated routes. |
+| `AwardModal` | `src/components/AwardModal.tsx` | Modal for awarding points to one or more kids. |
+| `MarbleJar` | `src/components/MarbleJar.tsx` | Shared family jar visualization with fill/empty animations. |
+| `FamilyJarCard` | `src/components/FamilyJarCard.tsx` | Home dashboard card showing the family reward target. |
+| `KidChartCard` | `src/components/KidChartCard.tsx` | Individual kid progress card on the home dashboard. |
+| `KidBadge` | `src/components/KidBadge.tsx` | Small kid avatar badge used in lists. |
+| `CompanionAvatar` | `src/components/CompanionAvatar.tsx` | Renders a kid's chosen companion avatar. |
+| `CompanionPicker` | `src/components/CompanionPicker.tsx` | Grid for choosing a companion during kid add/edit. |
+| `IconTile` | `src/components/IconTile.tsx` | Selectable emoji/icon tile for chores/skills. |
+| `Confetti` | `src/components/Confetti.tsx` | Celebration confetti effect. |
+| `Paywall` | `src/components/Paywall.tsx` | Subscription paywall modal. |
+| `EmptyState` | `src/components/EmptyState.tsx` | Empty-list illustration + message. |
+| `RecentActivity` | `src/components/RecentActivity.tsx` | Recent point events feed. |
+| `PublicPageLayout` | `src/components/PublicPageLayout.tsx` | Warm-gradient wrapper for public marketing pages. |
+| `HeroJarScene` | `src/components/HeroJarScene.tsx` | Interactive welcome-page hero jar. |
+| `WalkingMascots` | `src/components/WalkingMascots.tsx` | Animated mascots on the welcome page. |
+| `HeroBackground` | `src/components/HeroBackground.tsx` | Decorative background shapes on the welcome page. |
+| `ThemeTune` | `src/components/ThemeTune.tsx` | Audio playback for the welcome page. |
+| `InstallPrompt` | `src/components/InstallPrompt.tsx` | PWA install prompt. |
+| `ClientBoot` | `src/components/ClientBoot.tsx` | Initializes client-side auth, analytics, PWA. |
 
 ## Priority 1 — Polish Marketing Pages (generate images + refine)
 
@@ -83,7 +129,7 @@ When a user signs in (Priority 2 is done), we need to push any local data up to 
 **Mutation write-through:**
 Every `setState` call in `app-store.tsx` that mutates data should also write to Supabase:
 - `addChore` → `supabase.from('chores').insert({ household_id, name, icon, color, points, recurrence })`
-- `addKid` → `supabase.from('kids').insert({ household_id, name, color, points })`
+- `addKid` → `supabase.from('kids').insert({ household_id, name, color, current_points, all_time_points, points })`
 - `awardPoints` → `supabase.from('point_events').insert({ household_id, kid_id, item_name, item_icon, points, batch_id })`
 - `removeChore` → `supabase.from('chores').delete().eq('id', id)`
 - etc.
