@@ -47,11 +47,10 @@ export function KidBadge({
           <CompanionAvatar seed={kid.id} color={kid.color} size={dim} companionId={kid.companionId} />
         </div>
 
-        {/* streak pill — styled to match the floating "+N" bubbles in the logo */}
+        {/* streak flame */}
         {streak >= 2 && (
           <div
-            className="absolute -top-2 -right-2 rounded-full px-2 py-0.5 shadow-[0_2px_4px_rgba(120,110,90,0.25)] border border-foreground/15"
-            style={{ backgroundColor: PASTEL_HEX[kid.color] }}
+            className="absolute -top-1.5 -right-1.5 rounded-full bg-sage/70 px-2 py-0.5 shadow-sm"
             title={`${streak}-day streak`}
           >
             <span className="font-display text-[11px] font-bold leading-none text-foreground">
