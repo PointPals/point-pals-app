@@ -5,7 +5,7 @@ import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { useMemories, addMemory, removeMemory, toggleLike, addComment, fetchPostFeedback } from "@/lib/memories";
 import type { MemoryCommentEntry } from "@/lib/memories";
-import { PASTEL_HEX } from "@/lib/mock-data";
+import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { trackParent } from "@/lib/analytics";
 
