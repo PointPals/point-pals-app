@@ -1,4 +1,5 @@
 import { memo } from "react";
+import heroVideo from "@/assets/hero-background-video.mp4.asset.json";
 
 /**
  * Animated marketing background: a huge ghostly marble jar breathes behind
@@ -21,6 +22,18 @@ const MARBLES = [
 export const HeroBackground = memo(function HeroBackground() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden z-0">
+      {/* Ambient looping hero video — chibi mascots dropping marbles into the jar. */}
+      <video
+        src={heroVideo.url}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-60"
+      />
+      {/* Soft wash so overlay content stays readable. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--background))]/85 via-[hsl(var(--background))]/40 to-transparent" />
+
       {/* Toppled ghost jar tilted on its side, breathing softly. */}
       <svg
         viewBox="0 0 300 200"
