@@ -22,6 +22,7 @@ import {
   type PastelKey,
 } from "./mock-data";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import {
   fetchHouseholdBundle,
   fetchPrimaryHouseholdId,
@@ -294,9 +295,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         "postgres_changes",
         { event: "*", schema: "public", table: "point_events", filter: `household_id=eq.${hid}` },
         (payload) => {
-          const newRow = payload.new as
-            | { id: string; kid_id: string; item_name: string; item_icon: string; points: number; created_at: string; batch_id: string | null }
-            | null;
+          const newRow = payload.new as Database["public"]["Tables"]["point_events"]["Row"] | null;
           const oldRow = payload.old as { id?: string } | null;
           if (payload.eventType === "INSERT" && newRow) {
             if (echoIds.current.has(newRow.id)) return;
@@ -555,7 +554,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         chores: s.chores.map((c) => (c.id === id ? { ...c, ...patch } : c)),
       }));
       if (live) {
-        const dbPatch: Record<string, unknown> = {};
+        const dbPatch: Database["public"]["Tables"]["chores"]["Update"] = {};
         if (patch.name !== undefined) dbPatch.name = patch.name;
         if (patch.icon !== undefined) dbPatch.icon = patch.icon;
         if (patch.color !== undefined) dbPatch.color = patch.color;
@@ -572,7 +571,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         skills: s.skills.map((sk) => (sk.id === id ? { ...sk, ...patch } : sk)),
       }));
       if (live) {
-        const dbPatch: Record<string, unknown> = {};
+        const dbPatch: Database["public"]["Tables"]["skills"]["Update"] = {};
         if (patch.name !== undefined) dbPatch.name = patch.name;
         if (patch.icon !== undefined) dbPatch.icon = patch.icon;
         if (patch.color !== undefined) dbPatch.color = patch.color;
@@ -589,7 +588,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         kids: s.kids.map((k) => (k.id === id ? { ...k, ...patch } : k)),
       }));
       if (live) {
-        const dbPatch: Record<string, unknown> = {};
+        const dbPatch: Database["public"]["Tables"]["kids"]["Update"] = {};
         if (patch.name !== undefined) dbPatch.name = patch.name;
         if (patch.color !== undefined) dbPatch.color = patch.color;
         if (patch.points !== undefined) dbPatch.points = patch.points;
