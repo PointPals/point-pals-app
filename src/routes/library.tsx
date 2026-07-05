@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/app-store";
+import { useHouseholdRole } from "@/lib/use-household-role";
 import { IconTile } from "@/components/IconTile";
 import { KidChartCard } from "@/components/KidChartCard";
 import { CompanionPicker } from "@/components/CompanionPicker";
@@ -44,6 +45,7 @@ function LibraryPage() {
     chores,
     skills,
     kids,
+    household,
     addChore,
     addSkill,
     updateChore,
@@ -51,6 +53,7 @@ function LibraryPage() {
     removeChore,
     removeSkill,
   } = useApp();
+  const { canEdit, role } = useHouseholdRole(household.id);
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work" | "family">("chores");
 
   return (
@@ -61,6 +64,13 @@ function LibraryPage() {
           Add, edit, and remove anything your family tracks.
         </p>
       </div>
+
+      {!canEdit && role && (
+        <div className="card-soft px-4 py-3 text-sm border border-butter/60 bg-butter/20">
+          <strong className="font-semibold">View only.</strong>{" "}
+          Only admins and parents can edit chores, skills, and the family roster. Ask a household admin to change your role.
+        </div>
+      )}
 
       <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
         {[
@@ -81,6 +91,7 @@ function LibraryPage() {
         ))}
       </div>
 
+      <div className={canEdit ? "" : "pointer-events-none opacity-60 select-none"} aria-disabled={!canEdit}>
       {tab === "chores" && (
         <ChoreManager
           chores={chores}
@@ -119,6 +130,7 @@ function LibraryPage() {
         />
       )}
       {tab === "family" && <FamilyTab />}
+      </div>
     </div>
   );
 }
