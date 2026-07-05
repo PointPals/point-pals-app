@@ -2,6 +2,11 @@ import { memo, useEffect, useRef, useState } from "react";
 import sunnyAsset from "@/assets/companions/sunny.png.asset.json";
 import pipAsset from "@/assets/companions/pip.png.asset.json";
 import brambleAsset from "@/assets/companions/bramble.png.asset.json";
+import ziggyAsset from "@/assets/companions/ziggy.png.asset.json";
+import ridgeAsset from "@/assets/companions/ridge.png.asset.json";
+import codaAsset from "@/assets/companions/coda.png.asset.json";
+import fernAsset from "@/assets/companions/fern.png.asset.json";
+import marlowAsset from "@/assets/companions/marlow.png.asset.json";
 
 /**
  * Full-width overlay: the PointPals mascots walk slowly across the bottom
@@ -9,12 +14,19 @@ import brambleAsset from "@/assets/companions/bramble.png.asset.json";
  * up-and-right toward the jar. Each landed bubble calls onPointsLand(n).
  */
 
+// All 8 companions parade across in sequence. Same 26s duration keeps the pace
+// even; delays are spread evenly across the full cycle (26 / 8 ≈ 3.25s apart)
+// so there's always at least one on screen and they never bunch up. Sizes vary
+// within a range for a lively, non-uniform feel.
 const MASCOTS = [
-  // One-by-one parade across the top layer. Same duration so they keep the
-  // same pace; big staggered delays so they enter the screen in sequence.
-  { src: sunnyAsset.url, alt: "Sunny", dur: "26s", delay: "0s", size: 148, bottom: "6%" },
-  { src: pipAsset.url, alt: "Pip", dur: "26s", delay: "-9s", size: 132, bottom: "4%" },
-  { src: brambleAsset.url, alt: "Bramble", dur: "26s", delay: "-18s", size: 156, bottom: "5%" },
+  { src: sunnyAsset.url, alt: "Sunny", dur: "26s", delay: "0s", size: 156, bottom: "6%" },
+  { src: pipAsset.url, alt: "Pip", dur: "26s", delay: "-3.25s", size: 132, bottom: "4%" },
+  { src: brambleAsset.url, alt: "Bramble", dur: "26s", delay: "-6.5s", size: 150, bottom: "5%" },
+  { src: ziggyAsset.url, alt: "Ziggy", dur: "26s", delay: "-9.75s", size: 138, bottom: "7%" },
+  { src: ridgeAsset.url, alt: "Ridge", dur: "26s", delay: "-13s", size: 160, bottom: "4%" },
+  { src: codaAsset.url, alt: "Coda", dur: "26s", delay: "-16.25s", size: 134, bottom: "6%" },
+  { src: fernAsset.url, alt: "Fern", dur: "26s", delay: "-19.5s", size: 146, bottom: "5%" },
+  { src: marlowAsset.url, alt: "Marlow", dur: "26s", delay: "-22.75s", size: 152, bottom: "7%" },
 ];
 
 const BUBBLE_COLORS = ["#EC4899", "#F59E0B", "#10B981", "#60A5FA", "#A78BFA"];
@@ -59,8 +71,9 @@ export const WalkingMascots = memo(function WalkingMascots({
           key={i}
           className="absolute"
           style={{
-            width: `clamp(84px, 12vw, ${m.size}px)`,
-            height: `clamp(84px, 12vw, ${m.size}px)`,
+            // Smaller on phones (so they don't cover the jar), full size on desktop.
+            width: `clamp(56px, 11vw, ${m.size}px)`,
+            height: `clamp(56px, 11vw, ${m.size}px)`,
             bottom: m.bottom,
             animation: `pp-walk ${m.dur} linear infinite`,
             animationDelay: m.delay,
