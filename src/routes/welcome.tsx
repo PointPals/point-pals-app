@@ -94,14 +94,14 @@ function WelcomePage() {
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
               <Sparkles className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
             </div>
-            <h1 className="mt-4 font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-tight">
+            <h1 className="mt-4 font-display text-[2.5rem] sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
               Chores that feel
               <br />
               like a{" "}
               <span
                 className="inline-block"
                 style={{
-                  background: "linear-gradient(90deg, #EC4899, #F59E0B, #10B981)",
+                  background: "linear-gradient(90deg, #F9B4C1 0%, #F3D375 25%, #9CD08C 50%, #8FC7EA 75%, #B79BE0 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",

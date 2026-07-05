@@ -59,8 +59,8 @@ export const WalkingMascots = memo(function WalkingMascots({
           key={i}
           className="absolute"
           style={{
-            width: m.size,
-            height: m.size,
+            width: `clamp(84px, 12vw, ${m.size}px)`,
+            height: `clamp(84px, 12vw, ${m.size}px)`,
             bottom: m.bottom,
             animation: `pp-walk ${m.dur} linear infinite`,
             animationDelay: m.delay,
@@ -74,7 +74,7 @@ export const WalkingMascots = memo(function WalkingMascots({
               src={m.src}
               alt={m.alt}
               draggable={false}
-              className="w-full h-full object-contain select-none drop-shadow-[0_18px_28px_rgba(236,72,153,0.35)]"
+              className="w-full h-full object-contain select-none drop-shadow-[0_12px_18px_rgba(236,72,153,0.35)] sm:drop-shadow-[0_18px_28px_rgba(236,72,153,0.35)]"
             />
           </div>
         </div>

@@ -21,7 +21,7 @@ export const HeroJarScene = memo(function HeroJarScene({
   onFull: () => void;
 }) {
   return (
-    <div className="relative h-[560px] sm:h-[640px] lg:h-[720px] w-full">
+    <div className="relative h-[420px] sm:h-[640px] lg:h-[720px] w-full">
       {/* soft glow behind the jar */}
       <div
         aria-hidden
@@ -44,7 +44,7 @@ export const HeroJarScene = memo(function HeroJarScene({
           <MarbleJar
             value={value}
             target={target}
-            size={typeof window !== "undefined" && window.innerWidth < 640 ? 300 : 460}
+            size={typeof window !== "undefined" && window.innerWidth < 640 ? 240 : 460}
             onFull={onFull}
           />
         </div>
