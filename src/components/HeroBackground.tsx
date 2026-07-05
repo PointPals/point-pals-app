@@ -7,38 +7,25 @@ import { memo } from "react";
  */
 
 const MARBLES = [
-  { c: "#F9B4C1", size: 96, top: "8%", left: "6%", dur: "18s", delay: "0s" },
-  { c: "#F3D375", size: 72, top: "14%", left: "82%", dur: "22s", delay: "-4s" },
-  { c: "#9CD08C", size: 110, top: "68%", left: "3%", dur: "26s", delay: "-8s" },
-  { c: "#B79BE0", size: 84, top: "78%", left: "70%", dur: "20s", delay: "-2s" },
+  { c: "#F9B4C1", size: 96,  top: "8%",  left: "6%",  dur: "18s", delay: "0s" },
+  { c: "#F3D375", size: 72,  top: "14%", left: "82%", dur: "22s", delay: "-4s" },
+  { c: "#9CD08C", size: 110, top: "68%", left: "3%",  dur: "26s", delay: "-8s" },
+  { c: "#B79BE0", size: 84,  top: "78%", left: "70%", dur: "20s", delay: "-2s" },
   { c: "#8FC7EA", size: 130, top: "45%", left: "88%", dur: "28s", delay: "-12s" },
-  { c: "#E0B673", size: 66, top: "34%", left: "22%", dur: "24s", delay: "-6s" },
-  { c: "#84CFCB", size: 90, top: "88%", left: "42%", dur: "30s", delay: "-14s" },
-  { c: "#EDA6B2", size: 58, top: "22%", left: "58%", dur: "19s", delay: "-9s" },
-  { c: "#F1D36A", size: 78, top: "58%", left: "48%", dur: "23s", delay: "-3s" },
+  { c: "#E0B673", size: 66,  top: "34%", left: "22%", dur: "24s", delay: "-6s" },
+  { c: "#84CFCB", size: 90,  top: "88%", left: "42%", dur: "30s", delay: "-14s" },
+  { c: "#EDA6B2", size: 58,  top: "22%", left: "58%", dur: "19s", delay: "-9s" },
+  { c: "#F1D36A", size: 78,  top: "58%", left: "48%", dur: "23s", delay: "-3s" },
+  { c: "#C7B0EE", size: 54,  top: "5%",  left: "40%", dur: "21s", delay: "-5s" },
+  { c: "#F6BFA0", size: 68,  top: "40%", left: "12%", dur: "25s", delay: "-11s" },
+  { c: "#A8DAB5", size: 46,  top: "72%", left: "30%", dur: "17s", delay: "-7s" },
+  { c: "#F5C6D5", size: 62,  top: "18%", left: "70%", dur: "27s", delay: "-13s" },
+  { c: "#B9E1F0", size: 88,  top: "55%", left: "62%", dur: "29s", delay: "-1s" },
 ];
 
 export const HeroBackground = memo(function HeroBackground() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden z-0">
-      {/* Toppled ghost jar tilted on its side, breathing softly. */}
-      <svg
-        viewBox="0 0 300 200"
-        className="absolute -left-16 bottom-4 w-[70vw] max-w-[900px] h-auto"
-        style={{ animation: "pp-jar-breathe 8s ease-in-out infinite", transformOrigin: "center" }}
-      >
-        <defs>
-          <linearGradient id="ghostjar" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#F9B4C1" stopOpacity="0.5" />
-          </linearGradient>
-        </defs>
-        <g transform="rotate(-18 150 100)">
-          <rect x="30" y="60" width="220" height="110" rx="30" fill="url(#ghostjar)" stroke="rgba(150,120,140,0.35)" strokeWidth="2" />
-          <rect x="20" y="52" width="55" height="24" rx="12" fill="#ffffff" stroke="rgba(150,120,140,0.35)" strokeWidth="2" />
-        </g>
-      </svg>
-
       {/* Drifting pastel marbles — parallax-like floaty motion. */}
       {MARBLES.map((m, i) => (
         <div
