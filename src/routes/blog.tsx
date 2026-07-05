@@ -102,7 +102,7 @@ const POSTS = [
       "Looking for chores for kids by age? Use this simple family chore list for toddlers, preschoolers, school-aged children and tweens.",
     keywords: "age appropriate chores for kids, chores for kids by age, chore list for kids, family chore app, kids routines",
     title: "Age-Appropriate Chores for Kids: A Family Chore List",
-    image: "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/family_in_kitche.jpeg",
+    image: "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/age-appropriate-chores.jpeg",
     content: <AgeChoresPost />,
   },
 ] as const;
