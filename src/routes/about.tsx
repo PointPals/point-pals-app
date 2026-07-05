@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Heart, Bone, Sparkles, Scale, Minus } from "lucide-react";
 import { PublicPageLayout } from "@/components/PublicPageLayout";
-import aboutHero from "@/assets/marketing/about-hero.jpg";
 import {
   Accordion,
   AccordionItem,
