@@ -1,57 +1,25 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo } from "react";
 import { MarbleJar } from "@/components/MarbleJar";
 import { Confetti } from "@/components/Confetti";
 import { Gift, Sparkles } from "lucide-react";
 
 /**
- * Marketing hero centrepiece: a MASSIVE marble jar that fills in a loop.
- * Point bubbles fly in from the left, "drop" into the jar, and become
- * marbles (driven by MarbleJar's physics). When the jar fills, a reward
- * celebration bursts, then the cycle resets.
+ * Marketing hero centrepiece: a MASSIVE marble jar. Points come from the
+ * mascots via WalkingMascots (parent lifts state). When the jar fills, a
+ * reward celebration bursts.
  */
 
-const TARGET = 24;
-const TICK_MS = 700; // one point every 700ms => ~17s to fill
-const CELEBRATE_MS = 3200;
-const RESET_MS = 900;
-
-type Bubble = { id: number; value: number; color: string; top: string };
-
-const BUBBLE_COLORS = ["#EC4899", "#F59E0B", "#10B981", "#60A5FA", "#A78BFA"];
-
-export const HeroJarScene = memo(function HeroJarScene() {
-  const [value, setValue] = useState(0);
-  const [celebrating, setCelebrating] = useState(false);
-  const [bubbles, setBubbles] = useState<Bubble[]>([]);
-  const nextId = useRef(1);
-
-  // Point-drop loop
-  useEffect(() => {
-    if (celebrating) return;
-    const t = window.setInterval(() => {
-      const inc = 1 + Math.floor(Math.random() * 3); // +1..+3
-      const id = nextId.current++;
-      const color = BUBBLE_COLORS[id % BUBBLE_COLORS.length];
-      const top = `${30 + Math.floor(Math.random() * 40)}%`;
-      setBubbles((b) => [...b, { id, value: inc, color, top }]);
-      // when the bubble reaches the jar (~1.4s), add points
-      window.setTimeout(() => {
-        setValue((v) => Math.min(TARGET, v + inc));
-        setBubbles((b) => b.filter((x) => x.id !== id));
-      }, 1400);
-    }, TICK_MS);
-    return () => window.clearInterval(t);
-  }, [celebrating]);
-
-  // Celebration + reset
-  const handleFull = () => {
-    setCelebrating(true);
-    window.setTimeout(() => {
-      setValue(0);
-      window.setTimeout(() => setCelebrating(false), RESET_MS);
-    }, CELEBRATE_MS);
-  };
-
+export const HeroJarScene = memo(function HeroJarScene({
+  value,
+  target,
+  celebrating,
+  onFull,
+}: {
+  value: number;
+  target: number;
+  celebrating: boolean;
+  onFull: () => void;
+}) {
   return (
     <div className="relative h-[560px] sm:h-[640px] lg:h-[720px] w-full">
       {/* soft glow behind the jar */}
@@ -65,25 +33,6 @@ export const HeroJarScene = memo(function HeroJarScene() {
         }}
       />
 
-      {/* Incoming point bubbles */}
-      {bubbles.map((b) => (
-        <div
-          key={b.id}
-          className="absolute left-[-8%]"
-          style={{
-            top: b.top,
-            animation: "pp-fly-to-jar 1.4s cubic-bezier(0.4, 0, 0.6, 1) forwards",
-          }}
-        >
-          <div
-            className="rounded-2xl px-3 py-1 font-display text-base sm:text-lg font-extrabold text-white shadow-lg"
-            style={{ background: b.color }}
-          >
-            +{b.value}
-          </div>
-        </div>
-      ))}
-
       {/* The massive jar */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div
@@ -94,9 +43,9 @@ export const HeroJarScene = memo(function HeroJarScene() {
         >
           <MarbleJar
             value={value}
-            target={TARGET}
+            target={target}
             size={typeof window !== "undefined" && window.innerWidth < 640 ? 300 : 460}
-            onFull={handleFull}
+            onFull={onFull}
           />
         </div>
       </div>
