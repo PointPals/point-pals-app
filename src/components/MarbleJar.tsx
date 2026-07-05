@@ -175,7 +175,7 @@ export function MarbleJar({
 
     function step() {
       const list = marbles.current;
-      const g = 0.55;
+      const g = 0.34; // gentler gravity — marbles float down calmly
       let energy = 0;
       for (const m of list) {
         m.vy += g;
