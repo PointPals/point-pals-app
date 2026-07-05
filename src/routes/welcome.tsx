@@ -91,31 +91,19 @@ function WelcomePage() {
         <HeroBackground />
         <div className="relative z-10">
           <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 border border-butter px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
               <Sparkles className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
             </div>
             <h1 className="mt-4 font-display text-[2.5rem] sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
               Chores that feel
               <br />
-              like a{" "}
-              <span
-                className="inline-block"
-                style={{
-                  background: "linear-gradient(90deg, #F9B4C1 0%, #F3D375 25%, #9CD08C 50%, #8FC7EA 75%, #B79BE0 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                game
-              </span>
-              ,
+              like a <GameWord />,
               <br />
               not a fight.
             </h1>
             <p className="mt-5 text-lg text-foreground/80 max-w-xl">
-              PointPals turns everyday chores and good behaviour into points the whole family fills a
-              shared jar with together - then celebrates by choosing a reward as a team.
+              PointPals turns everyday chores and good behaviour into points the whole family fills
+              a shared jar with together - then celebrates by choosing a reward as a team.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
               <Link
@@ -172,34 +160,101 @@ function WelcomePage() {
         </div>
       </section>
 
-      {/* honesty section */}
-      <section className="max-w-2xl mx-auto px-6 pb-16 text-center">
+      {/* how it works — three numbered steps */}
+      <section className="relative max-w-4xl mx-auto px-6 pb-4">
+        <h2 className="text-center font-display text-2xl sm:text-3xl font-bold">How it works</h2>
+        <ol className="mt-6 grid sm:grid-cols-3 gap-5">
+          {[
+            "Set up your family's chores and good-behaviour skills.",
+            "Tap to award — watch a marble drop into the jar.",
+            "When it's full, the family votes on the reward and celebrates.",
+          ].map((step, i) => (
+            <li key={i} className="card-soft p-5 text-center">
+              <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background font-display font-bold">
+                {i + 1}
+              </div>
+              <p className="text-sm text-foreground/80 leading-snug">{step}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* evidence strip */}
+      <section className="max-w-2xl mx-auto px-6 py-12 text-center">
         <p className="text-sm text-muted-foreground">
-          PointPals is grounded in positive parenting and token-economy research: external rewards
-          help routines stick, and the goal is always the habit itself.{" "}
+          PointPals is built on token-economy research — a well-studied behavioural psychology
+          approach. External rewards scaffold habit formation for tasks that lack intrinsic
+          motivation, like chores. The goal is for the habit to stick, not for the reward to last
+          forever.{" "}
           <Link to="/about" className="underline hover:text-foreground">
-            Read the research
+            Read the research →
           </Link>
-          .
         </p>
       </section>
 
-      <footer className="max-w-4xl mx-auto px-6 pb-10 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
-        <Link to="/privacy" className="hover:text-foreground">
-          Privacy
-        </Link>
-        <Link to="/terms" className="hover:text-foreground">
-          Terms
-        </Link>
-        <Link to="/refunds" className="hover:text-foreground">
-          Refunds
-        </Link>
-        <a href="mailto:support@pointpals.app" className="hover:text-foreground">
-          Support
-        </a>
+      {/* pricing card */}
+      <section className="max-w-md mx-auto px-6 pb-16">
+        <div className="card-soft p-7 text-center">
+          <div className="font-display text-2xl font-bold">
+            Free for {BILLING_CONFIG.trialDays} days
+          </div>
+          <div className="mt-1 text-muted-foreground">
+            Then <span className="font-semibold text-foreground">{formatPrice()}</span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">Cancel any time. No hidden fees.</p>
+          <Link
+            to="/sign-up"
+            className="tap mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-base font-semibold text-background hover:opacity-90 transition"
+          >
+            Start free trial <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
+      <footer className="max-w-4xl mx-auto px-6 pb-10 text-center space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+          <Link to="/about" className="hover:text-foreground">
+            About
+          </Link>
+          <Link to="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
+          <Link to="/refunds" className="hover:text-foreground">
+            Refunds
+          </Link>
+          <a href="mailto:support@pointpals.app" className="hover:text-foreground">
+            support@pointpals.app
+          </a>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          © 2025 PointPals · Proudly made in New Zealand 🇳🇿
+        </p>
       </footer>
       <ThemeTune />
     </div>
+  );
+}
+
+// "game" with each letter in a different pastel accent (coral, sage, butter,
+// lilac) — no two adjacent the same (§1a).
+function GameWord() {
+  const letters: [string, string][] = [
+    ["g", "#F19AAC"], // coral
+    ["a", "#8FBE7E"], // sage
+    ["m", "#E9B84A"], // butter
+    ["e", "#A98BDB"], // lilac
+  ];
+  return (
+    <span className="inline-block">
+      {letters.map(([ch, color]) => (
+        <span key={ch} style={{ color }}>
+          {ch}
+        </span>
+      ))}
+    </span>
   );
 }
 

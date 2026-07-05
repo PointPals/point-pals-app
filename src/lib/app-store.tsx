@@ -68,6 +68,9 @@ type Ctx = {
   undoBatch: (batch: AwardBatch) => void;
   addChore: (c: Omit<Chore, "id">) => void;
   addSkill: (s: Omit<Skill, "id">) => void;
+  updateChore: (id: string, patch: Partial<Omit<Chore, "id">>) => void;
+  updateSkill: (id: string, patch: Partial<Omit<Skill, "id">>) => void;
+  updateKid: (id: string, patch: Partial<Omit<Kid, "id">>) => void;
   removeChore: (id: string) => void;
   removeSkill: (id: string) => void;
   addProposal: (kidId: string, name: string) => void;
@@ -233,6 +236,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })),
     addChore: (c) => setState((s) => ({ ...s, chores: [...s.chores, { ...c, id: uid() }] })),
     addSkill: (sk) => setState((s) => ({ ...s, skills: [...s.skills, { ...sk, id: uid() }] })),
+    updateChore: (id, patch) =>
+      setState((s) => ({
+        ...s,
+        chores: s.chores.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      })),
+    updateSkill: (id, patch) =>
+      setState((s) => ({
+        ...s,
+        skills: s.skills.map((sk) => (sk.id === id ? { ...sk, ...patch } : sk)),
+      })),
+    updateKid: (id, patch) =>
+      setState((s) => ({
+        ...s,
+        kids: s.kids.map((k) => (k.id === id ? { ...k, ...patch } : k)),
+      })),
     removeChore: (id) => setState((s) => ({ ...s, chores: s.chores.filter((c) => c.id !== id) })),
     removeSkill: (id) => setState((s) => ({ ...s, skills: s.skills.filter((sk) => sk.id !== id) })),
     addProposal: (kidId, name) =>
@@ -281,6 +299,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...s,
         kids: s.kids.filter((k) => k.id !== id),
         history: s.history.filter((e) => e.kidId !== id),
+        // Also drop proposals this kid made, and their votes on remaining ones.
+        proposals: s.proposals
+          .filter((p) => p.proposedByKidId !== id)
+          .map((p) => ({ ...p, votes: p.votes.filter((v) => v !== id) })),
       })),
     exportData: () =>
       JSON.stringify({ exportedAt: new Date().toISOString(), version: 1, ...state }, null, 2),

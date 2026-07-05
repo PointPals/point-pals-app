@@ -2,24 +2,39 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useApp } from "@/lib/app-store";
 import { KidBadge } from "@/components/KidBadge";
-import { Gift, Vote, PartyPopper } from "lucide-react";
+import { Gift, Vote, PartyPopper, Pencil, Check, X } from "lucide-react";
 
 export const Route = createFileRoute("/rewards")({
   component: RewardsPage,
   head: () => ({
     meta: [
       { title: "Rewards — PointPals" },
-      { name: "description", content: "Propose and vote on family rewards once the shared points pool hits the target." },
+      {
+        name: "description",
+        content: "Propose and vote on family rewards once the shared points pool hits the target.",
+      },
     ],
   }),
 });
 
 function RewardsPage() {
-  const { household, kids, proposals, addProposal, voteProposal, selectReward, setRewardTarget } = useApp();
+  const { household, kids, proposals, addProposal, voteProposal, selectReward, setRewardTarget } =
+    useApp();
   const [proposingKid, setProposingKid] = useState<string>(kids[0]?.id ?? "");
   const [proposalText, setProposalText] = useState("");
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [targetDraft, setTargetDraft] = useState(household.rewardTarget);
   const reached = household.sharedPool >= household.rewardTarget;
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
+
+  const openTargetEdit = () => {
+    setTargetDraft(household.rewardTarget);
+    setEditingTarget(true);
+  };
+  const saveTarget = () => {
+    setRewardTarget(Math.max(1, Math.round(targetDraft)));
+    setEditingTarget(false);
+  };
 
   const winner = [...proposals].sort((a, b) => b.votes.length - a.votes.length)[0];
 
@@ -45,17 +60,55 @@ function RewardsPage() {
             <div className="text-xs uppercase tracking-wider text-foreground/70">Shared pool</div>
             <div className="font-display text-5xl font-extrabold leading-none mt-1">
               {household.sharedPool}
-              <span className="text-2xl font-normal text-foreground/60"> / {household.rewardTarget}</span>
+              <span className="text-2xl font-normal text-foreground/60">
+                {" "}
+                / {household.rewardTarget}
+              </span>
             </div>
           </div>
           <div className="text-right">
-            <label className="text-xs uppercase tracking-wider text-foreground/70 block">Target</label>
-            <input
-              type="number"
-              value={household.rewardTarget}
-              onChange={(e) => setRewardTarget(Math.max(1, Number(e.target.value)))}
-              className="w-20 mt-1 bg-transparent border-b border-foreground/30 py-1 font-display font-bold text-2xl text-right focus:outline-none focus:border-foreground"
-            />
+            <span className="text-xs uppercase tracking-wider text-foreground/70 block">
+              Target
+            </span>
+            {editingTarget ? (
+              <div className="mt-1 flex items-center gap-1 justify-end">
+                <input
+                  type="number"
+                  min={1}
+                  autoFocus
+                  value={targetDraft}
+                  onChange={(e) => setTargetDraft(Number(e.target.value))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveTarget();
+                    if (e.key === "Escape") setEditingTarget(false);
+                  }}
+                  className="w-20 bg-transparent border-b border-foreground/40 py-1 font-display font-bold text-2xl text-right focus:outline-none focus:border-foreground"
+                />
+                <button
+                  onClick={saveTarget}
+                  aria-label="Save target"
+                  className="tap p-1.5 rounded-full hover:bg-white/50"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setEditingTarget(false)}
+                  aria-label="Cancel"
+                  className="tap p-1.5 rounded-full hover:bg-white/50"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={openTargetEdit}
+                aria-label="Edit reward target"
+                className="tap mt-1 inline-flex items-center gap-1.5 font-display font-bold text-2xl hover:opacity-80"
+              >
+                {household.rewardTarget}
+                <Pencil className="w-3.5 h-3.5 text-foreground/50" />
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-4 h-3 rounded-full bg-white/50 overflow-hidden">
@@ -159,21 +212,28 @@ function RewardsPage() {
                                 : "bg-muted text-muted-foreground hover:bg-secondary"
                             }`}
                           >
-                            {voted ? "★ " : ""}{k.name}
+                            {voted ? "★ " : ""}
+                            {k.name}
                           </button>
                         );
                       })}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-display text-3xl font-extrabold leading-none">{p.votes.length}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">votes</div>
+                    <div className="font-display text-3xl font-extrabold leading-none">
+                      {p.votes.length}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      votes
+                    </div>
                   </div>
                   {reached && (
                     <button
                       onClick={() => selectReward(p.id)}
                       className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                        isWinner ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                        isWinner
+                          ? "bg-foreground text-background"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       Pick

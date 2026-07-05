@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { playClink } from "@/lib/feedback";
 
 // The marble jar — PointPals' emotional centrepiece (§3).
@@ -50,11 +50,37 @@ export function MarbleJar({
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const marbles = useRef<Marble[]>([]);
   const raf = useRef<number | null>(null);
   const lastCount = useRef(0);
   const firedFull = useRef(false);
   const clinkAt = useRef(0);
+
+  // Effective render size: capped to the container width so the jar never
+  // overflows a narrow screen, and re-measured on resize / orientation change
+  // (§3d) so the canvas backing store stays crisp instead of stretched-blurry.
+  const [renderSize, setRenderSize] = useState(size);
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap || typeof ResizeObserver === "undefined") {
+      setRenderSize(size);
+      return;
+    }
+    const measure = () => {
+      const w = wrap.clientWidth || size;
+      setRenderSize(Math.max(160, Math.min(size, Math.round(w))));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    // Orientation change can also swap devicePixelRatio; re-measure on resize.
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [size]);
 
   // How many marbles the jar shows — honest fraction of target, capped so the
   // jar can physically hold them. Each marble ≈ one point until the cap, then
@@ -68,8 +94,8 @@ export function MarbleJar({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 2);
-    const W = size;
-    const H = Math.round(size * 1.18);
+    const W = renderSize;
+    const H = Math.round(renderSize * 1.18);
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
@@ -358,7 +384,7 @@ export function MarbleJar({
         raf.current = null;
       }
     };
-  }, [shown, size, target, perMarble, reducedMotion]);
+  }, [shown, renderSize, target, perMarble, reducedMotion]);
 
   // Fire the "full" celebration exactly once when we cross the target.
   useEffect(() => {
@@ -370,7 +396,7 @@ export function MarbleJar({
   }, [full, onFull]);
 
   return (
-    <div className={"relative " + (className ?? "")}>
+    <div ref={wrapRef} className={"relative " + (className ?? "")}>
       {/* Soft aurora halo behind the jar */}
       <div
         aria-hidden
@@ -384,10 +410,7 @@ export function MarbleJar({
           animation: "pp-jar-halo 6s ease-in-out infinite",
         }}
       />
-      <div
-        className="relative"
-        style={{ animation: "pp-jar-float 5s ease-in-out infinite" }}
-      >
+      <div className="relative" style={{ animation: "pp-jar-float 5s ease-in-out infinite" }}>
         <canvas
           ref={canvasRef}
           className={full ? "animate-jar-glow rounded-3xl" : "rounded-3xl"}
@@ -411,10 +434,10 @@ export function MarbleJar({
         </div>
         {/* Twinkling sparkles around the rim */}
         {[
-          { top: "6%",  left: "12%", d: "0s",   s: 10 },
+          { top: "6%", left: "12%", d: "0s", s: 10 },
           { top: "10%", left: "78%", d: "-1.2s", s: 8 },
-          { top: "22%", left: "92%", d: "-2s",   s: 6 },
-          { top: "72%", left: "4%",  d: "-0.6s", s: 7 },
+          { top: "22%", left: "92%", d: "-2s", s: 6 },
+          { top: "72%", left: "4%", d: "-0.6s", s: 7 },
           { top: "88%", left: "88%", d: "-1.8s", s: 9 },
         ].map((s, i) => (
           <span

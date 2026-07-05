@@ -44,8 +44,11 @@ export function ClientBoot() {
     }
 
     // Register the service worker (production only; dev SW caching is noisy).
+    // The ?v=<build id> makes the SW URL change every deploy so returning users
+    // get the new cache instead of stale assets (§2d).
     if ("serviceWorker" in navigator && import.meta.env.PROD) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
+      const buildId = typeof __PP_BUILD_ID__ !== "undefined" ? __PP_BUILD_ID__ : "1";
+      navigator.serviceWorker.register(`/sw.js?v=${buildId}`).catch(() => {
         /* registration failed — app still works online */
       });
     }

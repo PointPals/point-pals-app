@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useApp } from "@/lib/app-store";
-import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
+import { PASTEL_HEX, type PastelKey, COMPANIONS } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
+import { CompanionPicker } from "@/components/CompanionPicker";
 import { ArrowRight, ArrowLeft, Check, Sparkles, X } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
@@ -27,16 +28,21 @@ function Onboarding() {
   );
   const [kidName, setKidName] = useState("");
   const [kidColor, setKidColor] = useState<PastelKey>("sky");
+  const [kidCompanion, setKidCompanion] = useState<string>(COMPANIONS[0].id);
   const [target, setTarget] = useState(household.rewardTarget);
   const [added, setAdded] = useState<{ name: string; color: PastelKey }[]>([]);
 
   const commitKid = () => {
     const n = kidName.trim();
     if (!n) return;
-    addKid(n, kidColor);
+    addKid(n, kidColor, kidCompanion);
     setAdded((a) => [...a, { name: n, color: kidColor }]);
     setKidName("");
-    setKidColor(PALETTE[(PALETTE.indexOf(kidColor) + 1) % PALETTE.length]);
+    const nextColor = PALETTE[(PALETTE.indexOf(kidColor) + 1) % PALETTE.length];
+    setKidColor(nextColor);
+    setKidCompanion(
+      COMPANIONS[(COMPANIONS.findIndex((c) => c.id === kidCompanion) + 1) % COMPANIONS.length].id,
+    );
   };
 
   const finish = () => {
@@ -100,7 +106,12 @@ function Onboarding() {
                     className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full"
                     style={{ backgroundColor: PASTEL_HEX[k.color] }}
                   >
-                    <CompanionAvatar seed={k.id} color={k.color} size={56} />
+                    <CompanionAvatar
+                      seed={k.id}
+                      color={k.color}
+                      size={56}
+                      companionId={k.companionId}
+                    />
                   </div>
                   <span className="text-xs font-semibold">{k.name}</span>
                 </div>
@@ -127,10 +138,13 @@ function Onboarding() {
                 />
               ))}
             </div>
+            <div className="mt-4">
+              <CompanionPicker value={kidCompanion} onChange={setKidCompanion} />
+            </div>
             <button
               onClick={commitKid}
               disabled={!kidName.trim()}
-              className="mt-3 w-full rounded-full bg-muted px-4 py-2.5 text-sm font-semibold hover:bg-muted/70 transition disabled:opacity-40"
+              className="mt-4 w-full rounded-full bg-muted px-4 py-2.5 text-sm font-semibold hover:bg-muted/70 transition disabled:opacity-40"
             >
               + Add child
             </button>

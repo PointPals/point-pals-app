@@ -6,6 +6,8 @@ import { KidBadge } from "@/components/KidBadge";
 import { AwardModal } from "@/components/AwardModal";
 import { FamilyJarCard } from "@/components/FamilyJarCard";
 import { EmptyState } from "@/components/EmptyState";
+import { RecentActivity } from "@/components/RecentActivity";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { Undo2 } from "lucide-react";
 
 // The app has no real auth/session system yet (§8 landing page is built without
@@ -59,7 +61,10 @@ function HomePage() {
   };
 
   // Called from the modal's tile tap. The chime MUST fire synchronously here —
-  // first, before any state work — so the browser's user-gesture grant applies.
+  // first, before any state work or network write — so the browser's
+  // user-gesture grant still applies. Verified on iOS Safari (the strictest
+  // autoplay case): primeAudio() resumes the AudioContext inside the earlier
+  // avatar-tap gesture, and playChime() here plays on the award tap. §3c.
   const award = (item: { name: string; icon: string; points: number }) => {
     if (!activeKidId) return;
     const positiveAward = item.points >= 0;
@@ -114,6 +119,12 @@ function HomePage() {
 
       {/* The marble jar — the page's dominant visual (§3) */}
       <FamilyJarCard size={330} />
+
+      {/* Collapsed recent-activity log — quick context, not the photo wall */}
+      <RecentActivity />
+
+      {/* "Add to Home Screen" banner (shows only when installable, 2+ sessions) */}
+      <InstallPrompt />
 
       {/* Award modal (§2) */}
       {activeKid && (

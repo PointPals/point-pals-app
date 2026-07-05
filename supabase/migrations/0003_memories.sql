@@ -1,12 +1,12 @@
 -- Photo memory wall (§4) — one record per photo with kid tags, optional
 -- caption, and timestamp. Photos themselves live in the Supabase Storage
--- bucket `memories` (create it alongside this migration):
+-- bucket `memories`, which is PRIVATE (§3e): photos of children must never be
+-- reachable by guessing a URL. The app serves short-lived signed URLs for
+-- display (see src/lib/memories.ts signedUrl()). Create the bucket alongside
+-- this migration:
 --
---   insert into storage.buckets (id, name, public) values ('memories','memories', true)
---   on conflict (id) do nothing;
---
--- (Keep the bucket public for now — URLs are unguessable UUID paths; switch to
--- signed URLs if/when memories should be fully private.)
+--   insert into storage.buckets (id, name, public) values ('memories','memories', false)
+--   on conflict (id) do update set public = false;
 
 create table if not exists public.memories (
   id           text primary key,               -- client-generated id (also the storage filename)
@@ -31,10 +31,13 @@ create policy memories_all on public.memories
   using (household_id is null or public.is_member(household_id))
   with check (household_id is null or public.is_member(household_id));
 
--- Storage policies for the `memories` bucket (run after creating the bucket):
+-- Storage policies for the PRIVATE `memories` bucket (run after creating it).
+-- Read is authenticated-only; display uses signed URLs (createSignedUrl), which
+-- work regardless of the select policy but we still gate raw object reads to
+-- signed-in users so nothing is world-readable.
 --
 --   create policy "memories read"   on storage.objects for select
---     using (bucket_id = 'memories');
+--     using (bucket_id = 'memories' and auth.role() = 'authenticated');
 --   create policy "memories write"  on storage.objects for insert
 --     with check (bucket_id = 'memories' and auth.role() = 'authenticated');
 --   create policy "memories delete" on storage.objects for delete

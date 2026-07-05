@@ -54,7 +54,9 @@ export type Companion = {
   name: string;
   trait: string;
   color: PastelKey;
-  symbol: string; // emoji stand-in for the plush motif
+  symbol: string; // emoji stand-in for the plush motif (fallback when art is absent)
+  motif: string; // human description of the mascot's symbol, for the about page
+  quote: string; // shown as a subtitle in the picker + character detail
   bodyShape: "dumpling" | "egg" | "pear";
 };
 
@@ -461,47 +463,29 @@ export const COMPANIONS: Companion[] = [
     trait: "Kindness",
     color: "butter",
     symbol: "☀️",
+    motif: "Glowing heart with rays",
+    quote: "The smallest kindness leaves the biggest glow.",
     bodyShape: "dumpling",
-  },
-  {
-    id: "bramble",
-    name: "Bramble",
-    trait: "Bravery",
-    color: "sage",
-    symbol: "⭐",
-    bodyShape: "pear",
   },
   {
     id: "pip",
     name: "Pip",
-    trait: "Honesty",
+    trait: "Learning",
     color: "sky",
     symbol: "📖",
+    motif: "Open book",
+    quote: "You don't have to know it yet. You just have to open the book.",
     bodyShape: "egg",
   },
   {
-    id: "marlow",
-    name: "Marlow",
-    trait: "Helping",
-    color: "blush",
-    symbol: "🤝",
-    bodyShape: "dumpling",
-  },
-  {
-    id: "coda",
-    name: "Coda",
-    trait: "Independence",
-    color: "lilac",
-    symbol: "👣",
+    id: "bramble",
+    name: "Bramble",
+    trait: "Goals",
+    color: "sage",
+    symbol: "⭐",
+    motif: "Gold star",
+    quote: "Every done thing is a star you made yourself.",
     bodyShape: "pear",
-  },
-  {
-    id: "fern",
-    name: "Fern",
-    trait: "Gratitude",
-    color: "foam",
-    symbol: "🌿",
-    bodyShape: "dumpling",
   },
   {
     id: "ziggy",
@@ -509,6 +493,8 @@ export const COMPANIONS: Companion[] = [
     trait: "Creativity",
     color: "sand",
     symbol: "🎨",
+    motif: "Purple swirl",
+    quote: "The swirl never stops until something wonderful comes out.",
     bodyShape: "egg",
   },
   {
@@ -517,6 +503,38 @@ export const COMPANIONS: Companion[] = [
     trait: "Perseverance",
     color: "sky",
     symbol: "⛰️",
+    motif: "Mountain range",
+    quote: "You don't climb the mountain all at once. You just take the next step.",
+    bodyShape: "dumpling",
+  },
+  {
+    id: "coda",
+    name: "Coda",
+    trait: "Independence",
+    color: "lilac",
+    symbol: "👣",
+    motif: "Golden footprint",
+    quote: "One brave step is all it takes to begin.",
+    bodyShape: "pear",
+  },
+  {
+    id: "fern",
+    name: "Fern",
+    trait: "Daily habits",
+    color: "foam",
+    symbol: "🌿",
+    motif: "Leaf",
+    quote: "Every leaf was once just a bud. Every habit was once just a start.",
+    bodyShape: "dumpling",
+  },
+  {
+    id: "marlow",
+    name: "Marlow",
+    trait: "Teamwork",
+    color: "blush",
+    symbol: "🤝",
+    motif: "Clasped hands",
+    quote: "The jar fills faster when everyone adds to it.",
     bodyShape: "dumpling",
   },
 ];
