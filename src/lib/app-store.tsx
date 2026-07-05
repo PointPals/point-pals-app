@@ -182,6 +182,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [state, hydrated]);
 
+  // Cross-tab / cross-device-on-same-browser sync (§3 phase-3-lite). The
+  // localStorage `storage` event fires in *other* tabs when this key changes,
+  // so a point awarded on one tab shows up in the family jar on another — the
+  // marble drops and plays its clink there too. Real multi-device realtime
+  // will layer on top of this when awards move to Supabase.
+  useEffect(() => {
+    if (!hydrated) return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        const parsed = JSON.parse(e.newValue) as Partial<Persisted>;
+        setState((prev) => ({
+          household: { ...prev.household, ...parsed.household },
+          kids: parsed.kids ?? prev.kids,
+          chores: parsed.chores ?? prev.chores,
+          skills: parsed.skills ?? prev.skills,
+          history: parsed.history ?? prev.history,
+          proposals: parsed.proposals ?? prev.proposals,
+        }));
+      } catch {
+        /* ignore malformed cross-tab payload */
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [hydrated]);
+
   const { household, kids, chores, skills, history, proposals } = state;
 
   const streakByKid = useMemo(() => computeStreaks(kids, chores, history), [kids, chores, history]);
