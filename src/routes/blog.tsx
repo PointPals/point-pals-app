@@ -5,7 +5,7 @@ import imgResearch from "@/assets/marketing/blog-research.jpg";
 import imgCharacters from "@/assets/marketing/blog-characters.jpg";
 import imgChoresFun from "@/assets/marketing/blog-chores-fun.jpg";
 import imgMarbleJar from "@/assets/marketing/blog-marble-jar.jpg";
-import imgScreenTime from "@/assets/marketing/blog-screen-time.jpg";
+
 import imgAgeChores from "@/assets/marketing/blog-age-chores.jpg";
 import sunnyImg from "@/assets/companions/sunny.png.asset.json";
 import pipImg from "@/assets/companions/pip.png.asset.json";
