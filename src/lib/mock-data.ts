@@ -28,12 +28,13 @@ export type Kid = {
   name: string;
   color: PastelKey;
   points: number; // personal
+  companionId?: string; // chosen mascot (matches COMPANIONS.id)
 };
 
 export type Chore = {
   id: string;
   name: string;
-  icon: string; // emoji stand-in for the flat pastel icon (prototype only)
+  icon: string; // full image URL, "iXX" registry key, or emoji
   color: PastelKey;
   points: number;
   recurrence: "none" | "daily" | "weekly";
@@ -76,117 +77,67 @@ export type RewardProposal = {
 
 // -------- Seed data --------
 
+export const SUPABASE_ASSET_BASE =
+  "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets";
+const A = (file: string) => `${SUPABASE_ASSET_BASE}/${file}`;
+
 export const INITIAL_KIDS: Kid[] = [
-  { id: "k1", name: "Nova", color: "blush", points: 34 },
-  { id: "k2", name: "Milo", color: "sky", points: 22 },
-  { id: "k3", name: "Wren", color: "sage", points: 18 },
+  { id: "k1", name: "Nova", color: "blush", points: 34, companionId: "sunny" },
+  { id: "k2", name: "Milo", color: "sky", points: 22, companionId: "pip" },
+  { id: "k3", name: "Wren", color: "sage", points: 18, companionId: "fern" },
 ];
 
 export const INITIAL_CHORES: Chore[] = [
-  { id: "c1", name: "Made the bed", icon: "i00", color: "sage", points: 2, recurrence: "daily" },
-  {
-    id: "c2",
-    name: "Brushed teeth (AM)",
-    icon: "i01",
-    color: "butter",
-    points: 1,
-    recurrence: "daily",
-  },
-  {
-    id: "c3",
-    name: "Brushed teeth (PM)",
-    icon: "i02",
-    color: "lilac",
-    points: 1,
-    recurrence: "daily",
-  },
-  { id: "c4", name: "Got dressed", icon: "i03", color: "sand", points: 2, recurrence: "daily" },
-  { id: "c5", name: "Cleared plate", icon: "i04", color: "sky", points: 1, recurrence: "daily" },
-  { id: "c6", name: "Tidied bedroom", icon: "i16", color: "sand", points: 3, recurrence: "daily" },
-  {
-    id: "c7",
-    name: "Packed school bag",
-    icon: "i06",
-    color: "sky",
-    points: 2,
-    recurrence: "daily",
-  },
-  {
-    id: "c8",
-    name: "Read 20 minutes",
-    icon: "i12",
-    color: "lilac",
-    points: 3,
-    recurrence: "daily",
-  },
-  { id: "c9", name: "Helped cook", icon: "i13", color: "sand", points: 3, recurrence: "none" },
-  { id: "c10", name: "Fed the pet", icon: "i17", color: "sage", points: 2, recurrence: "daily" },
-  {
-    id: "c11",
-    name: "Watered plants",
-    icon: "i18",
-    color: "butter",
-    points: 2,
-    recurrence: "weekly",
-  },
-  {
-    id: "c12",
-    name: "Folded laundry",
-    icon: "i15",
-    color: "blush",
-    points: 3,
-    recurrence: "weekly",
-  },
-  {
-    id: "c13",
-    name: "Emptied dishwasher",
-    icon: "i35",
-    color: "sand",
-    points: 2,
-    recurrence: "weekly",
-  },
-  {
-    id: "c14",
-    name: "Took out rubbish",
-    icon: "i14",
-    color: "sky",
-    points: 2,
-    recurrence: "weekly",
-  },
-  {
-    id: "c15",
-    name: "Vacuumed a room",
-    icon: "i22",
-    color: "blush",
-    points: 3,
-    recurrence: "weekly",
-  },
+  { id: "c1", name: "Made the bed", icon: A("make-bed.png"), color: "sage", points: 2, recurrence: "daily" },
+  { id: "c2", name: "Brushed teeth (AM)", icon: A("brushteeth-morning-bed.png"), color: "butter", points: 1, recurrence: "daily" },
+  { id: "c3", name: "Brushed teeth (PM)", icon: A("brushteeth-night-bed.png"), color: "lilac", points: 1, recurrence: "daily" },
+  { id: "c4", name: "Got dressed", icon: A("get-dressed.png"), color: "sand", points: 2, recurrence: "daily" },
+  { id: "c5", name: "Ate breakfast", icon: A("ate-breakfast.png"), color: "sky", points: 1, recurrence: "daily" },
+  { id: "c6", name: "Packed bag", icon: A("packed-bag.png"), color: "sky", points: 2, recurrence: "daily" },
+  { id: "c7", name: "Did homework", icon: A("did-homework.png"), color: "lilac", points: 3, recurrence: "daily" },
+  { id: "c8", name: "Fed pets", icon: A("fed-pets.png"), color: "sage", points: 2, recurrence: "daily" },
+  { id: "c9", name: "Tidied room", icon: A("tidied-room.png"), color: "sand", points: 3, recurrence: "daily" },
+  { id: "c10", name: "Set the table", icon: A("set-the-table.png"), color: "sky", points: 1, recurrence: "daily" },
+  { id: "c11", name: "Washed hands", icon: A("washed-hands.png"), color: "blush", points: 1, recurrence: "daily" },
+  { id: "c12", name: "Woke up on time", icon: A("woke-up-on-time.png"), color: "butter", points: 1, recurrence: "daily" },
+  { id: "c13", name: "Went to bed by yourself", icon: A("went-to-bed-by-yourself.png"), color: "lilac", points: 2, recurrence: "daily" },
+  { id: "c14", name: "Music practice", icon: A("music-practise.png"), color: "blush", points: 3, recurrence: "daily" },
+  { id: "c15", name: "Bath or shower", icon: A("bath-or-shower.png"), color: "sky", points: 2, recurrence: "daily" },
+  { id: "c16", name: "Watered plants", icon: A("watered-plants.png"), color: "butter", points: 2, recurrence: "weekly" },
+  { id: "c17", name: "Emptied dishwasher", icon: A("emptied-or-loaded-dishwasher.png"), color: "sand", points: 2, recurrence: "weekly" },
+  { id: "c18", name: "Took out rubbish", icon: A("take-out-rubbish.png"), color: "sky", points: 2, recurrence: "weekly" },
+  { id: "c19", name: "Vacuumed a room", icon: A("vacuumn.png"), color: "blush", points: 3, recurrence: "weekly" },
+  { id: "c20", name: "Swept the room", icon: A("swept-the-room.png"), color: "foam", points: 2, recurrence: "weekly" },
+  { id: "c21", name: "Mopped the floor", icon: A("mopped-the-floor.png"), color: "foam", points: 2, recurrence: "weekly" },
+  { id: "c22", name: "Sorted recycling", icon: A("sorted-recycling.png"), color: "sage", points: 2, recurrence: "weekly" },
 ];
 
 export const INITIAL_SKILLS: Skill[] = [
-  { id: "s1", name: "Being Brave", icon: "i53", color: "butter", points: 2, isPositive: true },
-  { id: "s2", name: "Being Kind", icon: "i45", color: "blush", points: 2, isPositive: true },
-  { id: "s3", name: "Being Honest", icon: "i60", color: "sky", points: 2, isPositive: true },
-  { id: "s4", name: "Good Night", icon: "i51", color: "lilac", points: 2, isPositive: true },
-  { id: "s5", name: "Helping Others", icon: "i47", color: "blush", points: 2, isPositive: true },
-  { id: "s6", name: "Independent", icon: "i61", color: "sage", points: 2, isPositive: true },
-  { id: "s7", name: "Keep Trying", icon: "i49", color: "sand", points: 2, isPositive: true },
-  { id: "s8", name: "Being On Time", icon: "i38", color: "butter", points: 1, isPositive: true },
-  { id: "s9", name: "Good Listening", icon: "i46", color: "lilac", points: 1, isPositive: true },
-  { id: "s10", name: "Sharing", icon: "i44", color: "foam", points: 1, isPositive: true },
+  { id: "s1", name: "Being helpful", icon: A("being-helpful.png"), color: "butter", points: 2, isPositive: true },
+  { id: "s2", name: "Being independent", icon: A("being-independent.png"), color: "sage", points: 2, isPositive: true },
+  { id: "s3", name: "Being respectful", icon: A("being-respectful.png"), color: "sky", points: 2, isPositive: true },
+  { id: "s4", name: "Calmed down", icon: A("calmed-down-after-getting-mad.png"), color: "lilac", points: 2, isPositive: true },
+  { id: "s5", name: "Followed directions", icon: A("followed-directions.png"), color: "sand", points: 1, isPositive: true },
+  { id: "s6", name: "Helped without being asked", icon: A("helped-without-being-asked.png"), color: "blush", points: 3, isPositive: true },
+  { id: "s7", name: "Helping others", icon: A("helping-others.png"), color: "blush", points: 2, isPositive: true },
+  { id: "s8", name: "Including others", icon: A("including-others.png"), color: "foam", points: 2, isPositive: true },
+  { id: "s9", name: "Sharing toys", icon: A("sharing-toys.png"), color: "foam", points: 1, isPositive: true },
+  { id: "s10", name: "Showing empathy", icon: A("showing-empathy.png"), color: "blush", points: 2, isPositive: true },
+  { id: "s11", name: "Tried your best", icon: A("tried-your-best.png"), color: "sand", points: 2, isPositive: true },
+  { id: "s12", name: "Used kind words", icon: A("used-kindwords.png"), color: "butter", points: 1, isPositive: true },
+  { id: "s13", name: "Using manners", icon: A("using-manners.png"), color: "sky", points: 1, isPositive: true },
+  { id: "s14", name: "Waiting patiently", icon: A("waiting-paitently.png"), color: "lilac", points: 1, isPositive: true },
   // Needs work — negative values
-  { id: "n1", name: "Hitting", icon: "i58", color: "blush", points: -2, isPositive: false },
-  { id: "n2", name: "Yelling", icon: "i57", color: "sand", points: -1, isPositive: false },
-  { id: "n3", name: "Refused a chore", icon: "i65", color: "sky", points: -2, isPositive: false },
-  {
-    id: "n4",
-    name: "Not telling truth",
-    icon: "i59",
-    color: "lilac",
-    points: -2,
-    isPositive: false,
-  },
-  { id: "n5", name: "Name-calling", icon: "i56", color: "foam", points: -1, isPositive: false },
+  { id: "n1", name: "Argued", icon: A("argued.png"), color: "sand", points: -1, isPositive: false },
+  { id: "n2", name: "Didn't follow instructions", icon: A("did-not-follow-instructions.png"), color: "sky", points: -1, isPositive: false },
+  { id: "n3", name: "Didn't listen", icon: A("didn't-listen.png"), color: "lilac", points: -1, isPositive: false },
+  { id: "n4", name: "Hit or pushed", icon: A("hit-or-pushed.png"), color: "blush", points: -2, isPositive: false },
+  { id: "n5", name: "Made a mess", icon: A("made-a-mess.png"), color: "sand", points: -1, isPositive: false },
+  { id: "n6", name: "Ran away", icon: A("ran-away.png"), color: "foam", points: -2, isPositive: false },
+  { id: "n7", name: "Refused to share", icon: A("refused-to-share.png"), color: "sky", points: -1, isPositive: false },
+  { id: "n8", name: "Tantrum", icon: A("tantrum.png"), color: "blush", points: -2, isPositive: false },
+  { id: "n9", name: "Threw things", icon: A("threw-things.png"), color: "sand", points: -2, isPositive: false },
+  { id: "n10", name: "Yelled or screamed", icon: A("yelled-or-screamed.png"), color: "butter", points: -1, isPositive: false },
 ];
 
 export const COMPANIONS: Companion[] = [
