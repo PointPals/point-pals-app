@@ -235,7 +235,7 @@ async function loadOnce() {
       Promise.resolve(
         db
           .from("memory_posts")
-          .select("id, storage_path, media_type, caption, audio_path, created_at"),
+          .select("id, storage_path, media_type, media_paths, caption, audio_path, created_at"),
       ),
     );
     if (!res.error && res.data) {
@@ -243,6 +243,7 @@ async function loadOnce() {
         id: string;
         storage_path: string | null;
         media_type: "image" | "video" | null;
+        media_paths: MemoryMediaInput[] | null;
         caption: string | null;
         audio_path: string | null;
         created_at: string;
@@ -259,18 +260,36 @@ async function loadOnce() {
       }
 
       const remote: Memory[] = await Promise.all(
-        (res.data as Row[]).map(async (r) => ({
-          id: r.id,
-          url: r.storage_path ? await signedUrl(r.storage_path).catch(() => "") : "",
-          caption: r.caption ?? "",
-          kidIds: tagMap[r.id] ?? [],
-          createdAt: new Date(r.created_at).getTime(),
-          remote: true,
-          kind: r.media_type ?? (r.storage_path ? ("image" as const) : undefined),
-          storagePath: r.storage_path ?? undefined,
-          audioPath: r.audio_path ?? undefined,
-          audioUrl: r.audio_path ? await signedUrl(r.audio_path).catch(() => undefined) : undefined,
-        })),
+        (res.data as Row[]).map(async (r) => {
+          // Prefer media_paths (multi-image), fall back to legacy single storage_path
+          const list: MemoryMediaInput[] =
+            Array.isArray(r.media_paths) && r.media_paths.length > 0
+              ? r.media_paths
+              : r.storage_path
+                ? [{ path: r.storage_path, kind: r.media_type ?? "image" }]
+                : [];
+          const media: MemoryMedia[] = await Promise.all(
+            list.map(async (item) => ({
+              url: await signedUrl(item.path).catch(() => ""),
+              kind: item.kind,
+              path: item.path,
+            })),
+          );
+          const first = media[0];
+          return {
+            id: r.id,
+            url: first?.url ?? "",
+            caption: r.caption ?? "",
+            kidIds: tagMap[r.id] ?? [],
+            createdAt: new Date(r.created_at).getTime(),
+            remote: true,
+            kind: first?.kind,
+            storagePath: first?.path,
+            media,
+            audioPath: r.audio_path ?? undefined,
+            audioUrl: r.audio_path ? await signedUrl(r.audio_path).catch(() => undefined) : undefined,
+          };
+        }),
       );
       const localIds = new Set(memories.map((m) => m.id));
       memories = sortWall([...memories, ...remote.filter((m) => !localIds.has(m.id))]);
@@ -281,6 +300,7 @@ async function loadOnce() {
   }
 }
 
+const MAX_MEDIA_ITEMS = 10;
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
 function fileToDataUrl(file: Blob): Promise<string> {
@@ -294,28 +314,28 @@ function fileToDataUrl(file: Blob): Promise<string> {
 
 export async function addMemory(
   householdId: string,
-  file: File | null,
+  files: File[],
   caption: string,
   kidIds: string[],
   audioBlob?: Blob,
 ): Promise<Memory> {
   const id = uid();
 
-  // Prepare the media (if any): images are downscaled, short videos pass
-  // through as-is. Caption-/voice-only posts have no media at all.
-  let media: { blob: Blob; kind: "image" | "video"; contentType: string; ext: string } | null =
-    null;
-  let localUrl = "";
-  if (file) {
+  // Prepare each media item: images are downscaled, short videos pass
+  // through as-is. Caption-/voice-only posts have an empty list.
+  const clipped = files.slice(0, MAX_MEDIA_ITEMS);
+  const medias: { blob: Blob; kind: "image" | "video"; contentType: string; ext: string }[] = [];
+  const localMedia: MemoryMedia[] = [];
+  for (const file of clipped) {
     if (file.type.startsWith("video/")) {
       if (file.size > MAX_VIDEO_BYTES) throw new Error("video too large");
       const ext = file.type.includes("mp4") ? "mp4" : "webm";
-      media = { blob: file, kind: "video", contentType: file.type, ext };
-      localUrl = await fileToDataUrl(file);
+      medias.push({ blob: file, kind: "video", contentType: file.type, ext });
+      localMedia.push({ url: await fileToDataUrl(file), kind: "video" });
     } else {
       const { blob, dataUrl } = await downscale(file);
-      media = { blob, kind: "image", contentType: "image/jpeg", ext: "jpg" };
-      localUrl = dataUrl;
+      medias.push({ blob, kind: "image", contentType: "image/jpeg", ext: "jpg" });
+      localMedia.push({ url: dataUrl, kind: "image" });
     }
   }
 
@@ -328,22 +348,23 @@ export async function addMemory(
       audioPath = aud.path;
       audioUrl = aud.signedUrl;
     }
-    const up = await remoteUpload(id, householdId, media, caption, kidIds);
-    // Update audio path on the post
+    const up = await remoteUpload(id, householdId, medias, caption, kidIds);
     if (audioPath) {
       await withTimeout(
         Promise.resolve(db.from("memory_posts").update({ audio_path: audioPath }).eq("id", id)),
       ).catch(() => {});
     }
+    const first = up.media[0];
     memory = {
       id,
-      url: up.url,
+      url: first?.url ?? "",
       caption,
       kidIds,
       createdAt: Date.now(),
       remote: true,
-      kind: media?.kind,
-      storagePath: up.path ?? undefined,
+      kind: first?.kind,
+      storagePath: first?.path,
+      media: up.media,
       audioPath,
       audioUrl,
     };
@@ -352,14 +373,16 @@ export async function addMemory(
     // nothing the child just said is silently dropped.
     let audioUrl: string | undefined;
     if (audioBlob) audioUrl = await fileToDataUrl(audioBlob).catch(() => undefined);
+    const first = localMedia[0];
     memory = {
       id,
-      url: localUrl,
+      url: first?.url ?? "",
       caption,
       kidIds,
       createdAt: Date.now(),
       remote: false,
-      kind: media?.kind,
+      kind: first?.kind,
+      media: localMedia,
       audioUrl,
     };
   }
