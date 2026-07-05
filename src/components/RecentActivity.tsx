@@ -32,10 +32,14 @@ export function RecentActivity() {
         <ul className="divide-y divide-border border-t border-border">
           {recent.map((e) => {
             const kid = kids.find((k) => k.id === e.kidId);
+            const isCorrection = e.type === "correction";
             const showImg =
               isIconKey(e.itemIcon) || e.itemIcon.startsWith("http") || e.itemIcon.startsWith("/");
             return (
-              <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
+              <li
+                key={e.id}
+                className={`flex items-center gap-3 px-4 py-2.5 ${isCorrection ? "opacity-70" : ""}`}
+              >
                 {showImg ? (
                   <img
                     src={isIconKey(e.itemIcon) ? iconUrl(e.itemIcon) : e.itemIcon}
@@ -54,7 +58,13 @@ export function RecentActivity() {
                   </div>
                 </div>
                 <span
-                  className={`font-display font-bold ${e.points < 0 ? "text-destructive" : "text-foreground"}`}
+                  className={`font-display font-bold ${
+                    isCorrection
+                      ? "text-muted-foreground"
+                      : e.points < 0
+                        ? "text-destructive"
+                        : "text-foreground"
+                  }`}
                 >
                   {e.points > 0 ? "+" : ""}
                   {e.points}

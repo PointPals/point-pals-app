@@ -79,13 +79,9 @@ export type PointEvent = {
   points: number;
   at: number;
   batchId?: string | null;
-};
-
-export type RewardProposal = {
-  id: string;
-  proposedByKidId: string;
-  name: string;
-  votes: string[]; // kid ids
+  // "correction" = a parent's manual fix (double-tap, wrong kid). Rendered
+  // neutral/grey and excluded from behaviour stats — never a red/green event.
+  type?: "award" | "correction";
 };
 
 export type RewardHistory = {
@@ -819,9 +815,4 @@ export const INITIAL_HISTORY: PointEvent[] = [
     points: 3,
     at: Date.now() - DAY * 1 - 1000 * 60 * 120,
   },
-];
-
-export const INITIAL_PROPOSALS: RewardProposal[] = [
-  { id: "p1", proposedByKidId: "k1", name: "Pizza & movie night", votes: ["k1", "k3"] },
-  { id: "p2", proposedByKidId: "k2", name: "Trip to the trampoline park", votes: ["k2"] },
 ];

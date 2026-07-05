@@ -959,7 +959,7 @@ function FamilyTab() {
       )}
 
       {/* Correction tool — manual points adjustment */}
-      <CorrectionSection kids={kids} onUpdate={(id, patch) => updateKid(id, patch)} />
+      <CorrectionSection kids={kids} />
 
       {!editingId &&
         (adding ? (
@@ -986,11 +986,17 @@ function FamilyTab() {
 
 function CorrectionSection({
   kids,
-  onUpdate,
 }: {
-  kids: { id: string; name: string; currentPoints: number; color: string; companionId?: string }[];
-  onUpdate: (id: string, patch: { currentPoints: number }) => void;
+  kids: {
+    id: string;
+    name: string;
+    currentPoints: number;
+    allTimePoints: number;
+    color: string;
+    companionId?: string;
+  }[];
 }) {
+  const { correctPoints } = useApp();
   const [openId, setOpenId] = useState<string | null>(null);
   const [deltaStr, setDeltaStr] = useState("0");
   const [reason, setReason] = useState("");
@@ -1005,11 +1011,13 @@ function CorrectionSection({
       !window.confirm(
         `Change ${kid.name}'s points by ${delta > 0 ? "+" : ""}${delta} to ${next}?${
           reason ? ` Reason: "${reason}"` : ""
-        }`,
+        } This fixes both the current total and the all-time record.`,
       )
     )
       return;
-    onUpdate(id, { currentPoints: next });
+    // Adjusts BOTH currentPoints and allTimePoints and logs a neutral
+    // "correction" history entry — see app-store.correctPoints.
+    correctPoints(id, delta, reason.trim() || undefined);
     setOpenId(null);
     setDeltaStr("0");
     setReason("");

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useApp } from "@/lib/app-store";
 import { useCorrection } from "@/lib/correction-store";
 import { KidBadge } from "@/components/KidBadge";
@@ -24,9 +24,24 @@ function RewardsPage() {
   const { household, kids, history, setRewardTarget } = useApp();
   const { activeReward, setActiveReward, claimReward, rewardHistory } = useCorrection();
   const [rewardName, setRewardName] = useState(activeReward?.name ?? "");
-  const [rewardTarget, setRewardTargetLocal] = useState(activeReward?.targetPoints ?? household.rewardTarget);
+  const [rewardTarget, setRewardTargetLocal] = useState(
+    activeReward?.targetPoints ?? household.rewardTarget,
+  );
   const [editing, setEditing] = useState(!activeReward);
   const [celebrating, setCelebrating] = useState(false);
+
+  // The active reward hydrates from localStorage/server after first render —
+  // fold it into the form state when it arrives so a reload doesn't dump the
+  // parent back into the empty "Set a reward" form.
+  useEffect(() => {
+    if (activeReward) {
+      setRewardName(activeReward.name);
+      setRewardTargetLocal(activeReward.targetPoints);
+      setEditing(false);
+    } else {
+      setEditing(true);
+    }
+  }, [activeReward]);
 
   const reached = household.sharedPool >= household.rewardTarget;
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
@@ -40,7 +55,7 @@ function RewardsPage() {
 
   const handleClaimReward = useCallback(() => {
     const name = activeReward?.name ?? "Family reward";
-    claimReward(name, household.rewardTarget);
+    claimReward(name, activeReward?.targetPoints ?? household.rewardTarget);
     playFanfare();
     haptic("success");
     setCelebrating(true);
@@ -75,7 +90,9 @@ function RewardsPage() {
         <h1 className="font-display text-3xl font-bold flex items-center gap-2">
           <Gift className="w-7 h-7" /> Family rewards
         </h1>
-        <p className="text-sm text-muted-foreground">Set a reward, fill the jar, celebrate together.</p>
+        <p className="text-sm text-muted-foreground">
+          Set a reward, fill the jar, celebrate together.
+        </p>
       </div>
 
       {/* The jar */}
@@ -88,7 +105,7 @@ function RewardsPage() {
           {editing ? "Set a reward" : activeReward ? "Current reward" : "No reward yet"}
         </h2>
 
-        {editing ? (
+        {editing || !activeReward ? (
           <div className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -116,7 +133,9 @@ function RewardsPage() {
                   onChange={(e) => setRewardTargetLocal(Number(e.target.value))}
                   className="flex-1 accent-foreground"
                 />
-                <span className="font-display text-lg font-bold w-12 text-right">{rewardTarget}</span>
+                <span className="font-display text-lg font-bold w-12 text-right">
+                  {rewardTarget}
+                </span>
               </div>
             </div>
             <button
@@ -131,9 +150,9 @@ function RewardsPage() {
           <div className="space-y-4">
             <div className="card-soft p-4 bg-muted/30">
               <div className="text-sm text-muted-foreground">Working toward</div>
-              <div className="font-display text-2xl font-bold mt-1">{activeReward!.name}</div>
+              <div className="font-display text-2xl font-bold mt-1">{activeReward.name}</div>
               <div className="text-xs text-muted-foreground mt-1">
-                {household.sharedPool} / {activeReward!.targetPoints} points
+                {household.sharedPool} / {activeReward.targetPoints} points
               </div>
             </div>
             <div className="flex gap-3">
@@ -157,8 +176,8 @@ function RewardsPage() {
 
         {reached && !editing && (
           <div className="rounded-xl bg-butter/30 p-4 text-sm">
-            <strong className="font-semibold">🎉 The jar is full!</strong>{" "}
-            Tap "Claim reward" to log it and start a new cycle.
+            <strong className="font-semibold">🎉 The jar is full!</strong> Tap "Claim reward" to log
+            it and start a new cycle.
           </div>
         )}
       </section>
@@ -171,9 +190,7 @@ function RewardsPage() {
 
         {rewardHistory.length >= 3 && (
           <div className="card-soft p-4 text-sm text-muted-foreground">
-            {days !== null && (
-              <span className="font-semibold text-foreground">{days} days</span>
-            )}{" "}
+            {days !== null && <span className="font-semibold text-foreground">{days} days</span>}{" "}
             average between rewards
             {repeated && (
               <>

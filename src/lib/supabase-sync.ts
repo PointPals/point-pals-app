@@ -9,23 +9,21 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import type { Household } from "./app-store";
-import type { Chore, Kid, PointEvent, PastelKey, RewardProposal, Skill } from "./mock-data";
+import type { Chore, Kid, PointEvent, PastelKey, Skill } from "./mock-data";
 
 type DbKid = Database["public"]["Tables"]["kids"]["Row"];
 type DbChore = Database["public"]["Tables"]["chores"]["Row"];
 type DbSkill = Database["public"]["Tables"]["skills"]["Row"];
 type DbHousehold = Database["public"]["Tables"]["households"]["Row"];
 type DbEvent = Database["public"]["Tables"]["point_events"]["Row"];
-type DbProposal = Database["public"]["Tables"]["reward_proposals"]["Row"];
-type DbVote = Database["public"]["Tables"]["reward_votes"]["Row"];
 
 export function mapKid(row: DbKid): Kid {
   return {
     id: row.id,
     name: row.name,
     color: (row.color as PastelKey) ?? "sky",
-    currentPoints: (row as any).current_points ?? row.points,
-    allTimePoints: (row as any).all_time_points ?? row.points,
+    currentPoints: (row as { current_points?: number }).current_points ?? row.points,
+    allTimePoints: (row as { all_time_points?: number }).all_time_points ?? row.points,
     companionId: row.avatar_key ?? undefined,
   };
 }
@@ -76,6 +74,8 @@ export function mapEvent(row: DbEvent): PointEvent & { batchId?: string | null }
     points: row.points,
     at: new Date(row.created_at).getTime(),
     batchId: row.batch_id,
+    // Corrections are tagged by their batch id prefix (see app-store.correctPoints).
+    type: row.batch_id?.startsWith("corr_") ? ("correction" as const) : undefined,
   };
 }
 
@@ -85,12 +85,11 @@ export type HouseholdBundle = {
   chores: Chore[];
   skills: Skill[];
   history: (PointEvent & { batchId?: string | null })[];
-  proposals: RewardProposal[];
 };
 
 /** Fetch the household for the current user, plus everything hanging off it. */
 export async function fetchHouseholdBundle(householdId: string): Promise<HouseholdBundle | null> {
-  const [hh, kids, chores, skills, events, proposals, votes] = await Promise.all([
+  const [hh, kids, chores, skills, events] = await Promise.all([
     supabase.from("households").select("*").eq("id", householdId).maybeSingle(),
     supabase.from("kids").select("*").eq("household_id", householdId),
     supabase.from("chores").select("*").eq("household_id", householdId),
@@ -101,13 +100,8 @@ export async function fetchHouseholdBundle(householdId: string): Promise<Househo
       .eq("household_id", householdId)
       .order("created_at", { ascending: false })
       .limit(200),
-    supabase.from("reward_proposals").select("*").eq("household_id", householdId),
-    supabase.from("reward_votes").select("*"),
   ]);
   if (hh.error || !hh.data) return null;
-
-  const proposalRows = (proposals.data ?? []) as DbProposal[];
-  const voteRows = (votes.data ?? []) as DbVote[];
 
   return {
     household: mapHousehold(hh.data),
@@ -115,12 +109,6 @@ export async function fetchHouseholdBundle(householdId: string): Promise<Househo
     chores: (chores.data ?? []).map(mapChore),
     skills: (skills.data ?? []).map(mapSkill),
     history: (events.data ?? []).map(mapEvent),
-    proposals: proposalRows.map((p) => ({
-      id: p.id,
-      proposedByKidId: p.proposed_by ?? "",
-      name: p.name,
-      votes: voteRows.filter((v) => v.proposal_id === p.id).map((v) => v.kid_id),
-    })),
   };
 }
 
