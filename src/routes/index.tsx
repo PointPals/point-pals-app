@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useApp, type AwardBatch } from "@/lib/app-store";
+import { useHouseholdRole } from "@/lib/use-household-role";
 import { primeAudio, playChime, haptic } from "@/lib/feedback";
 import { KidBadge } from "@/components/KidBadge";
 import { AwardModal } from "@/components/AwardModal";
@@ -31,7 +32,8 @@ export const Route = createFileRoute("/")({
 // marble jar as the dominant visual. No chore/skill tiles live here; they're
 // exclusively inside the AwardModal. The old text feed moved to /memories.
 function HomePage() {
-  const { kids, awardPoints, undoBatch, streakByKid, hydrated } = useApp();
+  const { kids, household, awardPoints, undoBatch, streakByKid, hydrated } = useApp();
+  const { canAward, canEdit } = useHouseholdRole(household.id);
   const { entered } = Route.useSearch();
   const navigate = useNavigate();
   const [activeKidId, setActiveKidId] = useState<string | null>(null);
@@ -55,6 +57,7 @@ function HomePage() {
   const activeKid = kids.find((k) => k.id === activeKidId) ?? null;
 
   const openKid = (id: string) => {
+    if (!canAward) return;
     primeAudio(); // unlock audio inside this first gesture (iOS/Safari)
     haptic("light");
     setActiveKidId(id);
@@ -104,16 +107,18 @@ function HomePage() {
               onClick={() => openKid(kid.id)}
             />
           ))}
-          <Link
-            to="/library"
-            className="w-20 h-20 rounded-full border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-2xl self-start hover:border-foreground hover:text-foreground transition shrink-0"
-            aria-label="Manage family"
-          >
-            +
-          </Link>
+          {canEdit && (
+            <Link
+              to="/library"
+              className="w-20 h-20 rounded-full border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-2xl self-start hover:border-foreground hover:text-foreground transition shrink-0"
+              aria-label="Manage family"
+            >
+              +
+            </Link>
+          )}
         </div>
         <p className="text-center sm:text-left text-xs text-muted-foreground mt-1">
-          Tap a kid to give points.
+          {canAward ? "Tap a kid to give points." : "View only — an admin or parent can give you awarding rights."}
         </p>
       </section>
 
