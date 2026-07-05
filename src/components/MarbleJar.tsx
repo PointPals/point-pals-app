@@ -370,12 +370,68 @@ export function MarbleJar({
   }, [full, onFull]);
 
   return (
-    <div className={className}>
-      <canvas
-        ref={canvasRef}
-        className={full ? "animate-jar-glow rounded-3xl" : "rounded-3xl"}
+    <div className={"relative " + (className ?? "")}>
+      {/* Soft aurora halo behind the jar */}
+      <div
         aria-hidden
+        className="absolute inset-0 -z-10 rounded-[40%]"
+        style={{
+          background:
+            "radial-gradient(60% 55% at 50% 55%, rgba(251,207,232,0.75), transparent 70%)," +
+            "radial-gradient(45% 40% at 50% 45%, rgba(191,219,254,0.55), transparent 70%)," +
+            "radial-gradient(35% 30% at 60% 30%, rgba(253,230,138,0.6), transparent 70%)",
+          filter: "blur(6px)",
+          animation: "pp-jar-halo 6s ease-in-out infinite",
+        }}
       />
+      <div
+        className="relative"
+        style={{ animation: "pp-jar-float 5s ease-in-out infinite" }}
+      >
+        <canvas
+          ref={canvasRef}
+          className={full ? "animate-jar-glow rounded-3xl" : "rounded-3xl"}
+          aria-hidden
+        />
+        {/* Diagonal shine sweep across the glass */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
+          style={{ mixBlendMode: "screen" }}
+        >
+          <div
+            className="absolute -inset-y-8 -left-1/2 w-1/3"
+            style={{
+              background:
+                "linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+              filter: "blur(8px)",
+              animation: "pp-jar-shine 4.5s ease-in-out infinite",
+            }}
+          />
+        </div>
+        {/* Twinkling sparkles around the rim */}
+        {[
+          { top: "6%",  left: "12%", d: "0s",   s: 10 },
+          { top: "10%", left: "78%", d: "-1.2s", s: 8 },
+          { top: "22%", left: "92%", d: "-2s",   s: 6 },
+          { top: "72%", left: "4%",  d: "-0.6s", s: 7 },
+          { top: "88%", left: "88%", d: "-1.8s", s: 9 },
+        ].map((s, i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="absolute rounded-full bg-white"
+            style={{
+              top: s.top,
+              left: s.left,
+              width: s.s,
+              height: s.s,
+              boxShadow: "0 0 12px 3px rgba(255,255,255,0.85)",
+              animation: `pp-sparkle 2.4s ease-in-out ${s.d} infinite`,
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
