@@ -64,6 +64,7 @@ function AboutPage() {
         </p>
       </header>
 
+      <h2 className="sr-only">The research behind PointPals</h2>
       <Accordion type="multiple" className="space-y-1">
         <SectionAccordion
           id="crisis"
