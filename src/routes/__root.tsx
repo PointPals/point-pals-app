@@ -100,6 +100,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/app-icon.png" },
+      // iOS launch screen fallback. Without per-device PNGs iOS shows the
+      // icon centered on the manifest background_color — good enough until
+      // dedicated splash art is generated.
+      { rel: "apple-touch-startup-image", href: "/app-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
