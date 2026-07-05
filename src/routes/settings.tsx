@@ -234,6 +234,9 @@ function SettingsPage() {
         <a href="/refunds" className="hover:text-foreground">
           Refunds
         </a>
+        <a href="/contact" className="hover:text-foreground">
+          Contact
+        </a>
       </div>
     </div>
   );

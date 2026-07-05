@@ -225,9 +225,9 @@ function WelcomePage() {
           <Link to="/refunds" className="hover:text-foreground">
             Refunds
           </Link>
-          <a href="mailto:support@pointpals.app" className="hover:text-foreground">
-            support@pointpals.app
-          </a>
+          <Link to="/contact" className="hover:text-foreground">
+            Contact
+          </Link>
         </div>
         <p className="text-xs text-muted-foreground">
           © 2025 PointPals · Proudly made in New Zealand 🇳🇿
