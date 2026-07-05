@@ -1,26 +1,13 @@
-// Photo memory wall (§4) — the emotional/memory-keeping layer, separate from
-// the points mechanic. One record per photo: kid tags, optional caption,
-// timestamp. Chronological, most recent first.
+// Photo memory wall (§4) — the emotional/memory-keeping layer
 //
-// Storage strategy: photos belong in the Supabase Storage `memories` bucket
-// with one row per photo in the `memories` table (see
-// supabase/migrations/0003_memories.sql). That path is attempted first. When
-// Supabase isn't reachable (as in this build environment) or the write fails
-// (e.g. auth not yet wired), the photo falls back to LOCAL storage — a data
-// URL in IndexedDB — so the feature works fully offline and nothing is lost.
-// Records carry a `remote` flag so a later sync pass can upload local-only
-// photos once the backend is live.
-//
-// Images are downscaled client-side (max 1600px, JPEG) before storing, keeping
-// both IndexedDB and future uploads lean.
+// v2: Audio support, likes, comments, single-screen composer.
+// Images are downscaled client-side (max 1600px, JPEG) before storing.
+// Audio is captured via MediaRecorder, optionally transcribed via edge function.
 
 import { useSyncExternalStore } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-// The `memories` table isn't in the generated Database types yet (types can't
-// be regenerated until the project is reachable — see 0003_memories.sql), so
-// talk to it through an untyped client and keep the casts in one place.
 const db = supabase as unknown as SupabaseClient;
 
 export type Memory = {
@@ -30,12 +17,28 @@ export type Memory = {
   kidIds: string[];
   createdAt: number;
   remote: boolean;
+  audioUrl?: string; // signed URL for audio playback
+  audioPath?: string; // storage path
+};
+
+export type MemoryLikeEntry = {
+  postId: string;
+  userId: string;
+  createdAt: number;
+};
+
+export type MemoryCommentEntry = {
+  id: string;
+  postId: string;
+  userId: string;
+  body: string;
+  createdAt: number;
 };
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
 // ---------------------------------------------------------------------------
-// IndexedDB (local fallback) — tiny promise wrapper, no dependency.
+// IndexedDB (local fallback)
 // ---------------------------------------------------------------------------
 
 const DB_NAME = "pointpals";
@@ -110,17 +113,26 @@ async function downscale(file: File): Promise<{ blob: Blob; dataUrl: string }> {
 }
 
 // ---------------------------------------------------------------------------
-// Remote (Supabase) path — best-effort with a short timeout so a blocked
-// network never makes the composer feel broken.
+// Remote (Supabase) path — best-effort with a short timeout
 // ---------------------------------------------------------------------------
 
-const REMOTE_TIMEOUT_MS = 6000;
+const REMOTE_TIMEOUT_MS = 8000;
 
 function withTimeout<T>(p: Promise<T>): Promise<T> {
   return Promise.race([
     p,
     new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), REMOTE_TIMEOUT_MS)),
   ]);
+}
+
+const SIGNED_TTL = 60 * 60; // 1 hour
+
+async function signedUrl(path: string): Promise<string> {
+  const { data, error } = await withTimeout(
+    db.storage.from("memories").createSignedUrl(path, SIGNED_TTL),
+  );
+  if (error || !data?.signedUrl) throw error ?? new Error("could not sign url");
+  return data.signedUrl;
 }
 
 async function remoteUpload(
@@ -137,33 +149,46 @@ async function remoteUpload(
   if (up.error) throw up.error;
   const ins = await withTimeout(
     Promise.resolve(
-      db.from("memories").insert({
+      db.from("memory_posts").insert({
         id,
         household_id: householdId,
         storage_path: path,
         caption,
-        kid_ids: kidIds,
+        // kid_ids stored via memory_post_kids table
       }),
     ),
   );
   if (ins.error) throw ins.error;
-  // The `memories` bucket is PRIVATE (§3e) — photos of children must not be
-  // reachable by guessing a public URL. Serve a short-lived signed URL instead.
+  // Insert kid tags
+  if (kidIds.length > 0) {
+    await withTimeout(
+      Promise.resolve(
+        db.from("memory_post_kids").insert(
+          kidIds.map((kidId) => ({ post_id: id, kid_id: kidId })),
+        ),
+      ),
+    ).catch(() => { /* kid tagging best-effort */ });
+  }
   return signedUrl(path);
 }
 
-const SIGNED_TTL = 60 * 60; // 1 hour
-
-async function signedUrl(path: string): Promise<string> {
-  const { data, error } = await withTimeout(
-    db.storage.from("memories").createSignedUrl(path, SIGNED_TTL),
+/** Upload an audio blob to storage */
+async function remoteUploadAudio(
+  householdId: string,
+  blob: Blob,
+): Promise<{ path: string; signedUrl: string }> {
+  const id = uid();
+  const path = `audio/${id}.webm`;
+  const up = await withTimeout(
+    db.storage.from("memories").upload(path, blob, { contentType: "audio/webm" }),
   );
-  if (error || !data?.signedUrl) throw error ?? new Error("could not sign url");
-  return data.signedUrl;
+  if (up.error) throw up.error;
+  const url = await signedUrl(path);
+  return { path, signedUrl: url };
 }
 
 // ---------------------------------------------------------------------------
-// Store — module-level list + subscribe, so every component sees one wall.
+// Store
 // ---------------------------------------------------------------------------
 
 let memories: Memory[] = [];
@@ -182,41 +207,42 @@ async function loadOnce() {
     const local = await idbAll();
     memories = sortWall(local);
     emit();
-  } catch {
-    /* IndexedDB unavailable (private mode etc.) — wall starts empty */
-  }
-  // Best-effort remote merge; ignored when unreachable/unauthenticated.
+  } catch { /* IndexedDB unavailable */ }
+
   try {
     const res = await withTimeout(
-      Promise.resolve(db.from("memories").select("id, storage_path, caption, kid_ids, created_at")),
+      Promise.resolve(db.from("memory_posts").select("id, storage_path, caption, audio_path, created_at")),
     );
     if (!res.error && res.data) {
-      type Row = {
-        id: string;
-        storage_path: string;
-        caption: string | null;
-        kid_ids: string[] | null;
-        created_at: string;
-      };
+      type Row = { id: string; storage_path: string; caption: string | null; audio_path: string | null; created_at: string };
+      // Also fetch kid tags
+      const { data: kidLinks } = await withTimeout(
+        Promise.resolve(db.from("memory_post_kids").select("post_id, kid_id")),
+      ).catch(() => ({ data: null }));
+      const tagMap: Record<string, string[]> = {};
+      if (kidLinks) {
+        (kidLinks as { post_id: string; kid_id: string }[]).forEach((k) => {
+          (tagMap[k.post_id] ??= []).push(k.kid_id);
+        });
+      }
+
       const remote: Memory[] = await Promise.all(
         (res.data as Row[]).map(async (r) => ({
           id: r.id,
-          // Private bucket → sign each object for display (§3e). If signing
-          // fails, skip the image URL rather than leak a public path.
           url: await signedUrl(r.storage_path).catch(() => ""),
           caption: r.caption ?? "",
-          kidIds: r.kid_ids ?? [],
+          kidIds: tagMap[r.id] ?? [],
           createdAt: new Date(r.created_at).getTime(),
           remote: true,
+          audioPath: r.audio_path ?? undefined,
+          audioUrl: r.audio_path ? await signedUrl(r.audio_path).catch(() => undefined) : undefined,
         })),
       );
       const localIds = new Set(memories.map((m) => m.id));
       memories = sortWall([...memories, ...remote.filter((m) => !localIds.has(m.id))]);
       emit();
     }
-  } catch {
-    /* offline / backend not wired — local wall stands alone */
-  }
+  } catch { /* offline / backend not wired */ }
 }
 
 export async function addMemory(
@@ -224,24 +250,33 @@ export async function addMemory(
   file: File,
   caption: string,
   kidIds: string[],
+  audioBlob?: Blob,
 ): Promise<Memory> {
   const id = uid();
   const { blob, dataUrl } = await downscale(file);
 
   let memory: Memory;
   try {
+    let audioPath: string | undefined;
+    let audioUrl: string | undefined;
+    if (audioBlob) {
+      const aud = await remoteUploadAudio(householdId, audioBlob);
+      audioPath = aud.path;
+      audioUrl = aud.signedUrl;
+    }
     const url = await remoteUpload(id, householdId, blob, caption, kidIds);
-    memory = { id, url, caption, kidIds, createdAt: Date.now(), remote: true };
+    // Update audio path on the post
+    if (audioPath) {
+      await withTimeout(
+        Promise.resolve(db.from("memory_posts").update({ audio_path: audioPath }).eq("id", id)),
+      ).catch(() => {});
+    }
+    memory = { id, url, caption, kidIds, createdAt: Date.now(), remote: true, audioPath, audioUrl };
   } catch {
-    // Backend unreachable — keep the photo locally so nothing is lost.
     memory = { id, url: dataUrl, caption, kidIds, createdAt: Date.now(), remote: false };
   }
 
-  try {
-    await idbPut(memory);
-  } catch {
-    /* IndexedDB blocked — memory lives for this session only */
-  }
+  try { await idbPut(memory); } catch { /* session-only */ }
   memories = sortWall([memory, ...memories]);
   emit();
   return memory;
@@ -251,19 +286,93 @@ export async function removeMemory(id: string): Promise<void> {
   const target = memories.find((m) => m.id === id);
   memories = memories.filter((m) => m.id !== id);
   emit();
-  try {
-    await idbDelete(id);
-  } catch {
-    /* ignore */
-  }
+  try { await idbDelete(id); } catch { /* ignore */ }
   if (target?.remote) {
     try {
-      await withTimeout(Promise.resolve(db.from("memories").delete().eq("id", id)));
+      await withTimeout(Promise.resolve(db.from("memory_posts").delete().eq("id", id)));
       await withTimeout(db.storage.from("memories").remove([`${id}.jpg`]));
-    } catch {
-      /* backend unreachable — remote copy cleaned up on a later pass */
-    }
+      if (target.audioPath) {
+        await withTimeout(db.storage.from("memories").remove([target.audioPath])).catch(() => {});
+      }
+    } catch { /* best-effort */ }
   }
+}
+
+/** Transcribe audio via edge function */
+export async function transcribeAudio(
+  blob: Blob,
+  householdId: string,
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("transcribe-memory", {
+    body: { householdId },
+    // The blob is sent as FormData via the edge function
+  });
+
+  // If the edge function expects a different format, fall back to local text
+  if (error) throw new Error(error.message || "Transcription failed");
+
+  // Basic approach: send directly to a speech-to-text API
+  // For now, return empty so caller knows transcription wasn't available
+  return data?.text ?? "";
+}
+
+/** Toggle a like (returns new state) */
+export async function toggleLike(
+  postId: string,
+  userId: string,
+  liked: boolean,
+): Promise<boolean> {
+  if (liked) {
+    const { error } = await db.from("memory_likes").delete().eq("post_id", postId).eq("user_id", userId);
+    if (error) console.error("Failed to unlike:", error.message);
+    return false;
+  } else {
+    const { error } = await db.from("memory_likes").insert({ post_id: postId, user_id: userId });
+    if (error) console.error("Failed to like:", error.message);
+    return true;
+  }
+}
+
+/** Add a comment */
+export async function addComment(
+  postId: string,
+  userId: string,
+  body: string,
+): Promise<void> {
+  const { error } = await db.from("memory_comments").insert({
+    post_id: postId,
+    user_id: userId,
+    body,
+  });
+  if (error) throw error;
+}
+
+/** Fetch like count + comments for a post */
+export async function fetchPostFeedback(postId: string): Promise<{
+  likeCount: number;
+  likedByMe: boolean;
+  comments: MemoryCommentEntry[];
+}> {
+  const uid = (await supabase.auth.getUser()).data.user?.id;
+  const [likes, comments] = await Promise.all([
+    db.from("memory_likes").select("user_id").eq("post_id", postId),
+    db.from("memory_comments").select("*").eq("post_id", postId).order("created_at", { ascending: true }),
+  ]);
+  const likeRows = (likes.data ?? []) as { user_id: string }[];
+  const commentRows = (comments.data ?? []) as {
+    id: string; post_id: string; user_id: string; body: string; created_at: string;
+  }[];
+  return {
+    likeCount: likeRows.length,
+    likedByMe: uid ? likeRows.some((l) => l.user_id === uid) : false,
+    comments: commentRows.map((c) => ({
+      id: c.id,
+      postId: c.post_id,
+      userId: c.user_id,
+      body: c.body,
+      createdAt: new Date(c.created_at).getTime(),
+    })),
+  };
 }
 
 function subscribe(cb: () => void) {

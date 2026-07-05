@@ -27,7 +27,8 @@ export type Kid = {
   id: string;
   name: string;
   color: PastelKey;
-  points: number; // personal
+  currentPoints: number;   // resets to 0 when a reward is claimed
+  allTimePoints: number;   // never resets, cumulative forever
   companionId?: string; // chosen mascot (matches COMPANIONS.id)
 };
 
@@ -68,6 +69,7 @@ export type PointEvent = {
   itemIcon: string;
   points: number;
   at: number;
+  batchId?: string | null;
 };
 
 export type RewardProposal = {
@@ -77,6 +79,28 @@ export type RewardProposal = {
   votes: string[]; // kid ids
 };
 
+export type RewardHistory = {
+  id: string;
+  rewardName: string;
+  targetPoints: number;
+  achievedAt: number;
+  contributingKidIds: string[];
+};
+
+export type MemoryLike = {
+  postId: string;
+  userId: string;
+  createdAt: number;
+};
+
+export type MemoryComment = {
+  id: string;
+  postId: string;
+  userId: string;
+  body: string;
+  createdAt: number;
+};
+
 // -------- Seed data --------
 
 export const SUPABASE_ASSET_BASE =
@@ -84,9 +108,9 @@ export const SUPABASE_ASSET_BASE =
 const A = (file: string) => `${SUPABASE_ASSET_BASE}/${file}`;
 
 export const INITIAL_KIDS: Kid[] = [
-  { id: "k1", name: "Nova", color: "blush", points: 34, companionId: "sunny" },
-  { id: "k2", name: "Milo", color: "sky", points: 22, companionId: "pip" },
-  { id: "k3", name: "Wren", color: "sage", points: 18, companionId: "fern" },
+  { id: "k1", name: "Nova", color: "blush", currentPoints: 34, allTimePoints: 145, companionId: "sunny" },
+  { id: "k2", name: "Milo", color: "sky", currentPoints: 22, allTimePoints: 98, companionId: "pip" },
+  { id: "k3", name: "Wren", color: "sage", currentPoints: 18, allTimePoints: 72, companionId: "fern" },
 ];
 
 export const INITIAL_CHORES: Chore[] = [

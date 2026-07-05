@@ -270,6 +270,8 @@ export type Database = {
           avatar_key: string | null
           color: string
           created_at: string
+          current_points: number
+          all_time_points: number
           household_id: string
           id: string
           name: string
@@ -279,6 +281,8 @@ export type Database = {
           avatar_key?: string | null
           color?: string
           created_at?: string
+          current_points?: number
+          all_time_points?: number
           household_id: string
           id?: string
           name: string
@@ -288,6 +292,8 @@ export type Database = {
           avatar_key?: string | null
           color?: string
           created_at?: string
+          current_points?: number
+          all_time_points?: number
           household_id?: string
           id?: string
           name?: string
@@ -376,6 +382,7 @@ export type Database = {
           household_id: string
           id: string
           storage_path: string
+          audio_path: string | null
         }
         Insert: {
           caption?: string | null
@@ -384,6 +391,7 @@ export type Database = {
           household_id: string
           id?: string
           storage_path: string
+          audio_path?: string | null
         }
         Update: {
           caption?: string | null
@@ -392,6 +400,7 @@ export type Database = {
           household_id?: string
           id?: string
           storage_path?: string
+          audio_path?: string | null
         }
         Relationships: [
           {
@@ -402,6 +411,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      memory_likes: {
+        Row: {
+          post_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          post_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          post_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      memory_comments: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          body?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      reward_history: {
+        Row: {
+          id: string
+          household_id: string
+          reward_name: string
+          target_points: number
+          achieved_at: string
+          contributing_kid_ids: string[]
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          reward_name: string
+          target_points: number
+          achieved_at?: string
+          contributing_kid_ids?: string[]
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          reward_name?: string
+          target_points?: number
+          achieved_at?: string
+          contributing_kid_ids?: string[]
+        }
+        Relationships: []
+      }
+      household_settings: {
+        Row: {
+          household_id: string
+          ext_family_can_award_needs_work: boolean
+          ext_family_can_post_memories: boolean
+          updated_at: string
+        }
+        Insert: {
+          household_id: string
+          ext_family_can_award_needs_work?: boolean
+          ext_family_can_post_memories?: boolean
+          updated_at?: string
+        }
+        Update: {
+          household_id?: string
+          ext_family_can_award_needs_work?: boolean
+          ext_family_can_post_memories?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       point_events: {
         Row: {

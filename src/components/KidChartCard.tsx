@@ -61,7 +61,7 @@ export function KidChartCard({ kid }: { kid: Kid }) {
       </div>
       <div className="font-display text-xl font-bold leading-tight">{kid.name}</div>
       <div className="text-xs text-muted-foreground mb-3">
-        {kid.points} points · {active.length} weekly {active.length === 1 ? "chore" : "chores"}
+        {kid.currentPoints} current · {kid.allTimePoints} all-time · {active.length} weekly {active.length === 1 ? "chore" : "chores"}
       </div>
 
       <button

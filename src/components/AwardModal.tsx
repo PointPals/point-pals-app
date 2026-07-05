@@ -21,7 +21,7 @@ export function AwardModal({
   const [pointsFlash, setPointsFlash] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const prevPoints = useRef(kid.points);
+  const prevPoints = useRef(kid.currentPoints);
   const closeRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -61,12 +61,12 @@ export function AwardModal({
 
   // Bounce the header point count when it changes.
   useEffect(() => {
-    if (kid.points === prevPoints.current) return;
-    prevPoints.current = kid.points;
+    if (kid.currentPoints === prevPoints.current) return;
+    prevPoints.current = kid.currentPoints;
     setPointsFlash(true);
     const t = setTimeout(() => setPointsFlash(false), 600);
     return () => clearTimeout(t);
-  }, [kid.points]);
+  }, [kid.currentPoints]);
 
   // Escape closes; lock body scroll while open.
   useEffect(() => {
@@ -132,7 +132,7 @@ export function AwardModal({
               pointsFlash ? "animate-badge-bounce bg-sage/70" : "bg-card/70"
             }`}
           >
-            {kid.points}
+            {kid.currentPoints}
           </div>
           <button
             ref={closeRef}

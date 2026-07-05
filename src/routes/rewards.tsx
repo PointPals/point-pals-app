@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useApp } from "@/lib/app-store";
+import { useCorrection } from "@/lib/correction-store";
 import { KidBadge } from "@/components/KidBadge";
-import { Gift, Vote, PartyPopper, Pencil, Check, X } from "lucide-react";
+import { FamilyJarCard } from "@/components/FamilyJarCard";
+import { playFanfare, haptic, playChime } from "@/lib/feedback";
+import { Gift, Target, History, Trophy, Check, PartyPopper, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/rewards")({
   component: RewardsPage,
@@ -11,32 +14,60 @@ export const Route = createFileRoute("/rewards")({
       { title: "Rewards — PointPals" },
       {
         name: "description",
-        content: "Propose and vote on family rewards once the shared points pool hits the target.",
+        content: "Set a family reward and track progress toward filling the jar.",
       },
     ],
   }),
 });
 
 function RewardsPage() {
-  const { household, kids, proposals, addProposal, voteProposal, selectReward, setRewardTarget } =
-    useApp();
-  const [proposingKid, setProposingKid] = useState<string>(kids[0]?.id ?? "");
-  const [proposalText, setProposalText] = useState("");
-  const [editingTarget, setEditingTarget] = useState(false);
-  const [targetDraft, setTargetDraft] = useState(household.rewardTarget);
+  const { household, kids, history, setRewardTarget } = useApp();
+  const { activeReward, setActiveReward, claimReward, rewardHistory } = useCorrection();
+  const [rewardName, setRewardName] = useState(activeReward?.name ?? "");
+  const [rewardTarget, setRewardTargetLocal] = useState(activeReward?.targetPoints ?? household.rewardTarget);
+  const [editing, setEditing] = useState(!activeReward);
+  const [celebrating, setCelebrating] = useState(false);
+
   const reached = household.sharedPool >= household.rewardTarget;
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
 
-  const openTargetEdit = () => {
-    setTargetDraft(household.rewardTarget);
-    setEditingTarget(true);
-  };
-  const saveTarget = () => {
-    setRewardTarget(Math.max(1, Math.round(targetDraft)));
-    setEditingTarget(false);
-  };
+  const saveReward = useCallback(() => {
+    if (!rewardName.trim()) return;
+    setActiveReward(rewardName.trim(), Math.max(10, rewardTarget));
+    setRewardTarget(Math.max(10, rewardTarget));
+    setEditing(false);
+  }, [rewardName, rewardTarget, setActiveReward, setRewardTarget]);
 
-  const winner = [...proposals].sort((a, b) => b.votes.length - a.votes.length)[0];
+  const handleClaimReward = useCallback(() => {
+    const name = activeReward?.name ?? "Family reward";
+    claimReward(name, household.rewardTarget);
+    playFanfare();
+    haptic("success");
+    setCelebrating(true);
+    setTimeout(() => setCelebrating(false), 3000);
+  }, [activeReward, household.rewardTarget, claimReward]);
+
+  const avgDays = useCallback(() => {
+    if (rewardHistory.length < 2) return null;
+    const sorted = [...rewardHistory].sort((a, b) => b.achievedAt - a.achievedAt);
+    let total = 0;
+    for (let i = 0; i < sorted.length - 1; i++) {
+      total += (sorted[i].achievedAt - sorted[i + 1].achievedAt) / 86400000;
+    }
+    return Math.round(total / (sorted.length - 1));
+  }, [rewardHistory]);
+
+  const mostRepeated = useCallback(() => {
+    if (rewardHistory.length < 3) return null;
+    const counts: Record<string, number> = {};
+    rewardHistory.forEach((r) => {
+      counts[r.rewardName] = (counts[r.rewardName] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  }, [rewardHistory]);
+
+  const days = avgDays();
+  const repeated = mostRepeated();
 
   return (
     <div className="space-y-8">
@@ -44,204 +75,152 @@ function RewardsPage() {
         <h1 className="font-display text-3xl font-bold flex items-center gap-2">
           <Gift className="w-7 h-7" /> Family rewards
         </h1>
-        <p className="text-sm text-muted-foreground">Everyone contributes; everyone gets a say.</p>
+        <p className="text-sm text-muted-foreground">Set a reward, fill the jar, celebrate together.</p>
       </div>
 
-      {/* Progress */}
-      <section
-        className="rounded-3xl p-6"
-        style={{
-          background:
-            "linear-gradient(135deg, color-mix(in oklab, var(--pastel-butter) 55%, white), color-mix(in oklab, var(--pastel-blush) 45%, white))",
-        }}
-      >
-        <div className="flex items-baseline justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-foreground/70">Shared pool</div>
-            <div className="font-display text-5xl font-extrabold leading-none mt-1">
-              {household.sharedPool}
-              <span className="text-2xl font-normal text-foreground/60">
-                {" "}
-                / {household.rewardTarget}
-              </span>
+      {/* The jar */}
+      <FamilyJarCard size={300} />
+
+      {/* Active reward / set reward */}
+      <section className="card-soft p-5 space-y-4">
+        <h2 className="font-display text-xl font-bold flex items-center gap-2">
+          <Target className="w-5 h-5" />
+          {editing ? "Set a reward" : activeReward ? "Current reward" : "No reward yet"}
+        </h2>
+
+        {editing ? (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                What are you working toward?
+              </label>
+              <input
+                value={rewardName}
+                onChange={(e) => setRewardName(e.target.value)}
+                placeholder="e.g. Pizza night, trampoline park, movie night…"
+                autoFocus
+                className="w-full mt-1 rounded-xl border border-input bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Target points
+              </label>
+              <div className="flex items-center gap-3 mt-1">
+                <input
+                  type="range"
+                  min={30}
+                  max={400}
+                  step={10}
+                  value={rewardTarget}
+                  onChange={(e) => setRewardTargetLocal(Number(e.target.value))}
+                  className="flex-1 accent-foreground"
+                />
+                <span className="font-display text-lg font-bold w-12 text-right">{rewardTarget}</span>
+              </div>
+            </div>
+            <button
+              onClick={saveReward}
+              disabled={!rewardName.trim()}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+            >
+              <Check className="w-4 h-4" /> Set reward
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="card-soft p-4 bg-muted/30">
+              <div className="text-sm text-muted-foreground">Working toward</div>
+              <div className="font-display text-2xl font-bold mt-1">{activeReward!.name}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {household.sharedPool} / {activeReward!.targetPoints} points
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEditing(true)}
+                className="flex-1 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold hover:bg-muted transition"
+              >
+                Change reward
+              </button>
+              {reached && (
+                <button
+                  onClick={handleClaimReward}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition animate-pulse"
+                >
+                  <PartyPopper className="w-4 h-4" /> Claim reward!
+                </button>
+              )}
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-xs uppercase tracking-wider text-foreground/70 block">
-              Target
-            </span>
-            {editingTarget ? (
-              <div className="mt-1 flex items-center gap-1 justify-end">
-                <input
-                  type="number"
-                  min={1}
-                  autoFocus
-                  value={targetDraft}
-                  onChange={(e) => setTargetDraft(Number(e.target.value))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") saveTarget();
-                    if (e.key === "Escape") setEditingTarget(false);
-                  }}
-                  className="w-20 bg-transparent border-b border-foreground/40 py-1 font-display font-bold text-2xl text-right focus:outline-none focus:border-foreground"
-                />
-                <button
-                  onClick={saveTarget}
-                  aria-label="Save target"
-                  className="tap p-1.5 rounded-full hover:bg-white/50"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setEditingTarget(false)}
-                  aria-label="Cancel"
-                  className="tap p-1.5 rounded-full hover:bg-white/50"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={openTargetEdit}
-                aria-label="Edit reward target"
-                className="tap mt-1 inline-flex items-center gap-1.5 font-display font-bold text-2xl hover:opacity-80"
-              >
-                {household.rewardTarget}
-                <Pencil className="w-3.5 h-3.5 text-foreground/50" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="mt-4 h-3 rounded-full bg-white/50 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-foreground transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        {reached && (
-          <div className="mt-4 flex items-center gap-2 text-sm font-semibold">
-            <PartyPopper className="w-5 h-5" />
-            Target reached — time to pick a reward together!
+        )}
+
+        {reached && !editing && (
+          <div className="rounded-xl bg-butter/30 p-4 text-sm">
+            <strong className="font-semibold">🎉 The jar is full!</strong>{" "}
+            Tap "Claim reward" to log it and start a new cycle.
           </div>
         )}
       </section>
 
-      {/* Propose */}
-      <section className="card-soft p-5">
-        <h2 className="font-display text-xl font-bold mb-3 flex items-center gap-2">
-          <Vote className="w-5 h-5" /> Propose a reward
+      {/* Reward history */}
+      <section className="space-y-3">
+        <h2 className="font-display text-xl font-bold flex items-center gap-2">
+          <History className="w-5 h-5" /> Past rewards
         </h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!proposalText.trim() || !proposingKid) return;
-            addProposal(proposingKid, proposalText.trim());
-            setProposalText("");
-          }}
-          className="flex flex-wrap items-end gap-3"
-        >
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
-              Proposed by
-            </label>
-            <div className="flex gap-2">
-              {kids.map((k) => (
-                <KidBadge
-                  key={k.id}
-                  kid={k}
-                  size="sm"
-                  selected={proposingKid === k.id}
-                  onClick={() => setProposingKid(k.id)}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 min-w-[220px]">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Reward idea
-            </label>
-            <input
-              value={proposalText}
-              onChange={(e) => setProposalText(e.target.value)}
-              placeholder="Movie night, ice cream trip, new Lego set…"
-              className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
-            />
-          </div>
-          <button className="rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold">
-            Propose
-          </button>
-        </form>
-        <p className="text-xs text-muted-foreground mt-3">
-          A parent gets the final say on the winning idea to keep asks in check.
-        </p>
-      </section>
 
-      {/* Vote */}
-      <section>
-        <h2 className="font-display text-xl font-bold mb-3">On the table</h2>
-        {proposals.length === 0 ? (
-          <div className="card-soft p-6 text-center text-muted-foreground">
-            No proposals yet. Add one above ✨
+        {rewardHistory.length >= 3 && (
+          <div className="card-soft p-4 text-sm text-muted-foreground">
+            {days !== null && (
+              <span className="font-semibold text-foreground">{days} days</span>
+            )}{" "}
+            average between rewards
+            {repeated && (
+              <>
+                {" · Most repeated: "}
+                <span className="font-semibold text-foreground">{repeated[0]}</span>
+                {" ("}
+                {repeated[1]}
+                {repeated[1] === 1 ? " time" : " times"}
+                {")"}
+              </>
+            )}
+          </div>
+        )}
+
+        {rewardHistory.length === 0 ? (
+          <div className="card-soft p-6 text-center text-muted-foreground text-sm">
+            <Trophy className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+            No rewards claimed yet. Fill the jar and claim your first one!
           </div>
         ) : (
-          <ul className="space-y-3">
-            {proposals.map((p) => {
-              const by = kids.find((k) => k.id === p.proposedByKidId);
-              const isWinner = reached && winner?.id === p.id;
-              return (
-                <li
-                  key={p.id}
-                  className={`card-soft p-4 flex items-center gap-4 transition ${
-                    isWinner ? "ring-2 ring-foreground" : ""
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-lg font-bold truncate">{p.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Proposed by {by?.name ?? "someone"}
-                    </div>
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                      {kids.map((k) => {
-                        const voted = p.votes.includes(k.id);
-                        return (
-                          <button
-                            key={k.id}
-                            onClick={() => voteProposal(k.id, p.id)}
-                            className={`text-xs px-2.5 py-1 rounded-full font-semibold transition ${
-                              voted
-                                ? "bg-foreground text-background"
-                                : "bg-muted text-muted-foreground hover:bg-secondary"
-                            }`}
-                          >
-                            {voted ? "★ " : ""}
-                            {k.name}
-                          </button>
-                        );
-                      })}
-                    </div>
+          <ul className="space-y-2">
+            {rewardHistory.map((r) => (
+              <li key={r.id} className="card-soft p-4 flex items-center justify-between">
+                <div>
+                  <div className="font-display text-lg font-bold">{r.rewardName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(r.achievedAt).toLocaleDateString()} · {r.targetPoints} points
                   </div>
-                  <div className="text-right">
-                    <div className="font-display text-3xl font-extrabold leading-none">
-                      {p.votes.length}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      votes
-                    </div>
-                  </div>
-                  {reached && (
-                    <button
-                      onClick={() => selectReward(p.id)}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                        isWinner
-                          ? "bg-foreground text-background"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      Pick
-                    </button>
-                  )}
-                </li>
-              );
-            })}
+                </div>
+                <div className="flex -space-x-1.5">
+                  {r.contributingKidIds.map((kidId) => {
+                    const kid = kids.find((k) => k.id === kidId);
+                    if (!kid) return null;
+                    return (
+                      <span
+                        key={kidId}
+                        className="h-7 w-7 rounded-full border-2 border-card flex items-center justify-center text-[10px] font-bold"
+                        style={{ backgroundColor: `var(--pastel-${kid.color})` }}
+                        title={kid.name}
+                      >
+                        {kid.name[0]}
+                      </span>
+                    );
+                  })}
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </section>

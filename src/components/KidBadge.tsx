@@ -20,16 +20,16 @@ export function KidBadge({
 }) {
   const dim = { sm: 44, md: 60, lg: 80 }[size];
   const [flash, setFlash] = useState<"up" | "down" | null>(null);
-  const prev = useRef(kid.points);
+  const prev = useRef(kid.currentPoints);
 
   useEffect(() => {
-    if (kid.points === prev.current) return;
-    const dir = kid.points > prev.current ? "up" : "down";
-    prev.current = kid.points;
+    if (kid.currentPoints === prev.current) return;
+    const dir = kid.currentPoints > prev.current ? "up" : "down";
+    prev.current = kid.currentPoints;
     setFlash(dir);
     const t = setTimeout(() => setFlash(null), 600);
     return () => clearTimeout(t);
-  }, [kid.points]);
+  }, [kid.currentPoints]);
 
   return (
     <button
@@ -71,7 +71,7 @@ export function KidBadge({
                 : ""
           }`}
         >
-          {kid.points}
+          {kid.currentPoints}
         </div>
       )}
     </button>

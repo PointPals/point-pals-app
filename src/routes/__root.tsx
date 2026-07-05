@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppProvider } from "../lib/app-store";
+import { CorrectionProvider } from "../lib/correction-store";
 import { AppShell } from "../components/AppShell";
 import { ClientBoot } from "../components/ClientBoot";
 
@@ -127,10 +128,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
+        <CorrectionProvider>
         <ClientBoot />
         <AppShell>
           <Outlet />
         </AppShell>
+        </CorrectionProvider>
       </AppProvider>
     </QueryClientProvider>
   );

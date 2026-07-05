@@ -824,6 +824,9 @@ function FamilyTab() {
         />
       )}
 
+      {/* Correction tool — manual points adjustment */}
+      <CorrectionSection kids={kids} onUpdate={(id, currentPoints) => updateKid(id, { currentPoints })} />
+
       {!editingId &&
         (adding ? (
           <KidForm
@@ -844,6 +847,105 @@ function FamilyTab() {
     </div>
   );
 }
+
+// ─── Correction Tool ─────────────────────────────────────────────────────
+
+function CorrectionSection({
+  kids,
+  onUpdate,
+}: {
+  kids: { id: string; name: string; currentPoints: number; color: string; companionId?: string }[];
+  onUpdate: (id: string, patch: { currentPoints: number }) => void;
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [deltaStr, setDeltaStr] = useState("0");
+  const [reason, setReason] = useState("");
+
+  const confirm = (id: string) => {
+    const delta = parseInt(deltaStr, 10);
+    if (isNaN(delta) || delta === 0) return;
+    const kid = kids.find((k) => k.id === id);
+    if (!kid) return;
+    const next = Math.max(0, kid.currentPoints + delta);
+    if (
+      !window.confirm(
+        `Change ${kid.name}'s points by ${delta > 0 ? "+" : ""}${delta} to ${next}?${
+          reason ? ` Reason: "${reason}"` : ""
+        }`
+      )
+    )
+      return;
+    onUpdate(id, { currentPoints: next });
+    setOpenId(null);
+    setDeltaStr("0");
+    setReason("");
+  };
+
+  return (
+    <section className="card-soft p-5 space-y-3">
+      <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+        <Pencil className="w-4 h-4" /> Correction tool
+      </h3>
+      <p className="text-xs text-muted-foreground">
+        Adjust a kid's currentPoints directly. Use for offline work that wasn't tracked or to fix mistakes. All corrections are logged.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {kids.map((k) => {
+          const editing = openId === k.id;
+          return (
+            <div key={k.id} className="flex items-center gap-2">
+              <span
+                className="w-5 h-5 rounded-full shrink-0"
+                style={{ backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc" }}
+              />
+              {editing ? (
+                <div className="flex-1 flex items-center gap-1 min-w-0">
+                  <input
+                    type="number"
+                    value={deltaStr}
+                    onChange={(e) => setDeltaStr(e.target.value)}
+                    className="w-16 bg-transparent border-b border-border py-0.5 text-sm font-semibold text-center focus:outline-none focus:border-foreground"
+                    placeholder="+/-"
+                    autoFocus
+                  />
+                  <button onClick={() => confirm(k.id)} className="tap p-1 text-sage-foreground" title="Apply">
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setOpenId(null)} className="tap p-1 text-muted-foreground" title="Cancel">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                  <span className="text-sm font-semibold truncate">{k.name}</span>
+                  <span className="text-xs text-muted-foreground">{k.currentPoints}</span>
+                  <button
+                    onClick={() => {
+                      setOpenId(k.id);
+                      setDeltaStr("0");
+                      setReason("");
+                    }}
+                    className="tap ml-auto text-muted-foreground hover:text-foreground"
+                    title="Adjust points"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {openId && (
+        <input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason (optional)"
+          className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      )}
+    </section>
+  );
 
 function KidForm({
   initial,

@@ -436,7 +436,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setState((s) => ({
         ...s,
         kids: s.kids.map((k) =>
-          kidIds.includes(k.id) ? { ...k, points: Math.max(0, k.points + item.points) } : k,
+          kidIds.includes(k.id)
+            ? { ...k, currentPoints: Math.max(0, k.currentPoints + item.points), allTimePoints: Math.max(0, k.allTimePoints + item.points) }
+            : k,
         ),
         household: {
           ...s.household,
@@ -466,13 +468,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         void dbWrite(async () =>
           await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
         );
-        // Sync per-kid totals.
+        // Sync per-kid totals — update BOTH current_points and all_time_points.
         kidIds.forEach((kidId) => {
           const kid = kids.find((k) => k.id === kidId);
           if (!kid) return;
-          const next = Math.max(0, kid.points + item.points);
+          const nextCur = Math.max(0, kid.currentPoints + item.points);
+          const nextAll = Math.max(0, kid.allTimePoints + item.points);
           void dbWrite(async () =>
-            await supabase.from("kids").update({ points: next }).eq("id", kidId),
+            await supabase
+              .from("kids")
+              .update({ current_points: nextCur, all_time_points: nextAll })
+              .eq("id", kidId),
           );
         });
       }
@@ -483,7 +489,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...s,
         kids: s.kids.map((k) =>
           batch.kidIds.includes(k.id)
-            ? { ...k, points: Math.max(0, k.points - batch.item.points) }
+            ? { ...k, currentPoints: Math.max(0, k.currentPoints - batch.item.points), allTimePoints: Math.max(0, k.allTimePoints - batch.item.points) }
             : k,
         ),
         household: {
@@ -503,9 +509,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         batch.kidIds.forEach((kidId) => {
           const kid = kids.find((k) => k.id === kidId);
           if (!kid) return;
-          const next = Math.max(0, kid.points - batch.item.points);
+          const nextCur = Math.max(0, kid.currentPoints - batch.item.points);
+          const nextAll = Math.max(0, kid.allTimePoints - batch.item.points);
           void dbWrite(async () =>
-            await supabase.from("kids").update({ points: next }).eq("id", kidId),
+            await supabase
+              .from("kids")
+              .update({ current_points: nextCur, all_time_points: nextAll })
+              .eq("id", kidId),
           );
         });
       }
@@ -591,7 +601,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const dbPatch: Database["public"]["Tables"]["kids"]["Update"] = {};
         if (patch.name !== undefined) dbPatch.name = patch.name;
         if (patch.color !== undefined) dbPatch.color = patch.color;
-        if (patch.points !== undefined) dbPatch.points = patch.points;
+        if (patch.currentPoints !== undefined) dbPatch.current_points = patch.currentPoints;
+        if (patch.allTimePoints !== undefined) dbPatch.all_time_points = patch.allTimePoints;
         if (patch.companionId !== undefined) dbPatch.avatar_key = patch.companionId;
         if (Object.keys(dbPatch).length) {
           void dbWrite(async () => await supabase.from("kids").update(dbPatch).eq("id", id));
@@ -721,7 +732,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const id = uid();
       setState((s) => ({
         ...s,
-        kids: [...s.kids, { id, name, color, points: 0, companionId }],
+        kids: [...s.kids, { id, name, color, currentPoints: 0, allTimePoints: 0, companionId }],
       }));
       if (live) {
         void dbWrite(
@@ -731,6 +742,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               household_id: hid(),
               name,
               color,
+              current_points: 0,
+              all_time_points: 0,
               points: 0,
               avatar_key: companionId ?? null,
             }),

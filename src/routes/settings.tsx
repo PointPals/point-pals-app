@@ -125,7 +125,7 @@ function SettingsPage() {
 
   // Leaderboard is parent-controlled and OFF by default (§4). Framed as a recap,
   // never a live competitive ranking.
-  const ranked = [...kids].sort((a, b) => b.points - a.points);
+  const ranked = [...kids].sort((a, b) => b.currentPoints - a.currentPoints);
 
   return (
     <div className="space-y-8 pb-8">
@@ -422,7 +422,7 @@ function SettingsPage() {
                     aria-hidden
                   />
                   <span className="flex-1 font-semibold text-sm">{k.name}</span>
-                  <span className="font-display font-bold">{k.points}</span>
+                  <span className="font-display font-bold">{k.currentPoints}</span>
                 </li>
               ))}
             </ol>
