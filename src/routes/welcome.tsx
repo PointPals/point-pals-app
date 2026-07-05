@@ -17,14 +17,14 @@ export const Route = createFileRoute("/welcome")({
       {
         name: "description",
         content:
-          "Turn chores and good behaviour into points your whole family fills a jar with — then celebrate the reward you chose together. Research-backed, kid-friendly, NZ-made.",
+          "Turn chores and good behaviour into shared family points, then celebrate the reward you chose together. Research-backed, NZ-made.",
       },
       { name: "theme-color", content: "#F3E1A0" },
       { property: "og:title", content: "PointPals — Family Chore & Behaviour Chart, NZ-Made" },
       {
         property: "og:description",
         content:
-          "Turn chores and good behaviour into points your whole family fills a jar with — then celebrate the reward you chose together. Research-backed, kid-friendly, NZ-made.",
+          "Turn chores and good behaviour into shared family points, then celebrate the reward you chose together. Research-backed, NZ-made.",
       },
       { property: "og:type", content: "website" },
       { property: "og:image", content: heroAsset.url },
