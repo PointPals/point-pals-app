@@ -1,68 +1,92 @@
-# PointPals — Remaining Work Plan
+# Full Migration to Supabase (Option A)
 
-Scope reality check before we start: the `Household` type in `src/lib/app-store.tsx` has no `id` field, and the store is 100% localStorage. Priorities 1 + 2 require refactoring the store's shape before auth can hydrate it — that's the biggest single change here. Everything else is smaller.
+Move PointPals from a localStorage-only prototype to a real, auth-bound, realtime, multi-device Supabase backend. Signed-out visitors still get the seeded demo so marketing works.
 
-I'll ship this in 5 sequential commits so each is reviewable and revertible.
+## What the user gets
 
----
+- Sign up → household is created → dashboard hydrates from Supabase (empty aside from what onboarding adds).
+- Sign in on another device → same jar, same kids, same points. Award a point on your phone → the marble drops on the tablet in ~1s.
+- "Join with code" from the /join page still works, and shared households show the same jar to everyone.
+- Signed-out visitors on `/welcome` still see the animated demo jar (seeded fake data).
 
-## Commit 1 — Emoji pool fix (Priority 3, quickest win)
+## Architecture
 
-- Move the three emoji arrays out of `src/routes/library.tsx` into `src/lib/mock-data.ts` as `EMOJI_POOL_CHORE`, `EMOJI_POOL_SKILL_POS`, `EMOJI_POOL_SKILL_NEG` (clean values).
-- Import them in `library.tsx`, delete the local copies.
+### 1. New `AppProvider` modes (`src/lib/app-store.tsx`)
 
-## Commit 2 — Store gains a real `Household.id` + Supabase hydration
+Two modes controlled by a `mode` state:
+- **`demo`** — signed-out. Uses current `INITIAL_*` seed in memory (no localStorage persist, no writes). All mutations still work locally so the marketing/preview jar animates.
+- **`live`** — signed-in with a household. Data comes from Supabase; mutations are optimistic + Supabase write-through; realtime keeps state fresh.
 
-- Add `id: string` (uuid or `"local"` sentinel) to `Household`. Default to `crypto.randomUUID()` for offline-first users; overwritten when a signed-in household is loaded.
-- Revert `src/routes/memories.tsx` back to `household.id`.
-- Fix `src/components/Paywall.tsx` to pass `household.id` instead of `"household_local"`.
-- Add `hydrateFromSupabase(householdId)` to `app-store.tsx`: loads household row + kids + chores + skills + recent point_events, replaces state.
+Boot sequence:
+1. On mount: `supabase.auth.getSession()`.
+2. No session → `mode = demo`, seed state, done.
+3. Session → fetch `household_members` for the user → pick first household → fetch household row + kids + chores + skills + last 200 point_events + proposals + votes → set `mode = live`.
+4. `onAuthStateChange`: SIGNED_IN reruns bootstrap; SIGNED_OUT resets to demo.
 
-## Commit 3 — Auth routes + guard (Priority 1)
+### 2. UUIDs everywhere
 
-New files:
-- `src/routes/sign-in.tsx` — email/password form, "Forgot password?" → `/reset-password`, "Sign up" → `/sign-up`.
-- `src/routes/sign-up.tsx` — name + email + password; on success calls `supabase.auth.signUp` → `insert into households` (trigger adds member) → `hydrateFromSupabase(newHouseholdId)` → navigate `/`.
-- `src/routes/reset-password.tsx` — dual-mode page: shows an email form OR, if the URL has a `type=recovery` hash, shows a new-password form calling `supabase.auth.updateUser`.
+- Drop the `k1/k2/k3/c1/…` string ids for live mode. All ids come from Supabase (`gen_random_uuid()`).
+- The `Kid`/`Chore`/`Skill`/`PointEvent` types already use `string`, so no type churn.
+- Demo mode keeps the seed ids (they never touch the DB).
 
-Guard: one `onAuthStateChange` subscriber in `ClientBoot`:
-- unauthenticated + not on `/welcome|/sign-in|/sign-up|/reset-password|/about|/privacy|/terms|/refunds` → redirect to `/welcome`.
-- authenticated, no household membership → `/welcome` (household creation lives there).
-- authenticated with household → hydrate then allow current route (redirect `/welcome|/sign-*` → `/`).
+### 3. Mutation write-through
 
-Update `src/routes/welcome.tsx` "Log in" / "Start free trial" CTAs to point at `/sign-in` and `/sign-up`.
+Each mutation:
+- In `demo`: local state change only (as today).
+- In `live`: optimistic local update → Supabase write → on error, revert + toast. IDs for new rows are generated client-side with `crypto.randomUUID()` so the local record and DB row share the same id (no reconcile step needed).
 
-## Commit 4 — Write-through mutations (Priority 2)
+Coverage: `awardPoints`, `undoBatch`, `addChore`, `addSkill`, `updateChore`, `updateSkill`, `updateKid`, `removeChore`, `removeSkill`, `addKid`, `removeKid`, `addProposal`, `voteProposal`, `selectReward`, `setRewardTarget`, `setHouseholdName`, `completeOnboarding`.
 
-In `app-store.tsx`, extend the mutators (`addKid`, `removeKid`, `addChore`, `removeChore`, `addSkill`, `removeSkill`, `awardBatch`, `undoAward`, `setHouseholdName`, `setRewardTarget`) with a fire-and-forget Supabase write when a household id looks like a UUID (skip for `"local"` sentinel). Local state updates first — writes are non-blocking.
+`awardPoints` writes N rows to `point_events` (one per kid) with a shared `batch_id`, plus updates `households.shared_pool` and each kid's `points`. `undoBatch` deletes by `batch_id` and reverses the deltas.
 
-Push-up-on-first-sign-in: after `hydrateFromSupabase`, if the server-side kids/chores/skills tables are empty for that household AND local state has entries, bulk-insert them.
+### 4. Realtime subscription
 
-## Commit 5 — Responsive desktop sidebar (Priority 5)
+In `live` mode, subscribe to three channels scoped by `household_id`:
+- `point_events` INSERT/DELETE → reapply pool + kid deltas + push into `history`.
+- `kids` INSERT/UPDATE/DELETE → merge into `kids` array.
+- `households` UPDATE → merge into `household` (mostly `shared_pool`, `reward_target`, `name`).
 
-Modify `src/components/AppShell.tsx`:
-- Wrap in `SidebarProvider`, add a `Sidebar` (logo top, Home / Library / Memories / Rewards nav, settings gear bottom) shown from `md:` up.
-- Keep the existing floating pill nav but hide it at `md:` (`md:hidden`).
-- Content stays `max-w-4xl mx-auto px-4`.
+De-dup with local echo: every optimistic mutation records the row id it just wrote; the realtime handler skips events for ids it already knows.
 
-## Not in scope (explicit)
+Cleanup in useEffect return; one subscription lifecycle per household.
 
-- Deploying edge functions and adding `VITE_STRIPE_PRICE_NZD` (Priority 4 infra) — I'll flag this in the final message. Env vars go through Lovable's secrets UI; edge functions redeploy from the publish flow.
-- No new migrations — Claude's schema is already applied.
-- No changes to the mascot art / logo work we just finished.
+### 5. "No household yet" flow
 
-## Technical notes
+After sign-in, if the user has zero rows in `household_members`:
+- Redirect to a new `/welcome-back` step (or reuse `/onboarding` step 0) that shows two choices:
+  - **Create a new family** — inserts a `households` row (trigger adds them as admin) → `/onboarding`.
+  - **Join with a code** — routes to `/join`.
 
-- App-store today is `useState`-based, no reducers. I'll keep that pattern — mutators just gain an extra `void supabaseWrite(...)` line.
-- `id` collision: localStorage IDs are short strings like `"abc123"`. When hydrating from Supabase, the server's UUIDs replace them. First-push writes discard local ids and adopt server-returned uuids.
-- `onAuthStateChange` is already handled by ClientBoot (per the existing file list); I'll extend it, not add a second listener.
-- Guard implemented in `ClientBoot` (a client-only component that already wraps content), NOT as a TanStack `_authenticated` layout — the whole app is effectively private, and doing it in-component avoids a big route-tree reshuffle mid-project.
+Handled inside `ClientBoot.tsx` guard: if authed + no household + not on `/welcome-back`|`/join`|`/onboarding` → redirect to `/welcome-back`.
 
-## After merge
+### 6. Signed-out demo preservation
 
-You (the user) will need to:
-1. Add `VITE_STRIPE_PRICE_NZD` in Lovable env with your Stripe Price ID.
-2. Click **Publish → Update** so the frontend + edge functions redeploy.
-3. Test sign-up on the live URL (Supabase email confirmation may need to be disabled for smoother trial signup — I can flip that if you want).
+- `/welcome`, `/about`, `/privacy`, `/terms`, `/refunds`, `/contact`, `/join` stay public.
+- `AppProvider` renders demo state for these — the walking mascots + jar animation on `/welcome` keep working with no auth.
+- All authed routes (`/`, `/library`, `/memories`, `/rewards`, `/settings`, `/onboarding`) require session (already enforced by `ClientBoot`).
 
-Confirm and I'll start with Commit 1.
+## New/changed files
+
+| File | Change |
+|---|---|
+| `src/lib/app-store.tsx` | Rewrite: add `mode`, Supabase bootstrap, per-mutation write-through, realtime subscribe. |
+| `src/lib/supabase-sync.ts` (new) | Small helpers: `fetchHouseholdBundle(userId)`, `mapDbKid/Chore/Skill`, `insertPointEvents`, etc. Keeps `app-store` readable. |
+| `src/components/ClientBoot.tsx` | Add "authed but no household" redirect. |
+| `src/routes/welcome-back.tsx` (new) | Two-button chooser: Create family / Join with code. |
+| `src/routes/sign-up.tsx` | On success, DO NOT auto-insert household — let `/welcome-back` or `/onboarding` handle it (keeps flow single-sourced). Actually: keep auto-insert for the common case (they clicked "Start free trial"), so they land on `/onboarding` directly. Only the invite flow needs "no household yet". |
+| `src/routes/onboarding.tsx` | `addKid` and `setRewardTarget` now write through to Supabase automatically (no change needed once store is rewritten). |
+| `src/components/Paywall.tsx` | Change `startCheckout("household_local")` → `startCheckout(household.id)`. |
+
+## Out of scope (this pass)
+
+- Roles-based UI hiding (viewer/contributor) — the store loads everyone's data; role gating in the UI is Priority 5c and can follow separately.
+- Migrating existing localStorage data to Supabase on first sign-in — the user acknowledged real data, not seeded. Local demo state is discarded when transitioning to live.
+- Memories/`memory_posts` — already server-backed per the prompt notes.
+
+## Risks
+
+- Realtime + optimistic writes racing: handled by echo-suppression on row id.
+- Empty state after first sign-in: onboarding runs immediately so it feels intentional, not broken.
+- Trial/subscription fields on households are guarded by a trigger — reads only; only Stripe webhook writes them. Store keeps them read-only.
+
+Ready to proceed on your approval.
