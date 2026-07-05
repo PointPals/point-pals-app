@@ -21,6 +21,14 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 
 export const Route = createFileRoute("/blog")({
   component: BlogPage,
@@ -100,16 +108,29 @@ const POSTS = [
 ] as const;
 
 function BlogPage() {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openPost = POSTS.find((p) => p.id === openId) ?? null;
+
+  // Rotating brand-aligned tint palette for the scrapbook cards (desktop).
+  const TINTS = [
+    { border: "var(--pastel-blush)", bg: "color-mix(in oklab, var(--pastel-blush) 22%, white)", glow: "var(--pastel-blush)" },
+    { border: "var(--pastel-sky)", bg: "color-mix(in oklab, var(--pastel-sky) 22%, white)", glow: "var(--pastel-sky)" },
+    { border: "var(--pastel-sage)", bg: "color-mix(in oklab, var(--pastel-sage) 22%, white)", glow: "var(--pastel-sage)" },
+    { border: "var(--pastel-butter)", bg: "color-mix(in oklab, var(--pastel-butter) 25%, white)", glow: "var(--pastel-butter)" },
+    { border: "var(--pastel-lilac)", bg: "color-mix(in oklab, var(--pastel-lilac) 22%, white)", glow: "var(--pastel-lilac)" },
+    { border: "var(--pastel-foam)", bg: "color-mix(in oklab, var(--pastel-foam) 22%, white)", glow: "var(--pastel-foam)" },
+  ];
+
   return (
     <PublicPageLayout>
-    <article className="mx-auto max-w-2xl space-y-8">
+    <article className="mx-auto max-w-2xl md:max-w-6xl space-y-8">
       <header>
         <img
           src={blogHero}
           alt="An open notebook and marble jar on a soft peach blanket with crayons scattered around"
           width={1536}
           height={768}
-          className="w-full h-auto rounded-3xl shadow-sm mb-6"
+          className="w-full h-auto rounded-3xl shadow-sm mb-6 md:max-h-[420px] md:object-cover"
         />
         <h1 className="font-display text-4xl font-bold">PointPals Blog</h1>
         <p className="mt-3 text-muted-foreground leading-relaxed">
@@ -118,7 +139,8 @@ function BlogPage() {
         </p>
       </header>
 
-      <div className="space-y-2">
+      {/* Mobile: compact list of cards that scroll to accordion below */}
+      <div className="space-y-2 md:hidden">
         {POSTS.map((post) => (
           <Link
             key={post.id}
@@ -147,7 +169,7 @@ function BlogPage() {
                 loading="lazy"
                 className="h-14 w-14 rounded-xl object-cover shrink-0"
               />
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-display text-base font-bold">{post.title}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {post.metaDescription.slice(0, 90)}&hellip;
@@ -158,7 +180,54 @@ function BlogPage() {
         ))}
       </div>
 
-      <Accordion type="multiple" className="space-y-4">
+      {/* Desktop: scrapbook card grid — click opens post in a dialog */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {POSTS.map((post, i) => {
+          const tint = TINTS[i % TINTS.length];
+          return (
+            <button
+              key={post.id}
+              type="button"
+              onClick={() => setOpenId(post.id)}
+              className="group text-left flex flex-col bg-card rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{
+                borderBottom: `10px solid ${tint.border}`,
+                borderRight: `10px solid ${tint.border}`,
+              }}
+              aria-label={`Read: ${post.title}`}
+            >
+              <div
+                className="relative h-56 overflow-hidden"
+                style={{ background: tint.bg }}
+              >
+                <img
+                  src={post.image}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-7 flex flex-col flex-grow">
+                <h2 className="font-display text-xl font-bold leading-tight mb-3 text-foreground">
+                  {post.title}
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-6">
+                  {post.metaDescription}
+                </p>
+                <span
+                  className="mt-auto inline-flex items-center gap-1 text-xs font-bold tracking-widest uppercase"
+                  style={{ color: tint.border }}
+                >
+                  Read story →
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile accordion (hidden on desktop — desktop uses the dialog) */}
+      <Accordion type="multiple" className="space-y-4 md:hidden">
         {POSTS.map((post) => (
           <AccordionItem
             key={post.id}
@@ -195,6 +264,40 @@ function BlogPage() {
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* Desktop post reader */}
+      <Dialog open={!!openPost} onOpenChange={(o) => !o && setOpenId(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {openPost && (
+            <>
+              <DialogHeader>
+                <img
+                  src={openPost.image}
+                  alt=""
+                  className="w-full h-auto rounded-2xl mb-4 max-h-72 object-cover"
+                />
+                <DialogTitle className="font-display text-2xl md:text-3xl font-bold text-left">
+                  {openPost.title}
+                </DialogTitle>
+                <DialogDescription className="sr-only">{openPost.metaDescription}</DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-wrap gap-1.5 my-3">
+                {openPost.keywords.split(", ").map((kw) => (
+                  <span
+                    key={kw}
+                    className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+              <div className="space-y-3 leading-relaxed text-foreground/90">
+                {openPost.content}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </article>
     </PublicPageLayout>
   );
