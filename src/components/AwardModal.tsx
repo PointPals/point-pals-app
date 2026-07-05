@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { X, PlusCircle, Search } from "lucide-react";
 import type { Kid } from "@/lib/mock-data";
-import { PASTEL_HEX } from "@/lib/mock-data";
+import { PASTEL_HEX, appliesToKid } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-store";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
@@ -25,19 +25,30 @@ export function AwardModal({
   const closeRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const positive = useMemo(() => skills.filter((s) => s.isPositive), [skills]);
-  const needsWork = useMemo(() => skills.filter((s) => !s.isPositive), [skills]);
+  // Per-kid assignment: this modal awards to exactly one kid, so hide anything
+  // narrowed to other kids. Must stay in lockstep with the printable-chart
+  // filter (KidChartCard) — the live tiles and the PDF must always agree.
+  const eligibleChores = useMemo(
+    () => chores.filter((c) => appliesToKid(c, kid.id)),
+    [chores, kid.id],
+  );
+  const eligibleSkills = useMemo(
+    () => skills.filter((s) => appliesToKid(s, kid.id)),
+    [skills, kid.id],
+  );
+  const positive = useMemo(() => eligibleSkills.filter((s) => s.isPositive), [eligibleSkills]);
+  const needsWork = useMemo(() => eligibleSkills.filter((s) => !s.isPositive), [eligibleSkills]);
 
   // Collect all unique tags from chores for filter chips
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
-    chores.forEach((c) => (c.tags ?? []).forEach((t) => tagSet.add(t)));
+    eligibleChores.forEach((c) => (c.tags ?? []).forEach((t) => tagSet.add(t)));
     return Array.from(tagSet).sort();
-  }, [chores]);
+  }, [eligibleChores]);
 
   // Filter chores by search text and tag
   const filteredChores = useMemo(() => {
-    let result = [...chores];
+    let result = [...eligibleChores];
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((c) => c.name.toLowerCase().includes(q));
@@ -46,7 +57,7 @@ export function AwardModal({
       result = result.filter((c) => (c.tags ?? []).includes(tagFilter));
     }
     return result;
-  }, [chores, search, tagFilter]);
+  }, [eligibleChores, search, tagFilter]);
 
   // Filter skills by name (skills don't have tags)
   const filteredSkills = useMemo(() => {
