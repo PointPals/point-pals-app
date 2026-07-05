@@ -126,8 +126,8 @@ function BlogPage() {
     <article className="mx-auto max-w-2xl md:max-w-6xl space-y-8">
       <header>
         <img
-          src="https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/Marble_jar_blog_header.jpeg"
-          alt="An open notebook and marble jar on a soft peach blanket with crayons scattered around"
+          src="https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/Jar_of_marbles_with_figurines_202607060744.jpeg"
+          alt="A jar of marbles with cute figurines sitting around it on a wooden table"
           width={1536}
           height={768}
           className="w-full h-auto rounded-3xl shadow-sm mb-6 md:max-h-[420px] md:object-cover"
