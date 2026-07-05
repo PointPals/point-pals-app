@@ -57,24 +57,24 @@ export const WalkingMascots = memo(function WalkingMascots({
       {MASCOTS.map((m, i) => (
         <div
           key={i}
-          className="absolute w-[88px] h-[88px] sm:w-auto sm:h-auto"
+          className="absolute"
           style={{
+            width: `clamp(84px, 12vw, ${m.size}px)`,
+            height: `clamp(84px, 12vw, ${m.size}px)`,
             bottom: m.bottom,
             animation: `pp-walk ${m.dur} linear infinite`,
             animationDelay: m.delay,
           }}
         >
-          <div className="hidden sm:block absolute inset-0" style={{ width: m.size, height: m.size }} aria-hidden />
           <div
             style={{ animation: `pp-bob ${0.8 + i * 0.15}s ease-in-out infinite` }}
-            className="w-full h-full sm:w-auto sm:h-auto"
+            className="w-full h-full"
           >
             <img
               src={m.src}
               alt={m.alt}
               draggable={false}
-              className="w-[88px] h-[88px] object-contain select-none drop-shadow-[0_12px_18px_rgba(236,72,153,0.35)] sm:drop-shadow-[0_18px_28px_rgba(236,72,153,0.35)]"
-              style={{ width: undefined }}
+              className="w-full h-full object-contain select-none drop-shadow-[0_12px_18px_rgba(236,72,153,0.35)] sm:drop-shadow-[0_18px_28px_rgba(236,72,153,0.35)]"
             />
           </div>
         </div>
