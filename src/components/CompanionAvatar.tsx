@@ -18,6 +18,7 @@ const ACCENT: Record<PastelKey, string> = {
   lilac: "#9E82CF",
   sand: "#C39A5F",
   foam: "#5FBCB7",
+  orange: "#D48D3C",
 };
 
 // tiny deterministic hash → stable per-kid features

@@ -1,7 +1,7 @@
 // Mock data for PointPals frontend prototype.
 // Everything lives client-side (useState) — swap for Supabase later.
 
-export type PastelKey = "sky" | "butter" | "sage" | "blush" | "lilac" | "sand" | "foam";
+export type PastelKey = "sky" | "butter" | "sage" | "blush" | "lilac" | "sand" | "foam" | "orange";
 
 export const PASTEL_HEX: Record<PastelKey, string> = {
   sky: "#B8D4EC",
@@ -11,6 +11,7 @@ export const PASTEL_HEX: Record<PastelKey, string> = {
   lilac: "#D4C4E8",
   sand: "#E8CFA8",
   foam: "#B8DDDC",
+  orange: "#F5CAA0",
 };
 
 export const PASTEL_MUTED: Record<PastelKey, string> = {
@@ -21,6 +22,7 @@ export const PASTEL_MUTED: Record<PastelKey, string> = {
   lilac: "#D0CBD8",
   sand: "#DCD0BE",
   foam: "#CCD5D5",
+  orange: "#DDD0C0",
 };
 
 export type Kid = {

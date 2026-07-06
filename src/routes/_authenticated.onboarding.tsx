@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
   }),
 });
 
-const PALETTE: PastelKey[] = ["sky", "butter", "sage", "blush", "lilac", "sand", "foam"];
+const PALETTE: PastelKey[] = ["sky", "butter", "sage", "blush", "lilac", "sand", "foam", "orange"];
 
 // A guided first-run setup (§9). Names the family, adds kids as companion
 // avatars, and sets a first reward target — so a new household never lands on a

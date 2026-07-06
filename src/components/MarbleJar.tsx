@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { playClink, playChime } from "@/lib/feedback";
 import { type Kid, type PointEvent } from "@/lib/mock-data";
-import { companionTintKey } from "@/lib/companion-tints";
 
 // The marble jar — PointPals' emotional centrepiece (§3).
 //
@@ -43,6 +42,7 @@ const MARBLE_TINT: Record<string, [string, string]> = {
   lilac: ["#B79BE0", "#D7C7F0"],
   sand: ["#E0B673", "#F0D6A8"],
   foam: ["#84CFCB", "#B8E5E2"],
+  orange: ["#F0A858", "#F8CCA0"],
 };
 
 const DEFAULT_TINT: [string, string] = ["#B79BE0", "#D7C7F0"];
@@ -100,12 +100,12 @@ function buildDesired(
   cap: number,
   fallbackValue?: number,
 ): { id: string; kidId: string; color: string; hue: string }[] {
-  // Resolve each kid's marble tint from their chosen companion (colour story)
-  // falling back to the kid's assigned pastel colour.
+  // Marble tint is the kid's chosen background colour (PastelKey), not the
+  // companion's colour story — two kids with different backgrounds should
+  // have visibly distinct marbles even if they chose the same companion.
   const kidTintKey = new Map<string, string>();
   for (const k of kids) {
-    const tint = companionTintKey(k.companionId, k.color);
-    kidTintKey.set(k.id, tint);
+    kidTintKey.set(k.id, k.color);
   }
 
   // Oldest first

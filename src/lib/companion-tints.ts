@@ -41,6 +41,7 @@ export const TINT_HEX: Record<PastelKey, string> = {
   lilac: "#B79BE0",
   sand: "#E0B673",
   foam: "#84CFCB",
+  orange: "#F0A858",
 };
 
 /**

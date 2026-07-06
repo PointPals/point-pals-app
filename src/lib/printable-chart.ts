@@ -49,6 +49,7 @@ const PALETTE_ORDER: (keyof typeof PASTEL_HEX)[] = [
   "lilac",
   "sand",
   "foam",
+  "orange",
 ];
 
 export type ChartResult = {
@@ -137,6 +138,7 @@ function companionAccent(color: keyof typeof PASTEL_HEX): string {
     lilac: "#B39CD9",
     sand: "#C9A672",
     foam: "#82BEBC",
+    orange: "#D48D3C",
   };
   return map[color];
 }
