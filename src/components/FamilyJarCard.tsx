@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { useApp } from "@/lib/app-store";
@@ -15,6 +15,41 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
   const { household, history, kids } = useApp();
   const settings = useSettings();
   const [celebrating, setCelebrating] = useState(false);
+  // Floating "+N" receipts — one per new positive award, shown even when the
+  // marble jar is quantised (large targets) and the award doesn't land a marble.
+  const [floaters, setFloaters] = useState<
+    { id: string; points: number; color: string; offsetX: number }[]
+  >([]);
+  const seenEventIds = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    // Prime the seen set on first mount so historical events don't all fly in.
+    if (seenEventIds.current === null) {
+      seenEventIds.current = new Set(history.map((e) => e.id));
+      return;
+    }
+    if (settings.reducedMotion) return;
+    const seen = seenEventIds.current;
+    const fresh = history.filter((e) => !seen.has(e.id) && e.points > 0 && e.type !== "correction");
+    if (fresh.length === 0) return;
+    for (const e of fresh) seen.add(e.id);
+    const additions = fresh.map((e) => {
+      const kid = kids.find((k) => k.id === e.kidId);
+      return {
+        id: `${e.id}-${Math.random().toString(36).slice(2, 6)}`,
+        points: e.points,
+        color: kid ? PASTEL_HEX[kid.color] : "#F1D36A",
+        offsetX: (Math.random() - 0.5) * 60,
+      };
+    });
+    setFloaters((prev) => [...prev, ...additions]);
+    const ids = additions.map((a) => a.id);
+    const t = window.setTimeout(() => {
+      setFloaters((prev) => prev.filter((f) => !ids.includes(f.id)));
+    }, 1400);
+    return () => window.clearTimeout(t);
+  }, [history, kids, settings.reducedMotion]);
+
   const reached = household.sharedPool >= household.rewardTarget;
   const remaining = Math.max(0, household.rewardTarget - household.sharedPool);
   const pct = Math.min(100, Math.round((household.sharedPool / household.rewardTarget) * 100));
@@ -65,6 +100,27 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
         onFull={onFull}
         className="relative z-10 -my-2"
       />
+
+      {/* Floating "+N" receipts — anchored near the jar mouth, drift upward */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[42%] z-20"
+      >
+        {floaters.map((f) => (
+          <span
+            key={f.id}
+            className="absolute left-1/2 font-display text-2xl font-bold"
+            style={{
+              marginLeft: f.offsetX,
+              color: "#2b2b2b",
+              textShadow: `0 2px 8px ${f.color}, 0 0 2px rgba(255,255,255,0.9)`,
+              animation: "pp-plus-float 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+          >
+            +{f.points}
+          </span>
+        ))}
+      </div>
 
       {/* Per-kid contribution legend: each kid's colour dot + how many of the
           jar's *positive* points they put in over the recent event window. */}
