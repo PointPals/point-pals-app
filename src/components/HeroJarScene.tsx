@@ -49,6 +49,7 @@ export const HeroJarScene = memo(function HeroJarScene({
             size={typeof window !== "undefined" && window.innerWidth < 640 ? 240 : 460}
             pendingDrops={pendingDrops}
             onFull={onFull}
+            suppressDissolveChime
           />
         </div>
       </div>
