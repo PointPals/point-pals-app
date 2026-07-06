@@ -77,7 +77,7 @@ export const Route = createFileRoute("/_authenticated/library")({
 const PALETTE: PastelKey[] = ["sky", "butter", "sage", "blush", "lilac", "sand", "foam"];
 
 function pickIconForName(name: string): string {
-  if (ICON_KEYS.length === 0) return "i00";
+  if (ICON_KEYS.length === 0) return "make-bed.png";
   let h = 2166136261;
   for (let i = 0; i < name.length; i++) {
     h ^= name.charCodeAt(i);
