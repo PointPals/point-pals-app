@@ -185,6 +185,7 @@ export function MarbleJar({
   pendingDrops,
   onFull,
   className,
+  suppressDissolveChime = false,
 }: {
   value: number;
   target: number;
@@ -198,6 +199,9 @@ export function MarbleJar({
   pendingDrops?: { n: number; tint: string }[];
   onFull?: () => void;
   className?: string;
+  /** Marketing hero recycles the jar to 0 when full — that mass-dissolve is
+   *  a celebration reset, not a negative event, so don't play the dull chime. */
+  suppressDissolveChime?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -329,7 +333,7 @@ export function MarbleJar({
         }
       }
     }
-    if (dissolvedThisPass > 0) {
+    if (dissolvedThisPass > 0 && !suppressDissolveChime) {
       // Dull "needs work" chime plays once per event batch — the marble is
       // visibly dissolving to reinforce the same beat.
       playChime("needs-work");
