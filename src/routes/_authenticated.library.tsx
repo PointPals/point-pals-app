@@ -12,10 +12,6 @@ import { ICON_KEYS, iconUrl } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Pencil, X, Check, Wand2 } from "lucide-react";
 
-// Grid of built-in illustrated icons, styled like the ClassDojo picker.
-// Selecting one overrides the auto icon that would otherwise be derived from
-// the item name hash. Keep the AI-generation option hidden for now — the
-// prompt-based generator lives further down and can be re-enabled later.
 function IconPickerGrid({
   selected,
   onSelect,
@@ -23,11 +19,34 @@ function IconPickerGrid({
   selected: string | null;
   onSelect: (key: string) => void;
 }) {
+  const [aiOpen, setAiOpen] = useState(false);
+
   return (
     <div>
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        Icon
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Icon
+        </label>
+        <button
+          type="button"
+          onClick={() => setAiOpen((v) => !v)}
+          className="tap text-[11px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1"
+        >
+          <Wand2 className="w-3 h-3" />
+          {aiOpen ? "Close" : "AI generate"}
+        </button>
+      </div>
+
+      {aiOpen && (
+        <AiIconPanel
+          onSelect={(url) => {
+            onSelect(url);
+            setAiOpen(false);
+          }}
+          onClose={() => setAiOpen(false)}
+        />
+      )}
+
       <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2">
         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
           {ICON_KEYS.map((k) => {
@@ -671,14 +690,13 @@ function SkillManager({
 // ─── AI Icon Generation Panel ────────────────────────────────────────────────
 
 function AiIconPanel({
-  householdId,
   onSelect,
   onClose,
 }: {
-  householdId: string;
   onSelect: (iconUrl: string) => void;
   onClose: () => void;
 }) {
+  const { household } = useApp();
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -691,12 +709,12 @@ function AiIconPanel({
     setResult(null);
     try {
       const { data, error: fnErr } = await supabase.functions.invoke("generate-icon", {
-        body: { householdId, prompt: prompt.trim() },
+        body: { householdId: household.id, prompt: prompt.trim() },
       });
       if (fnErr) throw fnErr;
       if (data.error) throw new Error(data.error);
       console.log("Icon generated:", data);
-      setResult(data.storagePath);
+      setResult(data.url ?? data.storagePath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -735,7 +753,24 @@ function AiIconPanel({
         </button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      {result && <p className="text-xs text-sage-foreground">Icon generated! (path: {result})</p>}
+      {result && (
+        <div className="flex flex-col items-center gap-2">
+          <img
+            src={result}
+            alt="Generated icon"
+            className="w-24 h-24 rounded-xl object-contain border border-border"
+          />
+          <button
+            onClick={() => {
+              onSelect(result);
+              onClose();
+            }}
+            className="tap rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-semibold"
+          >
+            Use this icon
+          </button>
+        </div>
+      )}
     </div>
   );
 }

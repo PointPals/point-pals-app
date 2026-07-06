@@ -424,7 +424,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c31",
-    name: "Journaled",
+    name: "Journalling",
     icon: A("adult-journalling.png"),
     color: "sand",
     points: 1,
@@ -750,14 +750,6 @@ export const INITIAL_HISTORY: PointEvent[] = [
     itemIcon: A("brushteeth-night-bed.png"),
     points: 1,
     at: Date.now() - 1000 * 60 * 45,
-  },
-  {
-    id: "e3",
-    kidId: "k3",
-    itemName: "Helping others",
-    itemIcon: A("helping-others.png"),
-    points: 1,
-    at: Date.now() - 1000 * 60 * 90,
   },
   {
     id: "e4",
