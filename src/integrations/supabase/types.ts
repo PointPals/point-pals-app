@@ -317,8 +317,8 @@ export type Database = {
           id: string
           name: string
           personal_pool: number
-          personal_target: number
           personal_reward: string | null
+          personal_target: number
           points: number
         }
         Insert: {
@@ -331,8 +331,8 @@ export type Database = {
           id?: string
           name: string
           personal_pool?: number
-          personal_target?: number
           personal_reward?: string | null
+          personal_target?: number
           points?: number
         }
         Update: {
@@ -345,8 +345,8 @@ export type Database = {
           id?: string
           name?: string
           personal_pool?: number
-          personal_target?: number
           personal_reward?: string | null
+          personal_target?: number
           points?: number
         }
         Relationships: [
