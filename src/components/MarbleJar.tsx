@@ -532,14 +532,41 @@ export function MarbleJar({
 
       // front glass: rim, outline + shine highlight
       ctx.save();
-      // rim / lid
+      // rim / lid — brushed gold band with warm highlights
+      const rimX = left - W * 0.03;
+      const rimW = innerW + W * 0.06;
       ctx.beginPath();
-      ctx.roundRect(left - W * 0.03, neckTop, innerW + W * 0.06, rimH, rimH / 2);
-      const rim = ctx.createLinearGradient(0, neckTop, 0, neckTop + rimH);
-      rim.addColorStop(0, "rgba(255,255,255,0.85)");
-      rim.addColorStop(1, "rgba(210,224,232,0.7)");
+      ctx.roundRect(rimX, neckTop, rimW, rimH, rimH / 2);
+      const rim = ctx.createLinearGradient(rimX, neckTop, rimX + rimW, neckTop);
+      rim.addColorStop(0, "#B8862F"); // deep gold shadow
+      rim.addColorStop(0.25, "#E8C86A");
+      rim.addColorStop(0.5, "#FBF3C4"); // bright highlight
+      rim.addColorStop(0.75, "#D4A84A");
+      rim.addColorStop(1, "#8F6B23"); // deep gold shadow
       ctx.fillStyle = rim;
       ctx.fill();
+      // rim top highlight (thin bright band)
+      ctx.beginPath();
+      ctx.roundRect(rimX, neckTop, rimW, rimH * 0.35, rimH / 2);
+      const rimTop = ctx.createLinearGradient(0, neckTop, 0, neckTop + rimH * 0.35);
+      rimTop.addColorStop(0, "rgba(255,248,210,0.9)");
+      rimTop.addColorStop(1, "rgba(255,248,210,0)");
+      ctx.fillStyle = rimTop;
+      ctx.fill();
+      // rim bottom shadow (subtle depth)
+      ctx.beginPath();
+      ctx.rect(rimX, neckTop + rimH * 0.75, rimW, rimH * 0.25);
+      const rimBot = ctx.createLinearGradient(0, neckTop + rimH * 0.75, 0, neckTop + rimH);
+      rimBot.addColorStop(0, "rgba(90,60,20,0)");
+      rimBot.addColorStop(1, "rgba(90,60,20,0.35)");
+      ctx.fillStyle = rimBot;
+      ctx.fill();
+      // rim outline
+      ctx.beginPath();
+      ctx.roundRect(rimX, neckTop, rimW, rimH, rimH / 2);
+      ctx.strokeStyle = "rgba(120,85,20,0.5)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
       // body outline
       ctx.beginPath();
