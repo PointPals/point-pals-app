@@ -389,7 +389,7 @@ export const INITIAL_CHORES: Chore[] = [
   {
     id: "c27",
     name: "Ate a vegetable",
-    icon: A("adult-ate%20healthy.png"),
+    icon: A("adult-ate healthy.png"),
     color: "sage",
     points: 1,
     recurrence: "daily",
@@ -416,7 +416,7 @@ export const INITIAL_CHORES: Chore[] = [
   {
     id: "c30",
     name: "No doom-scroll before sleep",
-    icon: A("adult-no%20doom%20scrolling.png"),
+    icon: A("adult-no doom scrolling.png"),
     color: "sky",
     points: 1,
     recurrence: "daily",
