@@ -65,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/library")({
   component: LibraryPage,
   head: () => ({
     meta: [
-      { title: "Library — PointPals" },
+      { title: "Points — PointPals" },
       {
         name: "description",
         content: "Manage chores, positive skills, needs-work behaviours, and the family roster.",
@@ -108,7 +108,7 @@ function LibraryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold">Library</h1>
+        <h1 className="font-display text-3xl font-bold">Points</h1>
         <p className="text-sm text-muted-foreground">
           Add, edit, and remove anything your family tracks.
         </p>

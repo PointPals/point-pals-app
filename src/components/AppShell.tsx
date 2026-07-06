@@ -1,17 +1,41 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Home, Library, Camera, Gift, Settings, ChevronLeft } from "lucide-react";
+import { Home, Star, Camera, Settings, ChevronLeft } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
+
+// Small inline jar-of-marbles glyph used for the Rewards tab — lucide has no
+// jar, and a jar reads more truthfully than a gift box for this app.
+function JarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M7 3h10" />
+      <path d="M6 6h12" />
+      <path d="M7 6v13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6" />
+      <circle cx="10" cy="15" r="1.4" fill="currentColor" />
+      <circle cx="14" cy="14" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="17.5" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
 
 // Bottom nav = the app's four screens (§6): Home, Library, Memories, Rewards.
 // Settings lives behind the gear in the header — parent config, not a tab.
 const NAV = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/library", label: "Library", icon: Library },
+  { to: "/library", label: "Points", icon: Star },
   { to: "/memories", label: "Memories", icon: Camera },
-  { to: "/rewards", label: "Rewards", icon: Gift },
+  { to: "/rewards", label: "Rewards", icon: JarIcon },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -161,21 +185,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="max-w-4xl mx-auto px-5">{children}</main>
 
-      <nav className="pp-bottom-nav md:hidden fixed left-1/2 -translate-x-1/2 z-50">
-        <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border shadow-[0_10px_30px_-8px_rgba(120,110,90,0.25)] p-1.5">
+      <nav className="pp-bottom-nav md:hidden fixed inset-x-0 bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-stretch justify-around px-2 pt-1.5 pb-1">
           {NAV.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
                 key={to}
                 to={to}
-                className={`tap flex flex-col items-center justify-center gap-0.5 min-h-[48px] px-3.5 py-1.5 rounded-2xl text-[11px] font-semibold transition-all ${
-                  active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`tap flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[52px] rounded-xl text-[11px] font-semibold transition-colors ${
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-6 h-6 ${active ? "" : "opacity-80"}`} />
                 <span>{label}</span>
               </Link>
             );
