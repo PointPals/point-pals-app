@@ -46,7 +46,16 @@ export type MemoryCommentEntry = {
   createdAt: number;
 };
 
-const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+// memory_posts.id / memory_post_kids.post_id / memory_likes.post_id are all
+// `uuid` columns — anything else is rejected by Postgres with "invalid input
+// syntax for type uuid" and the whole save fails silently.
+const uid = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => {
+        const n = Number(c);
+        return (n ^ (Math.random() * 16) & (15 >> (n / 4))).toString(16);
+      });
 
 // ---------------------------------------------------------------------------
 // IndexedDB (local fallback)
