@@ -4,9 +4,9 @@ import { useApp, type AwardBatch } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { primeAudio, playChime, haptic } from "@/lib/feedback";
 import { KidBadge } from "@/components/KidBadge";
-import { MarbleJar } from "@/components/MarbleJar";
 import { AwardModal } from "@/components/AwardModal";
 import { FamilyJarCard } from "@/components/FamilyJarCard";
+import { PersonalJarCard } from "@/components/PersonalJarCard";
 import { EmptyState } from "@/components/EmptyState";
 import { RecentActivity } from "@/components/RecentActivity";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -117,42 +117,6 @@ function HomePage() {
                 streak={mounted ? (streakByKid[kid.id] ?? 0) : 0}
                 onClick={() => openKid(kid.id)}
               />
-              {/* Individual jar indicator: mini MarbleJar when shared jar hidden,
-                  or progress bar when shared jar is visible */}
-              {household.splitJarsEnabled && (kid.personalTarget ?? 0) > 0 && (
-                household.sharedJarEnabled ? (
-                  <div className="w-full max-w-[80px]">
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span className="font-semibold text-xs">{kid.personalPool}</span>
-                      <span>{kid.personalTarget}</span>
-                    </div>
-                    <div className="mt-0.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${Math.min(100, (kid.personalPool / Math.max(1, kid.personalTarget)) * 100)}%`,
-                          backgroundColor: `var(--pastel-${kid.color})`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-[92px]">
-                    <MarbleJar
-                      value={kid.personalPool}
-                      target={kid.personalTarget > 0 ? kid.personalTarget : 999}
-                      events={history.filter((e) => e.kidId === kid.id && e.points > 0)}
-                      kids={[kid]}
-                      size={80}
-                      reducedMotion={true}
-                    />
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5">
-                      <span className="font-semibold text-xs">{kid.personalPool}</span>
-                      <span>{kid.personalTarget}</span>
-                    </div>
-                  </div>
-                )
-              )}
             </div>
           ))}
           {canEdit && (
@@ -172,10 +136,25 @@ function HomePage() {
         </p>
       </section>
 
-      {/* The marble jar — the page's dominant visual (§3) */}
-      <section aria-labelledby="jar-heading">
-        <h2 id="jar-heading" className="sr-only">Family Jar</h2>
-        <FamilyJarCard size={330} />
+      {/* Jars — personal jars flank the family jar when split jars are on (§6) */}
+      <section aria-labelledby="jars-heading">
+        <h2 id="jars-heading" className="sr-only">Jars</h2>
+        <div className="flex flex-col items-center gap-6">
+          {/* Personal jars row — above the family jar when split jars enabled */}
+          {household.splitJarsEnabled && kids.filter((k) => (k.personalTarget ?? 0) > 0).length > 0 && (
+            <div className="flex flex-wrap justify-center gap-4 w-full">
+              {kids
+                .filter((k) => (k.personalTarget ?? 0) > 0)
+                .map((k) => (
+                  <div key={k.id} className="w-[130px]">
+                    <PersonalJarCard kid={k} size={100} />
+                  </div>
+                ))}
+            </div>
+          )}
+          {/* Family jar — hidden when individual-jars-only mode */}
+          {household.sharedJarEnabled && <FamilyJarCard size={330} />}
+        </div>
       </section>
 
       {/* Collapsed recent-activity log — quick context, not the photo wall */}

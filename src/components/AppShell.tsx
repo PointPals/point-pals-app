@@ -1,7 +1,8 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
 import { Home, Star, Camera, Settings, ChevronLeft } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import { useHouseholdRole } from "@/lib/use-household-role";
 import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
 import { url as logoUrl } from "@/assets/brand/pointpals-logo-points.asset.json";
 
@@ -41,7 +42,14 @@ const NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { household } = useApp();
+  const { role } = useHouseholdRole(household.id);
   const { goBack } = useBackNav();
+
+  // Viewers can't see the Rewards tab — they see jars on the home page.
+  const visibleNav = useMemo(
+    () => (role === "viewer" ? NAV.filter((n) => n.to !== "/rewards") : NAV),
+    [role],
+  );
   const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
 
   // Always start a newly-navigated page at the top. TanStack's built-in scroll
@@ -153,7 +161,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
         </Link>
         <nav className="flex flex-col gap-1">
-          {NAV.map(({ to, label, icon: Icon }) => {
+          {visibleNav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
@@ -259,7 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <nav className="pp-bottom-nav md:hidden fixed inset-x-0 bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-stretch justify-around px-2 pt-1.5 pb-1">
-          {NAV.map(({ to, label, icon: Icon }) => {
+          {visibleNav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
