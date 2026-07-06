@@ -14,10 +14,16 @@ import Stripe from "https://esm.sh/stripe@16?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
-  apiVersion: "2024-06-20",
-  httpClient: Stripe.createFetchHttpClient(),
-});
+const STRIPE_KEY = Deno.env.get("STRIPE_SECRET_KEY");
+if (!STRIPE_KEY) {
+  console.error("Missing STRIPE_SECRET_KEY — set it via `supabase secrets set STRIPE_SECRET_KEY=sk_live_...`");
+}
+const stripe = STRIPE_KEY
+  ? new Stripe(STRIPE_KEY, {
+      apiVersion: "2024-06-20",
+      httpClient: Stripe.createFetchHttpClient(),
+    })
+  : null;
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -37,6 +43,13 @@ Deno.serve(async (req) => {
 
     if (!householdId || !successUrl || !cancelUrl) {
       return json({ error: "Missing householdId/successUrl/cancelUrl" }, 400);
+    }
+
+    if (!stripe) {
+      return json(
+        { error: "Stripe is not configured — the STRIPE_SECRET_KEY environment variable is missing." },
+        503,
+      );
     }
 
     const priceId = priceIdFor(currency);

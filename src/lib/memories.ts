@@ -220,7 +220,7 @@ async function remoteUploadAudio(
 // ---------------------------------------------------------------------------
 
 let memories: Memory[] = [];
-let loaded = false;
+let remoteLoaded = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -229,8 +229,11 @@ function sortWall(list: Memory[]): Memory[] {
 }
 
 async function loadOnce() {
-  if (loaded || typeof window === "undefined") return;
-  loaded = true;
+  if (typeof window === "undefined") return;
+
+  // Always reload from IndexedDB on every mount — this ensures posts persist
+  // when navigating away and back within the same session, since IndexedDB
+  // survives component re-mounts. The local read is near-instant.
   try {
     const local = await idbAll();
     memories = sortWall(local);
@@ -238,6 +241,12 @@ async function loadOnce() {
   } catch {
     /* IndexedDB unavailable */
   }
+
+  // Remote fetch only once per session — avoids hammering Supabase on every
+  // navigation. New posts sync'd from another family member won't appear
+  // until the user refreshes; that's acceptable for v1.
+  if (remoteLoaded) return;
+  remoteLoaded = true;
 
   try {
     const res = await withTimeout(
