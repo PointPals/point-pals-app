@@ -59,7 +59,6 @@ const ICON_FILES: string[] = [
   "being-independent.png",
   "being-respectful.png",
   "helped-without-being-asked.png",
-  "helping-others.png",
   "including-others.png",
   "sharing-toys.png",
   "showing-empathy.png",
