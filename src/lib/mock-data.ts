@@ -489,14 +489,6 @@ export const INITIAL_SKILLS: Skill[] = [
     isPositive: true,
   },
   {
-    id: "s7",
-    name: "Helping others",
-    icon: A("helping-others.png"),
-    color: "blush",
-    points: 2,
-    isPositive: true,
-  },
-  {
     id: "s8",
     name: "Including others",
     icon: A("including-others.png"),
