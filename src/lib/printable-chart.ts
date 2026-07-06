@@ -18,18 +18,31 @@ import { addDays, format, startOfWeek } from "date-fns";
 
 // Cache images so repeated renders don't refetch.
 const imageCache = new Map<string, HTMLImageElement>();
-function loadImage(url: string): Promise<HTMLImageElement> {
+async function loadImage(url: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(url);
   if (cached && cached.complete && cached.naturalWidth > 0) return Promise.resolve(cached);
+
+  // Fetch the image as a blob, then create a same-origin blob URL. This avoids
+  // canvas taint entirely — the blob URL is same-origin so the canvas doesn't
+  // need CORS, even though the original URL is cross-origin. Supabase public
+  // bucket URLs are publicly readable, so fetch() should succeed.
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Failed to load ${url} (HTTP ${resp.status})`);
+  const blob = await resp.blob();
+  const blobUrl = URL.createObjectURL(blob);
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.onload = () => {
       imageCache.set(url, img);
+      URL.revokeObjectURL(blobUrl);
       resolve(img);
     };
-    img.onerror = () => reject(new Error(`Failed to load ${url}`));
-    img.src = url;
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      reject(new Error(`Failed to decode ${url}`));
+    };
+    img.src = blobUrl;
   });
 }
 

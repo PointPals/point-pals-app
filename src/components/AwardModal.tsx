@@ -136,7 +136,7 @@ export function AwardModal({
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-display text-2xl font-bold leading-none truncate">{kid.name}</div>
-            <div className="text-xs text-muted-foreground mt-1">Tap a tile to give points</div>
+            <div className="text-xs text-muted-foreground mt-1">Tap your character to award points</div>
           </div>
           <div
             className={`font-display text-2xl font-bold rounded-full px-3 py-1 transition-colors ${

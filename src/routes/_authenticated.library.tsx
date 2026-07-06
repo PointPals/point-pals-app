@@ -985,27 +985,36 @@ function FamilyTab() {
       </div>
 
       {editingId && (
-        <KidForm
-          key={editingId}
-          initial={kids.find((k) => k.id === editingId)}
-          onSubmit={(name, color, companionId) => {
-            updateKid(editingId, { name, color, companionId });
-            setEditingId(null);
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center pt-[15%] sm:pt-[8%] px-4 animate-pop-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingId(null);
           }}
-          onDelete={() => {
-            const k = kids.find((x) => x.id === editingId);
-            if (
-              k &&
-              window.confirm(
-                `Remove ${k.name} from the family? Their points and history will be deleted.`,
-              )
-            ) {
-              removeKid(editingId);
-              setEditingId(null);
-            }
-          }}
-          onCancel={() => setEditingId(null)}
-        />
+        >
+          <div className="w-full max-w-md">
+            <KidForm
+              key={editingId}
+              initial={kids.find((k) => k.id === editingId)}
+              onSubmit={(name, color, companionId) => {
+                updateKid(editingId, { name, color, companionId });
+                setEditingId(null);
+              }}
+              onDelete={() => {
+                const k = kids.find((x) => x.id === editingId);
+                if (
+                  k &&
+                  window.confirm(
+                    `Remove ${k.name} from the family? Their points and history will be deleted.`,
+                  )
+                ) {
+                  removeKid(editingId);
+                  setEditingId(null);
+                }
+              }}
+              onCancel={() => setEditingId(null)}
+            />
+          </div>
+        </div>
       )}
 
       {/* Correction tool — manual points adjustment */}
