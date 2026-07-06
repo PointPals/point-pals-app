@@ -613,9 +613,9 @@
       padding-bottom: 1.5rem;
     }
   }
-  .pp-bottom-nav {
-    bottom: calc(1rem + env(safe-area-inset-bottom));
-  }
+  /* Full-width bottom nav sits flush to the screen edge; the Tailwind
+     `bottom-0` on the element handles positioning and the element itself
+     pads for the safe-area inset. Class retained for print targeting. */
 }
 
 /* PWA install banner sits just above the floating bottom nav (§2c). */
