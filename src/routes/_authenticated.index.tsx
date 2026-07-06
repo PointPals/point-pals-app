@@ -71,14 +71,20 @@ function HomePage() {
   const award = (item: { name: string; icon: string; points: number }) => {
     if (!activeKidId) return;
     const positiveAward = item.points >= 0;
-    playChime(positiveAward ? "positive" : "needs-work");
+    const kidId = activeKidId;
+    // Close the modal immediately so the marble drop into the jar is visible.
+    // primeAudio() already unlocked the AudioContext on the earlier avatar tap,
+    // so deferring the chime/award out of the gesture is safe on iOS.
+    setActiveKidId(null);
     haptic(positiveAward ? "success" : "medium");
-
-    const batch = awardPoints([activeKidId], item);
-    const text = `${item.points > 0 ? "+" : ""}${item.points} ${item.name}`;
-    setToast({ batch, text });
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 5000);
+    window.setTimeout(() => {
+      playChime(positiveAward ? "positive" : "needs-work");
+      const batch = awardPoints([kidId], item);
+      const text = `${item.points > 0 ? "+" : ""}${item.points} ${item.name}`;
+      setToast({ batch, text });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 5000);
+    }, 180);
   };
 
   const undo = () => {
