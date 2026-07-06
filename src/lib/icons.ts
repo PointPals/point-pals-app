@@ -55,7 +55,6 @@ const ICON_FILES: string[] = [
   "watered-plants.png",
   "fed-pets.png",
   // Positive skills
-  "being-helpful.png",
   "being-independent.png",
   "being-respectful.png",
   "helped-without-being-asked.png",
@@ -95,8 +94,16 @@ const ICON_FILES: string[] = [
   "adult-took-a-lunchbreak.png",
 ];
 
+// Cache-buster: bump this whenever the Supabase bucket re-uploads existing
+// filenames (e.g. transparent-background refresh). Browsers/CDNs cache the
+// old bytes under the same URL otherwise.
+const ASSET_VERSION = "2";
+
 const REGISTRY: Record<string, string> = Object.fromEntries(
-  ICON_FILES.map((f) => [f, `${SUPABASE_ASSET_BASE}/${encodeURIComponent(f)}`]),
+  ICON_FILES.map((f) => [
+    f,
+    `${SUPABASE_ASSET_BASE}/${encodeURIComponent(f)}?v=${ASSET_VERSION}`,
+  ]),
 );
 
 export function iconUrl(key: string): string | undefined {
