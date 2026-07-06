@@ -24,7 +24,9 @@ import {
   XCircle,
   Loader2,
   ShieldCheck,
+  Shield,
   UserRound,
+  UserCog,
   Trash,
   BarChart3,
   ChevronRight,
@@ -349,7 +351,15 @@ function SettingsPage() {
                         Joined {new Date(m.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <RoleBadge role={m.role as HouseholdRole} />
+                    <div className="flex items-center gap-1.5">
+                      <RoleBadge role={m.role as HouseholdRole} />
+                      {isAdmin && m.user_id !== userId && (m.role as HouseholdRole) !== "admin" && (
+                        <PromoteButton
+                          targetUserId={m.user_id}
+                          onPromoted={loadMembersAndInvites}
+                        />
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -677,6 +687,92 @@ function RoleBadge({ role }: { role: HouseholdRole }) {
     >
       {role === "admin" && <ShieldCheck className="w-3 h-3" />} {label}
     </span>
+  );
+}
+
+function PromoteButton({
+  targetUserId,
+  onPromoted,
+}: {
+  targetUserId: string;
+  onPromoted: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const promote = async (newRole: "admin" | "parent" | "contributor") => {
+    setBusy(true);
+    setErr(null);
+    setMenuOpen(false);
+    const { data, error } = await supabase.rpc("promote_household_member", {
+      target_user_id: targetUserId,
+      new_role: newRole,
+    });
+    if (error) {
+      setErr(error.message);
+    } else {
+      const result = data as { ok?: boolean; error?: string };
+      if (result?.ok) {
+        await onPromoted();
+      } else {
+        setErr(result?.error ?? "Failed to update role");
+      }
+    }
+    setBusy(false);
+    setTimeout(() => setErr(null), 4000);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        disabled={busy}
+        className="tap rounded-full bg-muted p-1.5 hover:bg-muted/80 transition disabled:opacity-50"
+        title="Change role"
+        aria-label="Change role"
+      >
+        {busy ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <UserCog className="w-3.5 h-3.5" />
+        )}
+      </button>
+      {menuOpen && (
+        <>
+          {/* Backdrop to dismiss */}
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-input rounded-xl shadow-lg p-1.5 min-w-[140px] space-y-0.5">
+            <button
+              onClick={() => promote("admin")}
+              className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold hover:bg-muted transition text-left"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" /> Promote to admin
+            </button>
+            <button
+              onClick={() => promote("parent")}
+              className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold hover:bg-muted transition text-left"
+            >
+              <Shield className="w-3.5 h-3.5" /> Set as parent
+            </button>
+            <button
+              onClick={() => promote("contributor")}
+              className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold hover:bg-muted transition text-left"
+            >
+              <UserRound className="w-3.5 h-3.5" /> Set as contributor
+            </button>
+          </div>
+        </>
+      )}
+      {err && (
+        <div className="absolute right-0 top-full mt-12 z-20 bg-destructive/10 text-destructive text-[10px] font-semibold rounded-lg px-2.5 py-1.5 whitespace-nowrap">
+          {err}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -731,6 +731,7 @@ export type Database = {
         Returns: boolean
       }
       is_member: { Args: { hid: string }; Returns: boolean }
+      promote_household_member: { Args: { target_user_id: string; new_role: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
