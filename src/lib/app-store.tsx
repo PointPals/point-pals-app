@@ -51,6 +51,9 @@ export type Household = {
   subscriptionStatus: "trialing" | "active" | "past_due" | "canceled" | "free";
   trialEndsAt: number | null;
   onboarded: boolean;
+  // Individual jar settings (optional, default OFF)
+  splitJarsEnabled: boolean;
+  splitRatio: number; // percentage (0-100) that goes to the shared jar; rest is personal
 };
 
 // A reversible award batch, kept only until its undo window closes (§2).
@@ -60,6 +63,8 @@ export type AwardBatch = {
   kidIds: string[];
   item: { name: string; icon: string; points: number };
   poolDelta: number;
+  /** When split jars are enabled, this is the per-kid personal jar delta. */
+  personalDelta?: number;
 };
 
 type Ctx = {
@@ -100,6 +105,13 @@ type Ctx = {
   exportData: () => string;
   /** Called by /welcome-back after a household is created — reboots into live. */
   refreshFromServer: () => Promise<void>;
+  // ── Individual jar settings ────────────────────────────────────────
+  setSplitJarsEnabled: (enabled: boolean) => void;
+  setSplitRatio: (ratio: number) => void;
+  /** Set or clear a kid's personal jar target and reward. Set target to 0 to disable. */
+  setPersonalTarget: (kidId: string, target: number, reward?: string) => void;
+  /** Claim a kid's personal reward — resets only that kid's personalPool. */
+  claimPersonalReward: (kidId: string) => void;
 };
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -469,8 +481,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     awardPoints: (kidIds, item) => {
       const now = Date.now();
-      const poolDelta = item.points;
       const batchId = uid();
+      const splitJars = household.splitJarsEnabled;
+      const splitRatio = household.splitRatio;
+      // When split jars enabled, compute shared vs personal portions.
+      const sharedPoints = splitJars ? Math.floor(item.points * splitRatio / 100) : item.points;
+      const personalPoints = splitJars ? item.points - sharedPoints : 0;
+      const poolDelta = sharedPoints;
+
       const eventRows = kidIds.map((kidId) => ({
         id: uid(),
         kid_id: kidId,
@@ -479,7 +497,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         points: item.points,
         batch_id: batchId,
       }));
-      const batch: AwardBatch = { id: batchId, at: now, kidIds, item, poolDelta };
+      const batch: AwardBatch = { id: batchId, at: now, kidIds, item, poolDelta, personalDelta: splitJars ? personalPoints : undefined };
       setState((s) => ({
         ...s,
         kids: s.kids.map((k) =>
@@ -488,6 +506,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ...k,
                 currentPoints: Math.max(0, k.currentPoints + item.points),
                 allTimePoints: Math.max(0, k.allTimePoints + item.points),
+                personalPool: splitJars ? Math.max(0, k.personalPool + personalPoints) : k.personalPool,
               }
             : k,
         ),
@@ -524,17 +543,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           async () =>
             await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
         );
-        // Sync per-kid totals — update BOTH current_points and all_time_points.
+        // Sync per-kid totals — update current_points, all_time_points, and personal_pool.
         kidIds.forEach((kidId) => {
           const kid = kids.find((k) => k.id === kidId);
           if (!kid) return;
           const nextCur = Math.max(0, kid.currentPoints + item.points);
           const nextAll = Math.max(0, kid.allTimePoints + item.points);
+          const nextPersonal = splitJars ? Math.max(0, kid.personalPool + personalPoints) : kid.personalPool;
+          const dbPatch: Record<string, unknown> = { current_points: nextCur, all_time_points: nextAll };
+          if (splitJars) dbPatch.personal_pool = nextPersonal;
           void dbWrite(
             async () =>
               await supabase
                 .from("kids")
-                .update({ current_points: nextCur, all_time_points: nextAll } as never)
+                .update(dbPatch as never)
                 .eq("id", kidId),
           );
         });
@@ -542,6 +564,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return batch;
     },
     undoBatch: (batch) => {
+      const personalDelta = batch.personalDelta ?? 0;
       setState((s) => ({
         ...s,
         kids: s.kids.map((k) =>
@@ -550,6 +573,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ...k,
                 currentPoints: Math.max(0, k.currentPoints - batch.item.points),
                 allTimePoints: Math.max(0, k.allTimePoints - batch.item.points),
+                personalPool: personalDelta > 0 ? Math.max(0, k.personalPool - personalDelta) : k.personalPool,
               }
             : k,
         ),
@@ -577,11 +601,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!kid) return;
           const nextCur = Math.max(0, kid.currentPoints - batch.item.points);
           const nextAll = Math.max(0, kid.allTimePoints - batch.item.points);
+          const dbPatch: Record<string, unknown> = { current_points: nextCur, all_time_points: nextAll };
+          if (personalDelta > 0) {
+            const nextPersonal = Math.max(0, kid.personalPool - personalDelta);
+            dbPatch.personal_pool = nextPersonal;
+          }
           void dbWrite(
             async () =>
               await supabase
                 .from("kids")
-                .update({ current_points: nextCur, all_time_points: nextAll } as never)
+                .update(dbPatch as never)
                 .eq("id", kidId),
           );
         });
@@ -687,16 +716,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         kids: s.kids.map((k) => (k.id === id ? { ...k, ...patch } : k)),
       }));
       if (live) {
-        const dbPatch: Database["public"]["Tables"]["kids"]["Update"] = {};
+        const dbPatch: Record<string, unknown> = {};
         if (patch.name !== undefined) dbPatch.name = patch.name;
         if (patch.color !== undefined) dbPatch.color = patch.color;
         if (patch.currentPoints !== undefined)
-          (dbPatch as Record<string, unknown>).current_points = patch.currentPoints;
+          dbPatch.current_points = patch.currentPoints;
         if (patch.allTimePoints !== undefined)
-          (dbPatch as Record<string, unknown>).all_time_points = patch.allTimePoints;
+          dbPatch.all_time_points = patch.allTimePoints;
         if (patch.companionId !== undefined) dbPatch.avatar_key = patch.companionId;
+        if (patch.personalPool !== undefined) dbPatch.personal_pool = patch.personalPool;
+        if (patch.personalTarget !== undefined) dbPatch.personal_target = patch.personalTarget;
+        if (patch.personalReward !== undefined)
+          dbPatch.personal_reward = patch.personalReward || null;
         if (Object.keys(dbPatch).length) {
-          void dbWrite(async () => await supabase.from("kids").update(dbPatch).eq("id", id));
+          void dbWrite(async () => await supabase.from("kids").update(dbPatch as never).eq("id", id));
         }
       }
     },
@@ -825,7 +858,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const id = uid();
       setState((s) => ({
         ...s,
-        kids: [...s.kids, { id, name, color, currentPoints: 0, allTimePoints: 0, companionId }],
+        kids: [
+          ...s.kids,
+          {
+            id,
+            name,
+            color,
+            currentPoints: 0,
+            allTimePoints: 0,
+            companionId,
+            personalPool: 0,
+            personalTarget: 0,
+          },
+        ],
       }));
       if (live) {
         void dbWrite(
@@ -839,8 +884,80 @@ export function AppProvider({ children }: { children: ReactNode }) {
               all_time_points: 0,
               points: 0,
               avatar_key: companionId ?? null,
+              personal_pool: 0,
+              personal_target: 0,
             } as never),
           [id],
+        );
+      }
+    },
+    // ── Individual jar settings ────────────────────────────────────────
+    setSplitJarsEnabled: (enabled) => {
+      setState((s) => ({
+        ...s,
+        household: { ...s.household, splitJarsEnabled: enabled },
+      }));
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("households")
+              .update({ split_jars_enabled: enabled } as never)
+              .eq("id", hid()),
+        );
+      }
+    },
+    setSplitRatio: (ratio) => {
+      const clamped = Math.max(0, Math.min(100, ratio));
+      setState((s) => ({
+        ...s,
+        household: { ...s.household, splitRatio: clamped },
+      }));
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("households")
+              .update({ split_ratio: clamped } as never)
+              .eq("id", hid()),
+        );
+      }
+    },
+    setPersonalTarget: (kidId, target, reward) => {
+      setState((s) => ({
+        ...s,
+        kids: s.kids.map((k) =>
+          k.id === kidId
+            ? { ...k, personalTarget: Math.max(0, target), personalReward: reward }
+            : k,
+        ),
+      }));
+      if (live) {
+        const dbPatch: Record<string, unknown> = { personal_target: Math.max(0, target) };
+        if (reward !== undefined) dbPatch.personal_reward = reward || null;
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("kids")
+              .update(dbPatch as never)
+              .eq("id", kidId),
+        );
+      }
+    },
+    claimPersonalReward: (kidId) => {
+      setState((s) => ({
+        ...s,
+        kids: s.kids.map((k) =>
+          k.id === kidId ? { ...k, personalPool: 0 } : k,
+        ),
+      }));
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("kids")
+              .update({ personal_pool: 0 } as never)
+              .eq("id", kidId),
         );
       }
     },

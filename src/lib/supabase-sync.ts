@@ -25,6 +25,9 @@ export function mapKid(row: DbKid): Kid {
     currentPoints: (row as { current_points?: number }).current_points ?? row.points,
     allTimePoints: (row as { all_time_points?: number }).all_time_points ?? row.points,
     companionId: row.avatar_key ?? undefined,
+    personalPool: (row as { personal_pool?: number }).personal_pool ?? 0,
+    personalTarget: (row as { personal_target?: number }).personal_target ?? 0,
+    personalReward: (row as { personal_reward?: string | null }).personal_reward ?? undefined,
   };
 }
 
@@ -62,6 +65,8 @@ export function mapHousehold(row: DbHousehold): Household {
     subscriptionStatus: (row.subscription_status as Household["subscriptionStatus"]) ?? "trialing",
     trialEndsAt: row.trial_ends_at ? new Date(row.trial_ends_at).getTime() : null,
     onboarded: row.onboarded,
+    splitJarsEnabled: (row as { split_jars_enabled?: boolean }).split_jars_enabled ?? false,
+    splitRatio: (row as { split_ratio?: number }).split_ratio ?? 50,
   };
 }
 

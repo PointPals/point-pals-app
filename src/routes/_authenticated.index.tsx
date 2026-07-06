@@ -109,13 +109,31 @@ function HomePage() {
         <h2 id="kids-heading" className="sr-only">Kids</h2>
         <div className="flex flex-wrap gap-4 justify-center sm:flex-nowrap sm:gap-5 sm:overflow-x-auto sm:justify-start sm:pb-2 sm:-mx-1 sm:px-1">
           {kids.map((kid) => (
-            <KidBadge
-              key={kid.id}
-              kid={kid}
-              size="lg"
-              streak={mounted ? (streakByKid[kid.id] ?? 0) : 0}
-              onClick={() => openKid(kid.id)}
-            />
+            <div key={kid.id} className="flex flex-col items-center gap-1.5">
+              <KidBadge
+                kid={kid}
+                size="lg"
+                streak={mounted ? (streakByKid[kid.id] ?? 0) : 0}
+                onClick={() => openKid(kid.id)}
+              />
+              {household.splitJarsEnabled && (kid.personalTarget ?? 0) > 0 && (
+                <div className="w-full max-w-[80px]">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <span className="font-semibold text-xs">{kid.personalPool}</span>
+                    <span>{kid.personalTarget}</span>
+                  </div>
+                  <div className="mt-0.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(100, (kid.personalPool / Math.max(1, kid.personalTarget)) * 100)}%`,
+                        backgroundColor: `var(--pastel-${kid.color})`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
           {canEdit && (
             <Link

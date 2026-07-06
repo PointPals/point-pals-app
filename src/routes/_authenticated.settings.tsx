@@ -5,7 +5,7 @@ import { useSettings, setSetting } from "@/lib/settings";
 import { Paywall } from "@/components/Paywall";
 import { trackParent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { PASTEL_HEX } from "@/lib/mock-data";
+import { PASTEL_HEX, type Kid } from "@/lib/mock-data";
 import { useHouseholdRole, type HouseholdRole } from "@/lib/use-household-role";
 import {
   Volume2,
@@ -47,8 +47,17 @@ export const Route = createFileRoute("/_authenticated/settings")({
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
 function SettingsPage() {
-  const { household, kids, setHouseholdName, setRewardTarget, exportData, resetHousehold } =
-    useApp();
+  const {
+    household,
+    kids,
+    setHouseholdName,
+    setRewardTarget,
+    exportData,
+    resetHousehold,
+    setSplitJarsEnabled,
+    setSplitRatio,
+    setPersonalTarget,
+  } = useApp();
   const settings = useSettings();
   const navigate = useNavigate();
   const [name, setName] = useState(household.name);
@@ -175,6 +184,65 @@ function SettingsPage() {
               </span>
             </div>
           </label>
+        </div>
+      </section>
+
+      {/* Individual Jars — toggle, split ratio, per-kid targets */}
+      <section className="space-y-3">
+        <SectionTitle icon={<Target className="h-4 w-4" />}>Individual jars</SectionTitle>
+        <div className="card-soft p-5 space-y-4">
+          <ToggleRow
+            icon={<Target className="h-4 w-4" />}
+            label="Each kid has their own jar + reward"
+            desc="When on, every point award fills BOTH the shared family jar and each kid's personal jar. Kids can work toward their own reward while also filling the family jar together."
+            checked={household.splitJarsEnabled}
+            onChange={(v) => setSplitJarsEnabled(v)}
+          />
+
+          {household.splitJarsEnabled && (
+            <>
+              <div>
+                <span className="text-sm font-semibold">
+                  Split: {household.splitRatio}% to shared jar · {100 - household.splitRatio}% to personal jar
+                </span>
+                <div className="mt-1 flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={10}
+                    max={90}
+                    step={5}
+                    value={household.splitRatio}
+                    onChange={(e) => setSplitRatio(Number(e.target.value))}
+                    className="flex-1 accent-foreground"
+                  />
+                  <span className="font-display text-lg font-bold w-12 text-right">
+                    {household.splitRatio}%
+                  </span>
+                </div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
+                  <span>More personal</span>
+                  <span>More shared</span>
+                </div>
+              </div>
+
+              <div className="pt-1 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Personal targets
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Set how many points each kid needs in their personal jar before they can claim
+                  their own reward. Set to 0 to skip that kid.
+                </p>
+                {kids.map((k) => (
+                  <PersonalTargetRow
+                    key={k.id}
+                    kid={k}
+                    onChange={(target, reward) => setPersonalTarget(k.id, target, reward)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -592,6 +660,61 @@ function ToggleRow({
           className={`absolute top-0.5 h-5 w-5 rounded-full bg-background transition-transform ${checked ? "translate-x-[22px]" : "translate-x-0.5"}`}
         />
       </button>
+    </div>
+  );
+}
+
+function PersonalTargetRow({
+  kid,
+  onChange,
+}: {
+  kid: Kid;
+  onChange: (target: number, reward?: string) => void;
+}) {
+  const [target, setTarget] = useState(kid.personalTarget);
+  const [reward, setReward] = useState(kid.personalReward ?? "");
+
+  return (
+    <div className="card-soft p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="inline-block w-4 h-4 rounded-full shrink-0 shadow-inner"
+          style={{ backgroundColor: PASTEL_HEX[kid.color] }}
+        />
+        <span className="text-sm font-semibold">{kid.name}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground shrink-0 w-16">Target pts</span>
+        <input
+          type="range"
+          min={0}
+          max={200}
+          step={5}
+          value={target}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setTarget(v);
+            onChange(v, reward || undefined);
+          }}
+          className="flex-1 accent-foreground"
+        />
+        <span className="font-display text-base font-bold w-10 text-right">{target}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground shrink-0 w-16">Reward</span>
+        <input
+          value={reward}
+          onChange={(e) => {
+            const v = e.target.value;
+            setReward(v);
+            onChange(target, v || undefined);
+          }}
+          placeholder={"Optional personal reward"}
+          disabled={target === 0}
+          className="flex-1 rounded-lg border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-40"
+        />
+      </div>
     </div>
   );
 }

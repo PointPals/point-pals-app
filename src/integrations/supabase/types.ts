@@ -181,6 +181,8 @@ export type Database = {
           onboarded: boolean
           reward_target: number
           shared_pool: number
+          split_jars_enabled: boolean
+          split_ratio: number
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: string
@@ -204,6 +206,8 @@ export type Database = {
           onboarded?: boolean
           reward_target?: number
           shared_pool?: number
+          split_jars_enabled?: boolean
+          split_ratio?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string
@@ -227,6 +231,8 @@ export type Database = {
           onboarded?: boolean
           reward_target?: number
           shared_pool?: number
+          split_jars_enabled?: boolean
+          split_ratio?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string
@@ -310,6 +316,9 @@ export type Database = {
           household_id: string
           id: string
           name: string
+          personal_pool: number
+          personal_target: number
+          personal_reward: string | null
           points: number
         }
         Insert: {
@@ -321,6 +330,9 @@ export type Database = {
           household_id: string
           id?: string
           name: string
+          personal_pool?: number
+          personal_target?: number
+          personal_reward?: string | null
           points?: number
         }
         Update: {
@@ -332,6 +344,9 @@ export type Database = {
           household_id?: string
           id?: string
           name?: string
+          personal_pool?: number
+          personal_target?: number
+          personal_reward?: string | null
           points?: number
         }
         Relationships: [

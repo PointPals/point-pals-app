@@ -4,6 +4,7 @@ import { useApp } from "@/lib/app-store";
 import { useCorrection } from "@/lib/correction-store";
 import { KidBadge } from "@/components/KidBadge";
 import { FamilyJarCard } from "@/components/FamilyJarCard";
+import { PersonalJarCard } from "@/components/PersonalJarCard";
 import { playFanfare, haptic, playChime } from "@/lib/feedback";
 import { Gift, Target, History, Trophy, Check, PartyPopper, Sparkles } from "lucide-react";
 
@@ -181,6 +182,31 @@ function RewardsPage() {
           </div>
         )}
       </section>
+
+      {/* Personal jars — only when split jars enabled */}
+      {household.splitJarsEnabled && (
+        <section className="space-y-3">
+          <h2 className="font-display text-xl font-bold flex items-center gap-2">
+            <Gift className="w-5 h-5" /> Individual rewards
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Each kid&apos;s personal jar fills from their share of every award.
+          </p>
+          {kids.filter((k) => (k.personalTarget ?? 0) > 0).length === 0 ? (
+            <div className="card-soft p-4 text-center text-sm text-muted-foreground">
+              No personal targets set yet. Go to Settings → Individual jars to configure them.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {kids
+                .filter((k) => (k.personalTarget ?? 0) > 0)
+                .map((k) => (
+                  <PersonalJarCard key={k.id} kid={k} size={120} />
+                ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Reward history */}
       <section className="space-y-3">

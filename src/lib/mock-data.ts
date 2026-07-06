@@ -30,6 +30,10 @@ export type Kid = {
   currentPoints: number; // resets to 0 when a reward is claimed
   allTimePoints: number; // never resets, cumulative forever
   companionId?: string; // chosen mascot (matches COMPANIONS.id)
+  // Individual jar (optional — see split_jars_enabled on household)
+  personalPool: number; // points in the kid's personal jar
+  personalTarget: number; // points needed to fill personal jar (0 = disabled)
+  personalReward?: string; // reward name when personal jar fills
 };
 
 export type Chore = {
@@ -120,6 +124,8 @@ export const INITIAL_KIDS: Kid[] = [
     currentPoints: 34,
     allTimePoints: 145,
     companionId: "sunny",
+    personalPool: 0,
+    personalTarget: 0,
   },
   {
     id: "k2",
@@ -128,6 +134,8 @@ export const INITIAL_KIDS: Kid[] = [
     currentPoints: 22,
     allTimePoints: 98,
     companionId: "pip",
+    personalPool: 0,
+    personalTarget: 0,
   },
   {
     id: "k3",
@@ -136,6 +144,8 @@ export const INITIAL_KIDS: Kid[] = [
     currentPoints: 18,
     allTimePoints: 72,
     companionId: "fern",
+    personalPool: 0,
+    personalTarget: 0,
   },
 ];
 
@@ -712,6 +722,8 @@ export const INITIAL_HOUSEHOLD = {
   // 14-day free trial by default (§5 default scaffolding).
   trialEndsAt: Date.now() + 1000 * 60 * 60 * 24 * 14,
   onboarded: true,
+  splitJarsEnabled: false,
+  splitRatio: 50,
 };
 
 const DAY = 1000 * 60 * 60 * 24;
