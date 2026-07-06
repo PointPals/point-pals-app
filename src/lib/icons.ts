@@ -1,26 +1,111 @@
-// Icon registry — 66 flat-pastel tiles sliced from the PointPals icon pack
-// (see src/assets/icons/i00.png … i65.png, 11 cols × 6 rows).
-// Icons are referenced by key ("i00".."i65") throughout the app so mock data
-// stays JSON-safe and swappable to a real backend later.
+// Icon registry — transparent-background PNG tiles hosted in the Supabase
+// `assets` bucket. Icons are referenced throughout the app by their filename
+// key (e.g. "make-bed.png") so chores/skills stay JSON-safe. Chore records
+// may also store a full https URL (legacy) — those pass through unchanged
+// via the `startsWith("http")` branch in consumers.
 
-const modules = import.meta.glob("../assets/icons/*.png", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
+const SUPABASE_ASSET_BASE =
+  "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets";
 
-const REGISTRY: Record<string, string> = {};
-for (const path in modules) {
-  const m = path.match(/i(\d{2})\.png$/);
-  if (m) REGISTRY[`i${m[1]}`] = modules[path];
-}
+// Ordered: chores/kid behaviours first, then positive/needs-work skills,
+// with the adult-tagged icons grouped at the end.
+const ICON_FILES: string[] = [
+  // Daily routine
+  "make-bed.png",
+  "brushteeth-morning-bed.png",
+  "brushteeth-night-bed.png",
+  "flossed-teeth.png",
+  "brush-hair.png",
+  "washed-hands.png",
+  "bath-or-shower.png",
+  "get-dressed.png",
+  "get-ready-for-bed.png",
+  "went-to-bed-by-yourself.png",
+  "stayed-in-bed-all-night.png",
+  "woke-up-on-time.png",
+  "getting-out-the-door-on-time.png",
+  // Meals
+  "ate-breakfast.png",
+  "ate-lunch.png",
+  "finished-dinner.png",
+  "made-a-snack.png",
+  "take-vitamins_medicine.png",
+  // School / activities
+  "packed-bag.png",
+  "did-homework.png",
+  "music-practise.png",
+  "exercised.png",
+  "journalling.png",
+  "relaxed.png",
+  // Household chores
+  "tidied-room.png",
+  "tidied-up.png",
+  "put-things-away.png",
+  "put-clothes-away.png",
+  "put-shoes-away.png",
+  "hung-up-coat.png",
+  "groceries-away.png",
+  "set-the-table.png",
+  "emptied-or-loaded-dishwasher.png",
+  "swept-the-room.png",
+  "mopped-the-floor.png",
+  "vacuumn.png",
+  "take-out-rubbish.png",
+  "sorted-recycling.png",
+  "watered-plants.png",
+  "fed-pets.png",
+  // Positive skills
+  "being-helpful.png",
+  "being-independent.png",
+  "being-respectful.png",
+  "helped-without-being-asked.png",
+  "helping-others.png",
+  "including-others.png",
+  "sharing-toys.png",
+  "showing-empathy.png",
+  "using-manners.png",
+  "used-kindwords.png",
+  "followed-directions.png",
+  "waiting-paitently.png",
+  "calmed-down-after-getting-mad.png",
+  "tried-your-best.png",
+  "done.png",
+  // Needs work
+  "argued.png",
+  "didn't-listen.png",
+  "did-not-follow-instructions.png",
+  "hit-or-pushed.png",
+  "threw-things.png",
+  "yelled-or-screamed.png",
+  "tantrum.png",
+  "ran-away.png",
+  "refused-to-share.png",
+  "made-a-mess.png",
+  "not-yet.png",
+  // Adult
+  "adult-ate healthy.png",
+  "adult-bed-before-targettime.png",
+  "adult-drank-21L-water.png",
+  "adult-exercised-30min.png",
+  "adult-folded-and-put-away-on-same-day.png",
+  "adult-journalling.png",
+  "adult-meditated.png",
+  "adult-no doom scrolling.png",
+  "adult-no-phone.png",
+  "adult-paid-a-bill.png",
+  "adult-took-a-lunchbreak.png",
+];
+
+const REGISTRY: Record<string, string> = Object.fromEntries(
+  ICON_FILES.map((f) => [f, `${SUPABASE_ASSET_BASE}/${encodeURIComponent(f)}`]),
+);
 
 export function iconUrl(key: string): string | undefined {
   return REGISTRY[key];
 }
 
 export function isIconKey(key: string): boolean {
-  return /^i\d{2}$/.test(key) && key in REGISTRY;
+  return key in REGISTRY;
 }
 
-export const ICON_KEYS = Object.keys(REGISTRY).sort();
+export const ICON_KEYS = ICON_FILES.slice();
