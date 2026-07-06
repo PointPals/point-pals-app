@@ -28,7 +28,28 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
 
   return (
     <div className="card-soft relative overflow-hidden p-5 flex flex-col items-center text-center">
-      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-butter/30 to-transparent pointer-events-none" />
+      {/* Pastel mesh backdrop — soft, warm, heirloom-shelf feel */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(60% 45% at 50% 10%, rgba(253,230,138,0.45), transparent 70%)," +
+            "radial-gradient(50% 40% at 12% 40%, rgba(251,207,232,0.4), transparent 70%)," +
+            "radial-gradient(55% 45% at 92% 55%, rgba(191,219,254,0.4), transparent 70%)," +
+            "radial-gradient(70% 40% at 50% 100%, rgba(221,214,254,0.35), transparent 70%)",
+        }}
+      />
+      {/* Warm shelf glow beneath the jar */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-14 h-16 w-3/4 rounded-[50%]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(212,168,74,0.28), transparent 75%)",
+          filter: "blur(10px)",
+        }}
+      />
 
       <div className="relative z-10 flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] text-muted-foreground">
         <Sparkles className="w-3.5 h-3.5" /> Family jar
