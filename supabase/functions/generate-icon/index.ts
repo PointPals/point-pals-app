@@ -38,7 +38,7 @@ async function generateImage(prompt: string): Promise<Uint8Array> {
   const fullPrompt = `${STYLE_PROMPT}\n\n${prompt}`;
 
   // Gemini 2.0 Flash with image generation via Imagen
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GOOGLE_API_KEY}`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -52,6 +52,7 @@ async function generateImage(prompt: string): Promise<Uint8Array> {
         topP: 1,
         topK: 32,
         maxOutputTokens: 4096,
+        responseModalities: ["IMAGE", "TEXT"],
       },
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },

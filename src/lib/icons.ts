@@ -57,7 +57,6 @@ const ICON_FILES: string[] = [
   // Positive skills
   "being-independent.png",
   "being-respectful.png",
-  "being-helpful.png",
   "helped-without-being-asked.png",
   "including-others.png",
   "sharing-toys.png",
