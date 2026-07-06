@@ -26,3 +26,13 @@ COMMENT ON COLUMN households.split_jars_enabled
   IS 'When true, awards are split between shared pool and each kid''s personal pool';
 COMMENT ON COLUMN households.split_ratio
   IS 'Percentage of each award that goes to the shared jar (0-100; remainder is personal)';
+
+ALTER TABLE households
+  ADD COLUMN split_mode          TEXT NOT NULL DEFAULT 'percentage'
+    CHECK (split_mode IN ('percentage', 'match')),
+  ADD COLUMN shared_jar_enabled BOOLEAN NOT NULL DEFAULT true;
+
+COMMENT ON COLUMN households.split_mode
+  IS '"percentage" — split per split_ratio; "match" (1:1) — full points to both jars';
+COMMENT ON COLUMN households.shared_jar_enabled
+  IS 'When false, the shared family jar is hidden and all points flow to personal jars';

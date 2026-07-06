@@ -228,7 +228,7 @@ export function MarbleJar({
     }
     const measure = () => {
       const w = wrap.clientWidth || size;
-      setRenderSize(Math.max(160, Math.min(size, Math.round(w))));
+      setRenderSize(Math.max(80, Math.min(size, Math.round(w))));
     };
     measure();
     const ro = new ResizeObserver(measure);

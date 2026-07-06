@@ -54,6 +54,14 @@ export type Household = {
   // Individual jar settings (optional, default OFF)
   splitJarsEnabled: boolean;
   splitRatio: number; // percentage (0-100) that goes to the shared jar; rest is personal
+  /**
+   * "percentage" — split each award between shared + personal per splitRatio.
+   * "match" (1:1) — full award points go to BOTH the shared jar AND personal jar.
+   */
+  splitMode: "percentage" | "match";
+  /** When false, the shared family jar is hidden entirely. All points flow to
+   *  individual personal jars only. A mini MarbleJar per kid is shown on home. */
+  sharedJarEnabled: boolean;
 };
 
 // A reversible award batch, kept only until its undo window closes (§2).
@@ -108,6 +116,10 @@ type Ctx = {
   // ── Individual jar settings ────────────────────────────────────────
   setSplitJarsEnabled: (enabled: boolean) => void;
   setSplitRatio: (ratio: number) => void;
+  /** "percentage" — split per splitRatio; "match" (1:1) — full to both. */
+  setSplitMode: (mode: "percentage" | "match") => void;
+  /** Show the shared family jar alongside personal jars. */
+  setSharedJarEnabled: (enabled: boolean) => void;
   /** Set or clear a kid's personal jar target and reward. Set target to 0 to disable. */
   setPersonalTarget: (kidId: string, target: number, reward?: string) => void;
   /** Claim a kid's personal reward — resets only that kid's personalPool. */
@@ -482,11 +494,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     awardPoints: (kidIds, item) => {
       const now = Date.now();
       const batchId = uid();
-      const splitJars = household.splitJarsEnabled;
-      const splitRatio = household.splitRatio;
-      // When split jars enabled, compute shared vs personal portions.
-      const sharedPoints = splitJars ? Math.floor(item.points * splitRatio / 100) : item.points;
-      const personalPoints = splitJars ? item.points - sharedPoints : 0;
+
+      // ── Compute shared vs personal jar portions ───────────────────
+      //   splitJars OFF       → legacy single-jar mode (all to shared)
+      //   sharedJarEnabled OFF → individual j.ars only (all to personal)
+      //   splitMode "match"    → 1:1 — full points to BOTH jars
+      //   splitMode "%"        → split per splitRatio
+      let sharedPoints: number;
+      let personalPoints: number;
+      if (!household.splitJarsEnabled) {
+        sharedPoints = item.points;
+        personalPoints = 0;
+      } else if (!household.sharedJarEnabled) {
+        sharedPoints = 0;
+        personalPoints = item.points;
+      } else if (household.splitMode === "match") {
+        sharedPoints = item.points;
+        personalPoints = item.points;
+      } else {
+        sharedPoints = Math.floor(item.points * household.splitRatio / 100);
+        personalPoints = item.points - sharedPoints;
+      }
       const poolDelta = sharedPoints;
 
       const eventRows = kidIds.map((kidId) => ({
@@ -497,7 +525,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         points: item.points,
         batch_id: batchId,
       }));
-      const batch: AwardBatch = { id: batchId, at: now, kidIds, item, poolDelta, personalDelta: splitJars ? personalPoints : undefined };
+      const batch: AwardBatch = { id: batchId, at: now, kidIds, item, poolDelta, personalDelta: household.splitJarsEnabled ? personalPoints : undefined };
       setState((s) => ({
         ...s,
         kids: s.kids.map((k) =>
@@ -506,7 +534,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ...k,
                 currentPoints: Math.max(0, k.currentPoints + item.points),
                 allTimePoints: Math.max(0, k.allTimePoints + item.points),
-                personalPool: splitJars ? Math.max(0, k.personalPool + personalPoints) : k.personalPool,
+                personalPool: household.splitJarsEnabled ? Math.max(0, k.personalPool + personalPoints) : k.personalPool,
               }
             : k,
         ),
@@ -549,9 +577,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!kid) return;
           const nextCur = Math.max(0, kid.currentPoints + item.points);
           const nextAll = Math.max(0, kid.allTimePoints + item.points);
-          const nextPersonal = splitJars ? Math.max(0, kid.personalPool + personalPoints) : kid.personalPool;
+          const nextPersonal = household.splitJarsEnabled ? Math.max(0, kid.personalPool + personalPoints) : kid.personalPool;
           const dbPatch: Record<string, unknown> = { current_points: nextCur, all_time_points: nextAll };
-          if (splitJars) dbPatch.personal_pool = nextPersonal;
+          if (household.splitJarsEnabled) dbPatch.personal_pool = nextPersonal;
           void dbWrite(
             async () =>
               await supabase
@@ -919,6 +947,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
             await supabase
               .from("households")
               .update({ split_ratio: clamped } as never)
+              .eq("id", hid()),
+        );
+      }
+    },
+    setSplitMode: (mode) => {
+      setState((s) => ({
+        ...s,
+        household: { ...s.household, splitMode: mode },
+      }));
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("households")
+              .update({ split_mode: mode } as never)
+              .eq("id", hid()),
+        );
+      }
+    },
+    setSharedJarEnabled: (enabled) => {
+      setState((s) => ({
+        ...s,
+        household: { ...s.household, sharedJarEnabled: enabled },
+      }));
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("households")
+              .update({ shared_jar_enabled: enabled } as never)
               .eq("id", hid()),
         );
       }

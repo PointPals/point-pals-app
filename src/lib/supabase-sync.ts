@@ -67,6 +67,8 @@ export function mapHousehold(row: DbHousehold): Household {
     onboarded: row.onboarded,
     splitJarsEnabled: (row as { split_jars_enabled?: boolean }).split_jars_enabled ?? false,
     splitRatio: (row as { split_ratio?: number }).split_ratio ?? 50,
+    splitMode: (row as { split_mode?: string }).split_mode === "match" ? "match" : "percentage",
+    sharedJarEnabled: (row as { shared_jar_enabled?: boolean }).shared_jar_enabled ?? true,
   };
 }
 

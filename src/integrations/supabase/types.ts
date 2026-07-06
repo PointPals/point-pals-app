@@ -183,6 +183,8 @@ export type Database = {
           shared_pool: number
           split_jars_enabled: boolean
           split_ratio: number
+          split_mode: string
+          shared_jar_enabled: boolean
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: string
@@ -208,6 +210,8 @@ export type Database = {
           shared_pool?: number
           split_jars_enabled?: boolean
           split_ratio?: number
+          split_mode?: string
+          shared_jar_enabled?: boolean
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string
@@ -233,6 +237,8 @@ export type Database = {
           shared_pool?: number
           split_jars_enabled?: boolean
           split_ratio?: number
+          split_mode?: string
+          shared_jar_enabled?: boolean
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string

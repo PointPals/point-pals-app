@@ -4,6 +4,7 @@ import { useApp, type AwardBatch } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { primeAudio, playChime, haptic } from "@/lib/feedback";
 import { KidBadge } from "@/components/KidBadge";
+import { MarbleJar } from "@/components/MarbleJar";
 import { AwardModal } from "@/components/AwardModal";
 import { FamilyJarCard } from "@/components/FamilyJarCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/")({
 // marble jar as the dominant visual. No chore/skill tiles live here; they're
 // exclusively inside the AwardModal. The old text feed moved to /memories.
 function HomePage() {
-  const { kids, household, awardPoints, undoBatch, streakByKid, hydrated } = useApp();
+  const { kids, household, history, awardPoints, undoBatch, streakByKid, hydrated } = useApp();
   const { canAward, canEdit } = useHouseholdRole(household.id);
   const { entered } = Route.useSearch();
   const navigate = useNavigate();
@@ -116,22 +117,41 @@ function HomePage() {
                 streak={mounted ? (streakByKid[kid.id] ?? 0) : 0}
                 onClick={() => openKid(kid.id)}
               />
+              {/* Individual jar indicator: mini MarbleJar when shared jar hidden,
+                  or progress bar when shared jar is visible */}
               {household.splitJarsEnabled && (kid.personalTarget ?? 0) > 0 && (
-                <div className="w-full max-w-[80px]">
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span className="font-semibold text-xs">{kid.personalPool}</span>
-                    <span>{kid.personalTarget}</span>
+                household.sharedJarEnabled ? (
+                  <div className="w-full max-w-[80px]">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span className="font-semibold text-xs">{kid.personalPool}</span>
+                      <span>{kid.personalTarget}</span>
+                    </div>
+                    <div className="mt-0.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(100, (kid.personalPool / Math.max(1, kid.personalTarget)) * 100)}%`,
+                          backgroundColor: `var(--pastel-${kid.color})`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-0.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${Math.min(100, (kid.personalPool / Math.max(1, kid.personalTarget)) * 100)}%`,
-                        backgroundColor: `var(--pastel-${kid.color})`,
-                      }}
+                ) : (
+                  <div className="w-[92px]">
+                    <MarbleJar
+                      value={kid.personalPool}
+                      target={kid.personalTarget > 0 ? kid.personalTarget : 999}
+                      events={history.filter((e) => e.kidId === kid.id && e.points > 0)}
+                      kids={[kid]}
+                      size={80}
+                      reducedMotion={true}
                     />
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5">
+                      <span className="font-semibold text-xs">{kid.personalPool}</span>
+                      <span>{kid.personalTarget}</span>
+                    </div>
                   </div>
-                </div>
+                )
               )}
             </div>
           ))}

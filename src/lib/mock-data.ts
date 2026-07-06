@@ -726,6 +726,8 @@ export const INITIAL_HOUSEHOLD = {
   onboarded: true,
   splitJarsEnabled: false,
   splitRatio: 50,
+  splitMode: "percentage" as const,
+  sharedJarEnabled: true,
 };
 
 const DAY = 1000 * 60 * 60 * 24;

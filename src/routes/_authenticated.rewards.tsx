@@ -96,15 +96,17 @@ function RewardsPage() {
         </p>
       </div>
 
-      {/* The jar */}
-      <FamilyJarCard size={300} />
+      {/* Shared family jar — hidden when individual jars only */}
+      {household.sharedJarEnabled && (
+        <>
+          <FamilyJarCard size={300} />
 
-      {/* Active reward / set reward */}
-      <section className="card-soft p-5 space-y-4">
-        <h2 className="font-display text-xl font-bold flex items-center gap-2">
-          <Target className="w-5 h-5" />
-          {editing ? "Set a reward" : activeReward ? "Current reward" : "No reward yet"}
-        </h2>
+          {/* Active reward / set reward */}
+          <section className="card-soft p-5 space-y-4">
+            <h2 className="font-display text-xl font-bold flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              {editing ? "Set a reward" : activeReward ? "Current reward" : "No reward yet"}
+            </h2>
 
         {editing || !activeReward ? (
           <div className="space-y-4">
@@ -182,6 +184,8 @@ function RewardsPage() {
           </div>
         )}
       </section>
+        </>
+      )}
 
       {/* Personal jars — only when split jars enabled */}
       {household.splitJarsEnabled && (
