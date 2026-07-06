@@ -13,6 +13,7 @@
 
 import { COMPANIONS, PASTEL_HEX, type Chore, type Companion, type Kid } from "./mock-data";
 import { iconUrl, isIconKey } from "./icons";
+import { companionArtUrl } from "./companion-assets";
 import { addDays, format, startOfWeek } from "date-fns";
 
 // Cache images so repeated renders don't refetch.
@@ -307,6 +308,19 @@ async function renderSheet(input: SheetInput): Promise<{
     }),
   );
 
+  // Preload the kid's companion mascot art (the same PNG used in-app). If it
+  // can't be reached we fall back to the vector companion so the sheet still
+  // has a friendly face.
+  let companionImg: HTMLImageElement | null = null;
+  const companionUrl = companionArtUrl(input.companion.id);
+  if (companionUrl) {
+    try {
+      companionImg = await loadImage(companionUrl);
+    } catch {
+      companionImg = null;
+    }
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
@@ -323,7 +337,31 @@ async function renderSheet(input: SheetInput): Promise<{
   // ---- header ----
   const mascotSize = 200;
   const headerY = M;
-  drawCompanion(ctx, input.companion, contentX, headerY - 10, mascotSize);
+  // Coloured halo behind the avatar uses the kid's palette so the printed
+  // sheet visually matches their in-app card.
+  const haloCx = contentX + mascotSize / 2;
+  const haloCy = headerY - 10 + mascotSize / 2;
+  const haloR = mascotSize / 2;
+  const halo = ctx.createRadialGradient(haloCx, haloCy - haloR * 0.2, 4, haloCx, haloCy, haloR);
+  halo.addColorStop(0, PASTEL_HEX[input.kid.color]);
+  halo.addColorStop(1, tint(PASTEL_HEX[input.kid.color], 0.55));
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(haloCx, haloCy, haloR, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (companionImg) {
+    // Clip to a circle so the plush art sits neatly inside the coloured halo.
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(haloCx, haloCy, haloR - 4, 0, Math.PI * 2);
+    ctx.clip();
+    const s = (haloR - 4) * 2;
+    ctx.drawImage(companionImg, haloCx - s / 2, haloCy - s / 2, s, s);
+    ctx.restore();
+  } else {
+    drawCompanion(ctx, input.companion, contentX, headerY - 10, mascotSize);
+  }
 
   const textX = contentX + mascotSize + 40;
   ctx.textAlign = "left";
