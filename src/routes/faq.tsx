@@ -72,10 +72,9 @@ const FAQ_SCHEMA: { q: string; a: string }[] = [
     a: "Yes. Each child has their own chores and habits, earns points individually, and contributes to the shared family jar. The shared jar turns chore time from sibling competition into teamwork.",
   },
   {
-    q: "Does PointPals cost anything?",
-    a: "PointPals is free to try. A single low-cost family subscription unlocks the full app for every child and every parent in your household.",
+    q: "Why don't marbles drop one-for-one when the target is higher than 90?",
+    a: "The jar animation can fit up to 90 marbles while staying smooth on every device. If your family's target is above 90, each marble represents a chunk of points instead of a single point, so the jar still fills honestly to 100% of the target. Small awards are added to a running total, and a soft +N floater appears for every positive award so every contribution is acknowledged, even before a full marble drops.",
   },
-];
 
 type FaqEntry = { id: string; question: string; content: ReactNode };
 type FaqSection = { heading: string; items: FaqEntry[] };
