@@ -1,11 +1,55 @@
-// Season montage export (client side).
+// Memory seasons + montage export (client side).
 //
-// The memory feed runs in fixed 90-day cycles (see the cycle banner on the
-// Memories page — cycle state lives on the households row, maintained by the
-// retention cron jobs). The montage itself is rendered asynchronously by the
-// render-montage edge function and polled here until the MP4 is ready.
+// The memory feed runs in fixed "seasons" (90 days by default). Season state
+// lives on the households row (maintained by the retention cron jobs); the
+// montage itself is rendered asynchronously by the render-montage edge
+// function and polled here until the MP4 is ready.
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+
+const db = supabase as unknown as SupabaseClient;
+
+export type SeasonInfo = {
+  enabled: boolean;
+  retentionDays: number;
+  startedAt: number;
+  endsAt: number;
+  daysLeft: number;
+};
+
+export async function fetchSeasonInfo(householdId: string): Promise<SeasonInfo | null> {
+  const { data, error } = await db
+    .from("households")
+    .select(
+      "memory_retention_enabled, memory_retention_days, memory_cycle_started_at, memory_cycle_ends_at",
+    )
+    .eq("id", householdId)
+    .maybeSingle();
+  if (error || !data || !data.memory_cycle_ends_at) return null;
+  const endsAt = new Date(data.memory_cycle_ends_at).getTime();
+  return {
+    enabled: data.memory_retention_enabled ?? true,
+    retentionDays: data.memory_retention_days ?? 90,
+    startedAt: new Date(data.memory_cycle_started_at).getTime(),
+    endsAt,
+    daysLeft: Math.max(0, Math.ceil((endsAt - Date.now()) / (24 * 60 * 60 * 1000))),
+  };
+}
+
+/** Settings opt-out: turn the seasonal refresh on/off for a household. */
+export async function setSeasonRefreshEnabled(
+  householdId: string,
+  enabled: boolean,
+): Promise<boolean> {
+  const { error } = await db
+    .from("households")
+    .update({ memory_retention_enabled: enabled })
+    .eq("id", householdId);
+  return !error;
+}
+
+// ── Montage rendering ──────────────────────────────────────────────────────
 
 export type MontageResult =
   | { ok: true; jobId: string; status: "queued" | "rendering" | "done"; url?: string }
@@ -55,9 +99,9 @@ export function montageErrorMessage(code: string): string {
     case "not_configured":
       return "Montage rendering isn't switched on yet — it's coming soon.";
     case "season_limit_reached":
-      return "You've already made this cycle's montage. Subscribers can render a few extra takes.";
+      return "You've already made this season's montage. Subscribers can render a few extra takes.";
     case "no_memories":
-      return "Nothing in the feed this cycle yet — add some memories first.";
+      return "Nothing in the feed this season yet — add some memories first.";
     default:
       return "Couldn't create the montage right now — please try again later.";
   }

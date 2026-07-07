@@ -25,8 +25,6 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const CYCLE_DAYS = 90;
-const DAY_MS = 24 * 60 * 60 * 1000;
 const IMAGE_SECONDS = 3;
 const VIDEO_SECONDS = 5;
 const TITLE_SECONDS = 3;
@@ -39,15 +37,6 @@ const PAID_MONTAGES_PER_SEASON = 5;
 function shotstackBase(): string {
   const env = Deno.env.get("SHOTSTACK_ENV") ?? "v1";
   return `https://api.shotstack.io/edit/${env}`;
-}
-
-// Current season window, same arithmetic as notify-memory-expiry and
-// purge-memories: fixed 90-day cycles anchored at memory_cycle_started_at.
-function seasonWindow(anchorIso: string): { start: Date; end: Date } {
-  const anchor = new Date(anchorIso);
-  const cycleNumber = Math.floor((Date.now() - anchor.getTime()) / (CYCLE_DAYS * DAY_MS));
-  const start = new Date(anchor.getTime() + cycleNumber * CYCLE_DAYS * DAY_MS);
-  return { start, end: new Date(start.getTime() + CYCLE_DAYS * DAY_MS) };
 }
 
 type MediaItem = { path: string; kind: "image" | "video" };
@@ -113,21 +102,17 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
 
   const { data: hh } = await admin
     .from("households")
-    .select("name, subscription_status, memory_cycle_started_at")
+    .select("name, subscription_status, memory_cycle_started_at, memory_cycle_ends_at")
     .eq("id", householdId)
     .maybeSingle();
   if (!hh) return json({ ok: false, error: "Household not found" }, 404);
-  if (!hh.memory_cycle_started_at) return json({ ok: false, error: "no_memories" }, 400);
-
-  const season = seasonWindow(hh.memory_cycle_started_at);
-  const seasonEndIso = season.end.toISOString();
 
   // Idempotency: an in-flight job for this season is simply returned.
   const { data: existing } = await admin
     .from("montage_jobs")
     .select("id, status")
     .eq("household_id", householdId)
-    .eq("cycle_ends_at", seasonEndIso)
+    .eq("cycle_ends_at", hh.memory_cycle_ends_at)
     .in("status", ["queued", "rendering"])
     .order("created_at", { ascending: false })
     .limit(1);
@@ -142,7 +127,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     .from("montage_jobs")
     .select("id", { count: "exact", head: true })
     .eq("household_id", householdId)
-    .eq("cycle_ends_at", seasonEndIso)
+    .eq("cycle_ends_at", hh.memory_cycle_ends_at)
     .eq("status", "done");
   if ((doneCount ?? 0) >= cap) {
     return json({ ok: false, error: "season_limit_reached", limit: cap }, 429);
@@ -153,7 +138,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     .from("memory_posts")
     .select("id, storage_path, media_type, media_paths, created_at")
     .eq("household_id", householdId)
-    .gte("created_at", season.start.toISOString())
+    .gte("created_at", hh.memory_cycle_started_at)
     .order("created_at", { ascending: true });
   if (postErr) return json({ ok: false, error: postErr.message }, 500);
 
@@ -170,7 +155,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
   clips.push({
     asset: {
       type: "title",
-      text: `The ${hh.name} family\n${formatNzDate(season.start.toISOString())} – ${formatNzDate(seasonEndIso)}`,
+      text: `The ${hh.name} family\n${formatNzDate(hh.memory_cycle_started_at)} – ${formatNzDate(hh.memory_cycle_ends_at)}`,
       style: "chunk",
       size: "small",
     },
@@ -244,7 +229,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
       status: "rendering",
       provider: "shotstack",
       provider_render_id: renderId,
-      cycle_ends_at: seasonEndIso,
+      cycle_ends_at: hh.memory_cycle_ends_at,
       post_count: posts?.length ?? 0,
     })
     .select("id")
