@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
 import { Home, Star, Camera, Settings, ChevronLeft } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import { useCorrection } from "@/lib/correction-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
 import { LOGO_POINTS_URL } from "@/lib/image-urls";
@@ -43,6 +44,7 @@ const NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { household } = useApp();
+  const { activeReward } = useCorrection();
   const { role } = useHouseholdRole(household.id);
   const { goBack } = useBackNav();
 
@@ -229,13 +231,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Family pool
+                {activeReward ? "Working towards" : "Family pool"}
               </div>
               <div className="font-display text-2xl font-bold leading-none mt-1">
-                {household.sharedPool}
+                {activeReward ? (
+                  <span className="truncate max-w-[140px] sm:max-w-[200px] inline-block align-middle">
+                    {activeReward.name}
+                  </span>
+                ) : (
+                  household.sharedPool
+                )}
                 <span className="text-muted-foreground text-base font-sans font-normal">
                   {" "}
-                  / {household.rewardTarget}
+                  / {activeReward ? activeReward.targetPoints : household.rewardTarget}
                 </span>
               </div>
             </div>

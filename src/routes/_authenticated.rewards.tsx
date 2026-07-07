@@ -128,6 +128,14 @@ function RewardsPage() {
               <input
                 value={rewardName}
                 onChange={(e) => setRewardName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && rewardName.trim()) {
+                    e.preventDefault();
+                    setActiveReward(rewardName.trim(), Math.max(10, rewardTarget));
+                    setRewardTarget(Math.max(10, rewardTarget));
+                    setEditing(false);
+                  }
+                }}
                 onBlur={() => {
                   // Save on blur too — catches cases where the user tabs away
                   // or the keyboard dismisses without hitting the save button.
@@ -171,7 +179,7 @@ function RewardsPage() {
         ) : (
           <div className="space-y-4">
             <div className="card-soft p-4 bg-muted/30">
-              <div className="text-sm text-muted-foreground">Working toward</div>
+              <div className="text-sm text-muted-foreground">Working towards</div>
               <div className="font-display text-2xl font-bold mt-1">{activeReward.name}</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {household.sharedPool} / {activeReward.targetPoints} points
