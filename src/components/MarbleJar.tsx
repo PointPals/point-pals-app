@@ -152,13 +152,22 @@ function buildDesired(
     }
   }
 
-  // If the event log ends below the pool value, fill the gap with synthetic
-  // neutral marbles so the jar matches what the user sees in the text.
+  // If the fallback value indicates the jar should have fewer marbles than the
+  // event log builds (e.g. after a reward cycle reset), trim the list so the jar
+  // empties truthfully. Trim from the START (oldest events) so newly-earned
+  // marbles (from the current reward cycle) survive — this keeps the visible
+  // marble colours aligned with personalPool / sharedPool.
   const desiredCount = Math.min(
     Math.round(Math.max(0, fallbackValue ?? pool) / perMarble),
     Math.round(target / perMarble),
     cap,
   );
+  if (list.length > desiredCount) {
+    list.splice(0, list.length - desiredCount);
+  }
+
+  // Fill any remaining gap with synthetic neutral marbles so the jar always
+  // has the right number of marbles even when history is sparse.
   const neutral = MARBLE_TINT.sand ?? DEFAULT_TINT;
   while (list.length < desiredCount) {
     list.push({
@@ -167,13 +176,6 @@ function buildDesired(
       color: neutral[0],
       hue: neutral[1],
     });
-  }
-
-  // If the fallback value indicates the jar should have fewer marbles than the
-  // event log builds (e.g. after a reward cycle reset), trim the list so the jar
-  // empties truthfully.
-  while (list.length > desiredCount) {
-    list.pop();
   }
 
   // Cap: keep the newest `cap` marbles so an old jar full of ancient events
