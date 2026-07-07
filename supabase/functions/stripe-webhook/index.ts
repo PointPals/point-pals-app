@@ -16,10 +16,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ---- Resend template sender (mirror of src/lib/emails.server.ts) --------
 const RESEND_TEMPLATES = {
-  paymentConfirmation:   "1948c765-325d-420e-aabd-a5c9c05a7946",
-  subscriptionRenewal:   "188f5f1c-2e98-41c3-b34b-dc85e6d79c01",
-  paymentFailed:         "7521fc1b-69a3-4311-ba6b-3791525fde2e",
-  subscriptionCancelled: "0b599576-fda3-4f54-a16d-26290f0fb6e3",
+  paymentConfirmation:   "f349804b-9024-44e5-baf5-da4d18c3701a",
+  subscriptionRenewal:   "af7030c6-a449-4d85-beb7-b35f19a4d5fb",
+  paymentFailed:         "be31e3d1-c51d-4255-91fc-db501d76bf08",
+  subscriptionCancelled: "9bbe49aa-223d-44f1-af8d-88560d4a6ae2",
 } as const;
 type TemplateKey = keyof typeof RESEND_TEMPLATES;
 

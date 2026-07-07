@@ -11,16 +11,16 @@ export const RESEND_FROM = "PointPals <hello@pointpals.co.nz>";
 export const SUPPORT_INBOX = "support@pointpals.co.nz";
 
 export const EMAIL_TEMPLATES = {
-  trialWelcome:         "e27abaa3-ce06-4bdb-bea2-d297b81d15d8",
-  tipDay3:              "303f6963-2313-40f2-b8dd-9a7e7a04846e",
-  tipDay7:              "8e1eda2a-1afc-48ed-8b04-f3239e88f728",
-  trialEnding:          "0613cb97-9311-4de3-95e4-47de596b012a",
-  paymentConfirmation:  "1948c765-325d-420e-aabd-a5c9c05a7946",
-  subscriptionRenewal:  "188f5f1c-2e98-41c3-b34b-dc85e6d79c01",
-  paymentFailed:        "7521fc1b-69a3-4311-ba6b-3791525fde2e",
-  tipMonth1:            "bb97dd57-3e76-47aa-8421-3630de618589",
-  supportAutoreply:     "a22249dc-e162-4c29-8562-aecc63b08fa3",
-  subscriptionCancelled:"0b599576-fda3-4f54-a16d-26290f0fb6e3",
+  trialWelcome:         "c47b8f0c-0424-48b9-8298-aea923ae161d",  // Welcome-PointPals
+  tipDay3:              "f8fbb7b8-b955-48a6-b3aa-1079aeefd569",  // Parenting-Tip-StartSmall
+  tipDay7:              "d12adf3c-3874-4abf-94f3-ed04b349257c",  // Parenting-Tip-LabelPraise
+  trialEnding:          "929843c3-c808-4643-9ce5-3a686917f651",  // Trial-Ending-Soon
+  paymentConfirmation:  "f349804b-9024-44e5-baf5-da4d18c3701a",  // Subscription-Receipt
+  subscriptionRenewal:  "af7030c6-a449-4d85-beb7-b35f19a4d5fb",  // Subscription-Renewal
+  paymentFailed:        "be31e3d1-c51d-4255-91fc-db501d76bf08",  // Payment-Failed
+  tipMonth1:            "c61044aa-2146-4715-98c3-030fadc33646",  // Habit-Fading-Tips
+  supportAutoreply:     "267dc7da-55bb-4d22-9512-3b6012f61b75",  // Contact-Confirmation
+  subscriptionCancelled:"9bbe49aa-223d-44f1-af8d-88560d4a6ae2",  // Subscription-Cancelled
 } as const;
 
 export type TemplateKey = keyof typeof EMAIL_TEMPLATES;
