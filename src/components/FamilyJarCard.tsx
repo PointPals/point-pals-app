@@ -101,11 +101,33 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
         className="relative z-10 -my-2"
       />
 
+
       {/* Floating "+N" receipts — anchored near the jar mouth, drift upward */}
-      <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[42%] z-20"
+      >
+        {floaters.map((f) => (
+          <span
+            key={f.id}
+            className="absolute left-1/2 font-display text-2xl font-bold"
+            style={{
+              marginLeft: f.offsetX,
+              color: "#2b2b2b",
+              textShadow: `0 2px 8px ${f.color}, 0 0 2px rgba(255,255,255,0.9)`,
+              animation: "pp-plus-float 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+          >
+            +{f.points}
+          </span>
+        ))}
+      </div>
+
+      {/* Per-kid contribution: use personalPool (current cycle) when split jars are on,
+          fall back to history-based total for legacy (no split jars) mode. */}
+      {kids.length > 0 && household.sharedPool > 0 && (
+        <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
           {kids.map((k) => {
-            // Use personalPool (current cycle) when split jars are on;
-            // fall back to all-history sum for legacy mode.
             const contributed = household.splitJarsEnabled && k.personalPool > 0
               ? Math.min(k.personalPool, household.sharedPool)
               : Math.min(
@@ -123,17 +145,6 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
                 />
                 <span className="font-medium text-foreground">{k.name}</span>
                 <span>· {contributed}</span>
-              </div>
-            );
-          })}
-        </div>assName="flex items-center gap-1.5 text-muted-foreground">
-                <span
-                  aria-hidden
-                  className="inline-block w-2.5 h-2.5 rounded-full shadow-inner"
-                  style={{ backgroundColor: PASTEL_HEX[k.color] }}
-                />
-                <span className="font-medium text-foreground">{k.name}</span>
-                <span>· {Math.min(contributed, household.sharedPool)}</span>
               </div>
             );
           })}
