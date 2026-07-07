@@ -16,6 +16,11 @@ dist-ssr
 .nitro
 *.local
 
+# One-shot scripts
+_deploy_*
+_upload_*
+_up*.mjs
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

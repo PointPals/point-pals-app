@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-store";
 import { useSettings, setSetting } from "@/lib/settings";
 import { Paywall } from "@/components/Paywall";
@@ -32,6 +32,8 @@ import {
   BarChart3,
   ChevronRight,
   LogOut,
+  Send,
+  MailQuestion,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -46,6 +48,16 @@ export const Route = createFileRoute("/_authenticated/settings")({
     ],
   }),
 });
+
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { submitContactForm } from "@/lib/emails.functions";
 
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
@@ -578,12 +590,13 @@ function SettingsPage() {
           <p className="text-sm text-muted-foreground">
             Questions, feedback or trouble? We read every message.
           </p>
-          <a
-            href={`mailto:${SUPPORT_EMAIL}`}
-            className="mt-3 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition"
-          >
-            <LifeBuoy className="h-4 w-4" /> Email {SUPPORT_EMAIL}
-          </a>
+          <SupportDialog supportEmail={SUPPORT_EMAIL} />
+          <p className="mt-3 text-xs text-muted-foreground text-center">
+            Or email us directly at{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
+              {SUPPORT_EMAIL}
+            </a>
+          </p>
         </div>
       </section>
 
@@ -605,6 +618,100 @@ function SettingsPage() {
         </a>
       </div>
     </div>
+  );
+}
+
+/** In-app dialog for the Email Support button — posts through submitContactForm
+ *  which forwards to the support inbox and sends the Contact-Confirmation autoreply. */
+function SupportDialog({ supportEmail }: { supportEmail: string }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    try {
+      await submitContactForm({ data: { name, email, message } });
+      setSent(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSent(false); }}>
+      <DialogTrigger asChild>
+        <button className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition">
+          <MailQuestion className="h-4 w-4" /> Message us
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Send us a message</DialogTitle>
+          <DialogDescription>
+            A real human on the PointPals team will reply, usually within one working day.
+          </DialogDescription>
+        </DialogHeader>
+
+        {sent ? (
+          <div className="rounded-2xl bg-butter/40 border border-butter p-5 text-sm">
+            <p className="font-semibold">Message received 🌱</p>
+            <p className="mt-1 text-muted-foreground">
+              Check your inbox — we’ve sent a confirmation.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={onSubmit} className="space-y-3">
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your name</span>
+              <input
+                type="text" required maxLength={100} value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</span>
+              <input
+                type="email" required maxLength={255} value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Message</span>
+              <textarea
+                required maxLength={3000} rows={5} value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm resize-y"
+              />
+            </label>
+            {err && <p className="text-sm text-destructive">{err}</p>}
+            <button
+              type="submit" disabled={busy}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+            >
+              <Send className="h-4 w-4" /> {busy ? "Sending…" : "Send message"}
+            </button>
+          </form>
+        )}
+
+        <p className="text-xs text-muted-foreground text-center">
+          Or email{" "}
+          <a href={`mailto:${supportEmail}`} className="underline hover:text-foreground">
+            {supportEmail}
+          </a>
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 }
 
