@@ -21,6 +21,7 @@ import {
   Users,
   Copy,
   RefreshCw,
+  Check,
   CheckCircle,
   XCircle,
   Loader2,
@@ -58,6 +59,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { submitContactForm } from "@/lib/emails.functions";
+import { fetchSeasonInfo, setSeasonRefreshEnabled } from "@/lib/montage";
 
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
@@ -89,9 +91,28 @@ function SettingsPage() {
 
   const { role, userId, isAdmin } = useHouseholdRole(household.id);
   const isLive = !!userId; // signed in against Supabase household
+
+  // Seasonal memory refresh (retention opt-out). null = not loaded / demo mode.
+  const [seasonRefresh, setSeasonRefresh] = useState<boolean | null>(null);
+  const [seasonDays, setSeasonDays] = useState(90);
+  useEffect(() => {
+    if (!isLive) return;
+    void fetchSeasonInfo(household.id).then((s) => {
+      if (s) {
+        setSeasonRefresh(s.enabled);
+        setSeasonDays(s.retentionDays);
+      }
+    });
+  }, [isLive, household.id]);
+  async function saveSeasonRefresh(enabled: boolean) {
+    setSeasonRefresh(enabled); // optimistic
+    const ok = await setSeasonRefreshEnabled(household.id, enabled);
+    if (!ok) setSeasonRefresh(!enabled);
+    else trackParent("memory_season_refresh_toggled", { enabled });
+  }
   const [members, setMembers] = useState<
     { user_id: string; role: string; created_at: string; display_name: string | null }[]
-  >([],);
+  >([]);
   const [invites, setInvites] = useState<
     { id: string; code: string; role: string; expires_at: string; used_at: string | null }[]
   >([]);
@@ -118,16 +139,35 @@ function SettingsPage() {
     setMembersLoading(false);
   }
 
-  // Initialise my display name from loaded data
+  // A name suggested by the auth provider (Google populates full_name / name;
+  // fall back to the email's local part). Used to prefill the display-name
+  // field for a member who hasn't set one yet, so extended family who signed
+  // in with Google don't have to retype their name.
+  const [suggestedName, setSuggestedName] = useState("");
+  useEffect(() => {
+    if (!isLive) return;
+    void supabase.auth.getUser().then(({ data }) => {
+      const meta = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const fromMeta =
+        (typeof meta.full_name === "string" && meta.full_name) ||
+        (typeof meta.name === "string" && meta.name) ||
+        "";
+      const fromEmail = data.user?.email?.split("@")[0] ?? "";
+      setSuggestedName((fromMeta || fromEmail || "").trim());
+    });
+  }, [isLive]);
+
+  // Initialise my display name from loaded data, falling back to the
+  // provider-suggested name when none is saved yet.
   useEffect(() => {
     if (userId && members.length > 0) {
       const me = members.find((m) => m.user_id === userId);
       if (me && !myDisplayName) {
-        setMyDisplayName(me.display_name ?? "");
+        setMyDisplayName(me.display_name ?? suggestedName ?? "");
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, members]);
+  }, [userId, members, suggestedName]);
 
   useEffect(() => {
     void loadMembersAndInvites();
@@ -238,8 +278,6 @@ function SettingsPage() {
         </div>
       </section>
 
-
-
       {/* Reports — parent/admin only */}
       {(role === null || role === "admin" || role === "parent") && (
         <section className="space-y-3">
@@ -289,16 +327,14 @@ function SettingsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold truncate">
-                          {isMe ? "You" : displayName ?? `Member · ${m.user_id.slice(0, 8)}`}
+                          {isMe ? "You" : (displayName ?? `Member · ${m.user_id.slice(0, 8)}`)}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Joined {new Date(m.created_at).toLocaleDateString()}
                           {displayName && !isMe && (
                             <>
                               {" · "}
-                              <span className="font-mono text-[10px]">
-                                {m.user_id.slice(0, 8)}
-                              </span>
+                              <span className="font-mono text-[10px]">{m.user_id.slice(0, 8)}</span>
                             </>
                           )}
                         </div>
@@ -499,106 +535,131 @@ function SettingsPage() {
 
       {/* Sibling leaderboard — off by default */}
       {(role === null || role !== "viewer") && (
-      <section className="space-y-3">
-        <SectionTitle icon={<Trophy className="h-4 w-4" />}>Sibling leaderboard</SectionTitle>
-        <div className="card-soft p-1">
-          <ToggleRow
-            icon={<Trophy className="h-4 w-4" />}
-            label="Show a friendly leaderboard"
-            desc="Off by default. A gentle recap of who's earned what — not a live competition."
-            checked={settings.leaderboard}
-            onChange={(v) => {
-              setSetting("leaderboard", v);
-              trackParent("leaderboard_toggle", { on: v });
-            }}
-          />
-        </div>
-        {settings.leaderboard && (
-          <div className="card-soft p-5">
-            <ol className="space-y-2">
-              {ranked.map((k, i) => (
-                <li key={k.id} className="flex items-center gap-3">
-                  <span className="w-5 text-center font-display font-bold text-muted-foreground">
-                    {i + 1}
-                  </span>
-                  <span
-                    className="h-8 w-8 rounded-full"
-                    style={{ backgroundColor: PASTEL_HEX[k.color] }}
-                    aria-hidden
-                  />
-                  <span className="flex-1 font-semibold text-sm">{k.name}</span>
-                  <span className="font-display font-bold">{k.currentPoints}</span>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Everyone contributes to the same jar — this is just a recap, kept out of kids' award
-              screen.
-            </p>
+        <section className="space-y-3">
+          <SectionTitle icon={<Trophy className="h-4 w-4" />}>Sibling leaderboard</SectionTitle>
+          <div className="card-soft p-1">
+            <ToggleRow
+              icon={<Trophy className="h-4 w-4" />}
+              label="Show a friendly leaderboard"
+              desc="Off by default. A gentle recap of who's earned what — not a live competition."
+              checked={settings.leaderboard}
+              onChange={(v) => {
+                setSetting("leaderboard", v);
+                trackParent("leaderboard_toggle", { on: v });
+              }}
+            />
           </div>
-        )}
-      </section>
+          {settings.leaderboard && (
+            <div className="card-soft p-5">
+              <ol className="space-y-2">
+                {ranked.map((k, i) => (
+                  <li key={k.id} className="flex items-center gap-3">
+                    <span className="w-5 text-center font-display font-bold text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <span
+                      className="h-8 w-8 rounded-full"
+                      style={{ backgroundColor: PASTEL_HEX[k.color] }}
+                      aria-hidden
+                    />
+                    <span className="flex-1 font-semibold text-sm">{k.name}</span>
+                    <span className="font-display font-bold">{k.currentPoints}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Everyone contributes to the same jar — this is just a recap, kept out of kids' award
+                screen.
+              </p>
+            </div>
+          )}
+        </section>
       )}
 
       {/* Your data */}
       {(role === null || role !== "viewer") && (
-      <section className="space-y-3">
-        <SectionTitle icon={<Download className="h-4 w-4" />}>Your data</SectionTitle>
-        <div className="card-soft p-5 space-y-3">
-          <p className="text-sm text-muted-foreground">
-            You can export or permanently delete your family's data at any time.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={exportJson}
-              className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold hover:bg-muted transition"
-            >
-              <Download className="h-4 w-4" /> Export data (JSON)
-            </button>
-            <button
-              onClick={deleteAll}
-              className="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-card px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-            >
-              <Trash2 className="h-4 w-4" /> Delete all data
-            </button>
-          </div>
-          <div className="border-t border-border/40 pt-3 mt-2">
-            <ToggleRow
-              icon={<RefreshCw className="h-4 w-4" />}
-              label="Auto-purge memory feed every 90 days"
-              desc="When on, memories older than the current 90-day cycle are automatically removed. We'll email you a reminder first."
-              checked={household.memory_auto_purge !== false}
-              onChange={async (v) => {
-                const { supabase } = await import("@/integrations/supabase/client");
-                await (supabase.from("households") as any)
-                  .update({ memory_auto_purge: v })
-                  .eq("id", household.id);
-              }}
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              <a href="/faq#memory-retention" className="underline hover:text-foreground">
-                Learn about 90-day retention cycles
-              </a>
+        <section className="space-y-3">
+          <SectionTitle icon={<Download className="h-4 w-4" />}>Your data</SectionTitle>
+          <div className="card-soft p-5 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              You can export or permanently delete your family's data at any time.
             </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={exportJson}
+                className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold hover:bg-muted transition"
+              >
+                <Download className="h-4 w-4" /> Export data (JSON)
+              </button>
+              <button
+                onClick={deleteAll}
+                className="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-card px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
+              >
+                <Trash2 className="h-4 w-4" /> Delete all data
+              </button>
+            </div>
+            {isLive && seasonRefresh !== null && (
+              <div className="border-t border-border/60 -mx-4 mt-1">
+                <ToggleRow
+                  icon={<RefreshCw className="h-4 w-4" />}
+                  label="Seasonal memory refresh"
+                  desc={`Memories are kept for one ${seasonDays}-day season, then cleared — you get an email and a downloadable montage first. Turn off to keep the feed forever.`}
+                  checked={seasonRefresh}
+                  onChange={(v) => void saveSeasonRefresh(v)}
+                />
+              </div>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
-      {/* Sign out */}
+      {/* Account */}
       <section className="space-y-3">
         <SectionTitle icon={<LogOut className="h-4 w-4" />}>Account</SectionTitle>
-        <div className="card-soft p-5 space-y-3">
-          <p className="text-sm text-muted-foreground">Sign out of PointPals on this device.</p>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/welcome" });
-            }}
-            className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-          >
-            <LogOut className="h-4 w-4" /> Sign out
-          </button>
+        <div className="card-soft p-5 space-y-4">
+          {isLive && (
+            <div>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Your display name
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">
+                  Shown to the rest of the family instead of an account number — e.g. "Grandma".
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={myDisplayName}
+                    onChange={(e) => setMyDisplayName(e.target.value)}
+                    placeholder="Your name"
+                    className="flex-1 rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
+                  />
+                  <button
+                    onClick={() => void saveDisplayName()}
+                    disabled={savingName}
+                    className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                  >
+                    {displayNameSaved ? <Check className="h-4 w-4" /> : null}
+                    {savingName ? "Saving…" : displayNameSaved ? "Saved" : "Save"}
+                  </button>
+                </div>
+              </label>
+            </div>
+          )}
+
+          <div className="space-y-3 border-t border-border/60 pt-4">
+            <p className="text-sm text-muted-foreground">Sign out of PointPals on this device.</p>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/welcome" });
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
+            >
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
+          </div>
         </div>
       </section>
 
@@ -666,7 +727,13 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSent(false); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setSent(false);
+      }}
+    >
       <DialogTrigger asChild>
         <button className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition">
           <MailQuestion className="h-4 w-4" /> Message us
@@ -690,32 +757,48 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
         ) : (
           <form onSubmit={onSubmit} className="space-y-3">
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your name</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Your name
+              </span>
               <input
-                type="text" required maxLength={100} value={name}
+                type="text"
+                required
+                maxLength={100}
+                value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
               />
             </label>
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Email
+              </span>
               <input
-                type="email" required maxLength={255} value={email}
+                type="email"
+                required
+                maxLength={255}
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
               />
             </label>
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Message</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Message
+              </span>
               <textarea
-                required maxLength={3000} rows={5} value={message}
+                required
+                maxLength={3000}
+                rows={5}
+                value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm resize-y"
               />
             </label>
             {err && <p className="text-sm text-destructive">{err}</p>}
             <button
-              type="submit" disabled={busy}
+              type="submit"
+              disabled={busy}
               className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> {busy ? "Sending…" : "Send message"}
@@ -812,10 +895,7 @@ function PromoteButton({
       {menuOpen && (
         <>
           {/* Backdrop to dismiss */}
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setMenuOpen(false)}
-          />
+          <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
           <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-input rounded-xl shadow-lg p-1.5 min-w-[140px] space-y-0.5">
             <button
               onClick={() => promote("admin")}
@@ -846,5 +926,3 @@ function PromoteButton({
     </div>
   );
 }
-
-

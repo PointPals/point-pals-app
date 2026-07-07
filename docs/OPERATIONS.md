@@ -96,7 +96,36 @@ Keep the existing **Resend** integration for receipts / password resets.
 (`FREE_MONTHLY_CAP` / `PREMIUM_MONTHLY_CAP`) via the `icon_generations` ledger.
 Wire your image provider where marked `TODO` in the function.
 
-## 8. PWA / app-store path (§8)
+## 8. Memory seasons (retention + montage)
+
+The memory feed runs in fixed **90-day seasons**
+(`20260714000000_memory_retention.sql`): each household has a cycle anchor on
+`households` (`memory_cycle_started_at` → derived `memory_cycle_ends_at`).
+Two cron jobs (`20260714000001_memory_retention_cron.sql`, authenticated with
+the Vault `CRON_SECRET`) drive the lifecycle:
+
+- **notify-memory-expiry** (daily 9:30 UTC) — emails the household when a
+  season ends within 0–4 days (idempotent via `email_memory_expiry_sent_at`).
+  Sends direct HTML via Resend — no hosted template to create.
+- **purge-expired-memories** (daily 13:00 UTC) — deletes the ended season's
+  storage objects + rows and rolls the anchor. **Never purges a household
+  whose reminder is missing or under 24h old.** Supports `{"dry_run": true}`
+  for a no-op report — recommended for the first production runs.
+
+Per-household opt-out: `memory_retention_enabled` (toggle in Settings → Your
+data). The cycle columns themselves are frozen for clients by the billing
+guard trigger.
+
+Deploy: `supabase functions deploy notify-memory-expiry purge-expired-memories
+render-montage`, then `supabase db push`.
+
+**Montage export** (`render-montage`, `20260714000002_montage_jobs.sql`):
+members can render their season as an MP4 via Shotstack — set
+`SHOTSTACK_API_KEY` (see `ENV.md`); until then the UI degrades gracefully.
+Finished videos land in the private `exports` bucket and are served by signed
+URL. Cost gate: 1 montage/season free tier, 5 for subscribers.
+
+## 9. PWA / app-store path (§8)
 
 `public/manifest.webmanifest` + `public/sw.js` (registered in `ClientBoot`,
 production only). Nothing depends on browser-only APIs without a clean Capacitor

@@ -31,6 +31,40 @@ function stringifyVars(vars?: Record<string, unknown>): Record<string, string> {
   return out;
 }
 
+export interface ResendHtmlOptions {
+  to: string | string[];
+  from: string;
+  subject: string;
+  html: string;
+  replyTo?: string;
+}
+
+/** Send a plain HTML email (no hosted template) via the Resend API. */
+export async function sendResendHtml(
+  apiKey: string,
+  opts: ResendHtmlOptions,
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const to = Array.isArray(opts.to) ? opts.to : [opts.to];
+  const payload: Record<string, unknown> = {
+    from: opts.from,
+    to,
+    subject: opts.subject,
+    html: opts.html,
+  };
+  if (opts.replyTo) payload.reply_to = opts.replyTo;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  return { ok: res.ok, status: res.status, body };
+}
+
 export async function sendResendTemplate(
   apiKey: string,
   opts: ResendTemplateOptions,

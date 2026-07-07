@@ -79,6 +79,10 @@ const FAQ_SCHEMA: { q: string; a: string }[] = [
     q: "Does PointPals cost anything?",
     a: "PointPals is free to try. A single low-cost family subscription unlocks the full app for every child and every parent in your household.",
   },
+  {
+    q: "How long are memories kept?",
+    a: "The memory feed runs in 90-day seasons. When a season ends, its photos, videos, and voice notes are permanently deleted — a privacy feature, not a storage limit. You get an email a few days beforehand, you can download the season as a video montage first, and you can switch the seasonal refresh off in Settings.",
+  },
 ];
 
 type FaqEntry = { id: string; question: string; content: ReactNode };
@@ -99,9 +103,9 @@ const SECTIONS: FaqSection[] = [
               together with a reward you choose as a team.
             </p>
             <p>
-              It&rsquo;s designed for families who are tired of nagging, bribing, and power struggles
-              over everyday tasks. Instead of fighting about chores, families track progress together
-              and celebrate effort.
+              It&rsquo;s designed for families who are tired of nagging, bribing, and power
+              struggles over everyday tasks. Instead of fighting about chores, families track
+              progress together and celebrate effort.
             </p>
           </>
         ),
@@ -118,8 +122,8 @@ const SECTIONS: FaqSection[] = [
               pre-agreed reward.
             </p>
             <p>
-              The jar is shared — every child&rsquo;s contribution fills it together. This encourages
-              teamwork rather than competition between siblings.
+              The jar is shared — every child&rsquo;s contribution fills it together. This
+              encourages teamwork rather than competition between siblings.
             </p>
           </>
         ),
@@ -192,10 +196,20 @@ const SECTIONS: FaqSection[] = [
           <>
             <p>Anything you want to encourage. Common examples include:</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Chores:</strong> making the bed, putting shoes away, clearing the table, feeding pets</li>
-              <li><strong>Habits:</strong> brushing teeth, getting dressed, packing a school bag</li>
-              <li><strong>Kindness:</strong> helping a sibling, using kind words, sharing</li>
-              <li><strong>Effort:</strong> trying something hard, staying calm during frustration, apologising</li>
+              <li>
+                <strong>Chores:</strong> making the bed, putting shoes away, clearing the table,
+                feeding pets
+              </li>
+              <li>
+                <strong>Habits:</strong> brushing teeth, getting dressed, packing a school bag
+              </li>
+              <li>
+                <strong>Kindness:</strong> helping a sibling, using kind words, sharing
+              </li>
+              <li>
+                <strong>Effort:</strong> trying something hard, staying calm during frustration,
+                apologising
+              </li>
             </ul>
             <p>
               You decide what matters for your family. PointPals lets you create custom chores and
@@ -262,14 +276,14 @@ const SECTIONS: FaqSection[] = [
               rather than a single point.
             </p>
             <p>
-              For example, a target of 300 means each marble is worth about 3.3 points. The jar still
-              fills honestly to 100% of the target — it just reaches 90 marbles at the 300-point mark
-              instead of showing 300 individual marbles.
+              For example, a target of 300 means each marble is worth about 3.3 points. The jar
+              still fills honestly to 100% of the target — it just reaches 90 marbles at the
+              300-point mark instead of showing 300 individual marbles.
             </p>
             <p>
               To make sure every award still feels acknowledged, a soft <strong>+N</strong> floater
-              appears above the jar for every positive point award, even when it is not yet enough to
-              drop a full marble.
+              appears above the jar for every positive point award, even when it is not yet enough
+              to drop a full marble.
             </p>
           </>
         ),
@@ -279,9 +293,7 @@ const SECTIONS: FaqSection[] = [
         question: "Isn't this just bribery?",
         content: (
           <>
-            <p>
-              This is the most common question, and it deserves an honest answer.
-            </p>
+            <p>This is the most common question, and it deserves an honest answer.</p>
             <p>
               Bribery is offering a reward <em>after</em> a behaviour has already started, often to
               stop something going wrong. PointPals works differently — it&rsquo;s a pre-agreed
@@ -371,10 +383,20 @@ const SECTIONS: FaqSection[] = [
               This is normal, especially after the initial novelty wears off. A few things to try:
             </p>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Refresh the rewards.</strong> Let the child help choose a new reward goal.</li>
-              <li><strong>Add new chores.</strong> Rotate in fresh tasks or increase the challenge.</li>
-              <li><strong>Change the target.</strong> A smaller jar fills faster — early wins build momentum.</li>
-              <li><strong>Take a break.</strong> Sometimes the system needs a pause. Habits that are already formed will likely stick.</li>
+              <li>
+                <strong>Refresh the rewards.</strong> Let the child help choose a new reward goal.
+              </li>
+              <li>
+                <strong>Add new chores.</strong> Rotate in fresh tasks or increase the challenge.
+              </li>
+              <li>
+                <strong>Change the target.</strong> A smaller jar fills faster — early wins build
+                momentum.
+              </li>
+              <li>
+                <strong>Take a break.</strong> Sometimes the system needs a pause. Habits that are
+                already formed will likely stick.
+              </li>
             </ul>
             <p>
               Interest naturally ebbs and flows. That&rsquo;s not failure — it&rsquo;s family life.
@@ -427,6 +449,40 @@ const SECTIONS: FaqSection[] = [
         ),
       },
       {
+        id: "memories-retention",
+        question: "How long are memories kept?",
+        content: (
+          <>
+            <p>
+              The memory feed runs in <strong>90-day seasons</strong>. When a season ends, the
+              photos, videos, and voice notes in it are permanently deleted from our servers and the
+              feed starts fresh. That&rsquo;s deliberate: photos of your children are the most
+              personal thing in PointPals, and we&rsquo;d rather not hold them a day longer than
+              needed.
+            </p>
+            <p>Nothing disappears by surprise:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>We email you a few days before a season ends.</li>
+              <li>
+                You can download the whole season as a <strong>video montage</strong> from the
+                Memories page — a keepsake of everything your family did.
+              </li>
+              <li>
+                Prefer to keep the feed forever? Switch off the seasonal refresh in Settings → Your
+                data.
+              </li>
+            </ul>
+            <p>
+              The full details are in our{" "}
+              <Link to="/privacy" className="underline hover:text-foreground">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </>
+        ),
+      },
+      {
         id: "offline",
         question: "Does PointPals work offline?",
         content: (
@@ -436,9 +492,7 @@ const SECTIONS: FaqSection[] = [
               devices. Some core features (viewing progress, awarding points) may work with
               intermittent connectivity, but full syncing requires a connection.
             </p>
-            <p>
-              We&rsquo;re exploring improved offline support for future updates.
-            </p>
+            <p>We&rsquo;re exploring improved offline support for future updates.</p>
           </>
         ),
       },
@@ -467,83 +521,6 @@ const SECTIONS: FaqSection[] = [
               </a>
               . We read every message and genuinely value your input — PointPals is better because
               of the families who use it.
-            </p>
-          </>
-        ),
-      },
-    ],
-  },
-  {
-    heading: "Privacy & data",
-    items: [
-      {
-        id: "memory-retention",
-        question: "How long are my family's memories kept?",
-        content: (
-          <>
-            <p>
-              Your Memory Feed runs on a fixed 90-day cycle, aligned with the New Zealand Privacy
-              Act 2020 data-minimisation principle. Every 90 days, the cycle turns over and posts
-              from the previous cycle are automatically removed.
-            </p>
-            <p>
-              We send a reminder email about 7 days before your cycle ends so you have time to
-              export or save what matters. You can download a ZIP of all original photos (and an
-              MP4 montage if available) at any time during the cycle.
-            </p>
-            <p>
-              You can also disable auto-purge in Settings → Your data. If turned off, your
-              memories stay indefinitely until you delete them manually.
-            </p>
-          </>
-        ),
-      },
-      {
-        id: "montage-export",
-        question: "Can I download or print my memories?",
-        content: (
-          <>
-            <p>
-              Yes. During your 90-day cycle you can export:
-            </p>
-            <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>
-                <strong>ZIP of originals</strong> — all the original photos in high resolution,
-                perfect for printing on Snapfish, sending to grandparents, or keeping as a backup.
-              </li>
-              <li>
-                <strong>MP4 video montage</strong> — a shareable movie of your memories. This
-                is a paid add-on (covering the third-party render service).
-              </li>
-            </ul>
-            <p className="mt-2">
-              Links stay live for 7 days after your cycle turns over, so you can still grab
-              anything you missed.
-            </p>
-          </>
-        ),
-      },
-      {
-        id: "data-security",
-        question: "How do you keep my family's data safe?",
-        content: (
-          <>
-            <p>
-              PointPals uses industry-standard security:
-            </p>
-            <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>All data encrypted in transit (TLS 1.3) and at rest.</li>
-              <li>Photo storage is private — each family can only see their own uploads.</li>
-              <li>GPS and metadata stripped from all photo uploads automatically.</li>
-              <li>No third-party analytics track your children.</li>
-              <li>Database locked down with per-row security policies.</li>
-            </ul>
-            <p className="mt-2">
-              See our{' '}
-              <a href="/privacy" className="underline hover:text-foreground">
-                Privacy Policy
-              </a>{' '}
-              for the full details.
             </p>
           </>
         ),
@@ -597,7 +574,9 @@ function FaqPage() {
                   className="border-0 rounded-2xl bg-card/50 px-5 data-[state=open]:bg-card/80 transition-colors"
                 >
                   <AccordionTrigger className="py-4 hover:no-underline cursor-pointer">
-                    <span className="font-display text-lg font-bold text-left">{item.question}</span>
+                    <span className="font-display text-lg font-bold text-left">
+                      {item.question}
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-3 leading-relaxed text-foreground/90 pb-4">
@@ -673,4 +652,3 @@ function FaqPage() {
     </PublicPageLayout>
   );
 }
-

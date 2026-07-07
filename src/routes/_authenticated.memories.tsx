@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useApp } from "@/lib/app-store";
-import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import {
   Camera,
   ImagePlus,
@@ -16,8 +15,11 @@ import {
   Play,
   ChevronLeft,
   ChevronRight,
-  CalendarDays,
+  Film,
+  Download,
+  CalendarClock,
 } from "lucide-react";
+import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import {
   useMemories,
@@ -29,6 +31,13 @@ import {
   transcribeAudio,
 } from "@/lib/memories";
 import type { MemoryCommentEntry, MemoryMedia } from "@/lib/memories";
+import {
+  fetchSeasonInfo,
+  startMontage,
+  pollMontage,
+  montageErrorMessage,
+  type SeasonInfo,
+} from "@/lib/montage";
 import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { trackParent } from "@/lib/analytics";
@@ -65,30 +74,6 @@ function MemoriesPage() {
     });
   }, []);
 
-  // ── Memory cycle info (90-day retention) ────────────────────────────────
-  const cycleInfo = useMemo(() => {
-    const anchor = household.memory_cycle_started_at
-      ? new Date(household.memory_cycle_started_at)
-      : null;
-    if (!anchor) return null;
-
-    const now = Date.now();
-    const msSinceAnchor = now - anchor.getTime();
-    const daysSinceAnchor = msSinceAnchor / (24 * 60 * 60 * 1000);
-    const cycleNumber = Math.floor(daysSinceAnchor / 90);
-    const cycleStart = new Date(anchor.getTime() + cycleNumber * 90 * 24 * 60 * 60 * 1000);
-    const cycleEnd = new Date(cycleStart.getTime() + 90 * 24 * 60 * 60 * 1000);
-    const msRemaining = cycleEnd.getTime() - now;
-    const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
-
-    return {
-      cycleNumber: cycleNumber + 1,
-      daysRemaining,
-      cycleEnd,
-      autoPurge: household.memory_auto_purge !== false,
-    };
-  }, [household.memory_cycle_started_at, household.memory_auto_purge]);
-
   return (
     <div className="space-y-6 pb-8">
       <div>
@@ -98,30 +83,7 @@ function MemoriesPage() {
         </p>
       </div>
 
-      {/* 🔔 Memory cycle banner */}
-      {cycleInfo && (
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-center gap-3 text-sm">
-          <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
-          <div className="flex-1 min-w-0">
-            <span className="font-semibold">
-              Cycle {cycleInfo.cycleNumber}
-            </span>
-            <span className="text-muted-foreground">
-              {' '}— {cycleInfo.daysRemaining} day{cycleInfo.daysRemaining !== 1 ? "s" : ""} until
-              the memory feed refreshes.
-              {cycleInfo.autoPurge
-                ? " Older memories will be automatically removed."
-                : " Your auto-purge is off — memories stay until you delete them."}
-            </span>
-          </div>
-          <a
-            href="/faq#memory-retention"
-            className="shrink-0 text-xs font-semibold text-primary underline-offset-2 hover:underline"
-          >
-            How this works
-          </a>
-        </div>
-      )}
+      {wall.length > 0 && <SeasonBanner householdId={household.id} />}
 
       {canAward ? (
         <Composer householdId={household.id} kids={kids} />
@@ -149,6 +111,136 @@ function MemoriesPage() {
         </ul>
       )}
     </div>
+  );
+}
+
+// ─── Season banner ─────────────────────────────────────────────────────────
+// The memory feed runs in fixed seasons (90 days by default): the feed is
+// cleared when a season ends, after an email heads-up, and families can take
+// the season home as an MP4 montage. See docs/OPERATIONS.md → Memory seasons.
+
+function SeasonBanner({ householdId }: { householdId: string }) {
+  const [season, setSeason] = useState<SeasonInfo | null>(null);
+  const [montageState, setMontageState] = useState<
+    | { phase: "idle" }
+    | { phase: "working"; jobId?: string }
+    | { phase: "ready"; url: string }
+    | { phase: "error"; message: string }
+  >({ phase: "idle" });
+  const pollingRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSeasonInfo(householdId).then((s) => {
+      if (!cancelled) setSeason(s);
+    });
+    return () => {
+      cancelled = true;
+      pollingRef.current = false;
+    };
+  }, [householdId]);
+
+  // Demo mode / retention switched off / columns not migrated yet → no banner.
+  if (!season || !season.enabled) return null;
+
+  const refreshDate = new Date(season.endsAt).toLocaleDateString("en-NZ", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const createMontage = async () => {
+    setMontageState({ phase: "working" });
+    trackParent("montage_requested", {});
+    const started = await startMontage(householdId);
+    if (!started.ok) {
+      setMontageState({ phase: "error", message: montageErrorMessage(started.error) });
+      return;
+    }
+    if (started.status === "done" && started.url) {
+      setMontageState({ phase: "ready", url: started.url });
+      return;
+    }
+    // Poll until the render lands (every 5s, up to ~5 minutes).
+    setMontageState({ phase: "working", jobId: started.jobId });
+    pollingRef.current = true;
+    for (let attempt = 0; attempt < 60 && pollingRef.current; attempt++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      if (!pollingRef.current) return;
+      const res = await pollMontage(householdId, started.jobId);
+      if (!res.ok) {
+        setMontageState({ phase: "error", message: montageErrorMessage(res.error) });
+        return;
+      }
+      if (res.status === "done" && res.url) {
+        setMontageState({ phase: "ready", url: res.url });
+        return;
+      }
+    }
+    if (pollingRef.current) {
+      setMontageState({
+        phase: "error",
+        message: "The montage is taking longer than usual — check back in a few minutes.",
+      });
+    }
+  };
+
+  return (
+    <section className="card-soft p-4 border border-lilac/50 bg-lilac/10 space-y-2">
+      <div className="flex items-start gap-3">
+        <span className="shrink-0 rounded-full bg-lilac/40 p-2 mt-0.5">
+          <CalendarClock className="h-4 w-4" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold">
+            This season of memories refreshes on {refreshDate}
+            {season.daysLeft > 0 && (
+              <span className="text-muted-foreground font-normal">
+                {" "}
+                · {season.daysLeft} days left
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            To keep your family's photos private, each season lasts {season.retentionDays} days —
+            then the feed is cleared for the next one. Take this season home as a video montage
+            first.
+          </p>
+        </div>
+      </div>
+
+      <div className="pl-11">
+        {montageState.phase === "ready" ? (
+          <a
+            href={montageState.url}
+            download
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+          >
+            <Download className="h-4 w-4" /> Download your montage (MP4)
+          </a>
+        ) : (
+          <button
+            onClick={() => void createMontage()}
+            disabled={montageState.phase === "working"}
+            className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-60"
+          >
+            {montageState.phase === "working" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Making your montage — takes a minute or
+                two…
+              </>
+            ) : (
+              <>
+                <Film className="h-4 w-4" /> Create video montage
+              </>
+            )}
+          </button>
+        )}
+        {montageState.phase === "error" && (
+          <p className="mt-1.5 text-xs text-destructive">{montageState.message}</p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -190,30 +282,27 @@ function Composer({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationRef = useRef(0);
 
-  const addFiles = useCallback(
-    (incoming: File[]) => {
-      if (incoming.length === 0) return;
-      setPickError(null);
-      setFiles((prev) => {
-        const room = MAX_MEDIA_PER_POST - prev.length;
-        if (room <= 0) {
-          setPickError(`Up to ${MAX_MEDIA_PER_POST} photos or videos per memory.`);
-          return prev;
-        }
-        const accepted = incoming.slice(0, room);
-        if (incoming.length > room) {
-          setPickError(`Only the first ${MAX_MEDIA_PER_POST} were added.`);
-        }
-        const newPreviews = accepted.map((f) => ({
-          url: URL.createObjectURL(f),
-          isVideo: f.type.startsWith("video/"),
-        }));
-        setPreviews((p) => [...p, ...newPreviews]);
-        return [...prev, ...accepted];
-      });
-    },
-    [],
-  );
+  const addFiles = useCallback((incoming: File[]) => {
+    if (incoming.length === 0) return;
+    setPickError(null);
+    setFiles((prev) => {
+      const room = MAX_MEDIA_PER_POST - prev.length;
+      if (room <= 0) {
+        setPickError(`Up to ${MAX_MEDIA_PER_POST} photos or videos per memory.`);
+        return prev;
+      }
+      const accepted = incoming.slice(0, room);
+      if (incoming.length > room) {
+        setPickError(`Only the first ${MAX_MEDIA_PER_POST} were added.`);
+      }
+      const newPreviews = accepted.map((f) => ({
+        url: URL.createObjectURL(f),
+        isVideo: f.type.startsWith("video/"),
+      }));
+      setPreviews((p) => [...p, ...newPreviews]);
+      return [...prev, ...accepted];
+    });
+  }, []);
 
   const removeFileAt = (idx: number) => {
     setPreviews((p) => {
@@ -262,7 +351,8 @@ function Composer({
     void startRecording();
   };
 
-  const canPost = files.length > 0 || caption.trim().length > 0 || (audioBlob !== null && keepAudio);
+  const canPost =
+    files.length > 0 || caption.trim().length > 0 || (audioBlob !== null && keepAudio);
 
   // ── Voice recording (v2): the child narrates the photo; the recording is
   // transcribed straight into the caption for the parent to tidy — or leave
@@ -464,7 +554,11 @@ function Composer({
                     {p.isVideo ? (
                       <video src={p.url} className="w-full h-full object-cover" muted playsInline />
                     ) : (
-                      <img src={p.url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                      <img
+                        src={p.url}
+                        alt={`Preview ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                     )}
                     {p.isVideo && (
                       <span className="absolute bottom-1 left-1 rounded-full bg-foreground/70 text-background px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-0.5">
@@ -548,7 +642,10 @@ function Composer({
                       const audio = new Audio(url);
                       audioPreviewRef.current = audio;
                       audio.onended = () => setAudioPlayingPreview(false);
-                      audio.play().then(() => setAudioPlayingPreview(true)).catch(() => {});
+                      audio
+                        .play()
+                        .then(() => setAudioPlayingPreview(true))
+                        .catch(() => {});
                     }
                   }}
                   className="tap flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background shrink-0"
@@ -561,9 +658,7 @@ function Composer({
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold">
-                    Voice note recorded
-                  </div>
+                  <div className="text-xs font-semibold">Voice note recorded</div>
                   <div className="text-[11px] text-muted-foreground">
                     {Math.round(audioBlob.size / 1024)} KB
                     {audioDuration > 0 && ` · ${formatDuration(audioDuration)}`}
@@ -914,11 +1009,7 @@ function MemoryCard({
         />
       )}
       {lightboxIdx !== null && (
-        <Lightbox
-          media={media}
-          startIndex={lightboxIdx}
-          onClose={() => setLightboxIdx(null)}
-        />
+        <Lightbox media={media} startIndex={lightboxIdx} onClose={() => setLightboxIdx(null)} />
       )}
 
       {/* Caption */}
@@ -985,8 +1076,7 @@ function MemoryCard({
             )}
             {comments.map((c) => (
               <div key={c.id} className="text-sm">
-                <span className="font-semibold">{c.userId.slice(0, 8)}</span>{" "}
-                <span>{c.body}</span>
+                <span className="font-semibold">{c.userId.slice(0, 8)}</span> <span>{c.body}</span>
               </div>
             ))}
             {userId && (
@@ -1041,11 +1131,7 @@ function MediaCollage({
     return m.kind === "video" ? (
       <video src={m.url} controls playsInline className="w-full max-h-[70vh] bg-foreground/5" />
     ) : (
-      <button
-        onClick={() => onOpen(0)}
-        className="block w-full"
-        aria-label="Open photo"
-      >
+      <button onClick={() => onOpen(0)} className="block w-full" aria-label="Open photo">
         <img src={m.url} alt={alt} className="w-full max-h-[70vh] object-cover" loading="lazy" />
       </button>
     );
@@ -1055,7 +1141,15 @@ function MediaCollage({
   const visible = media.slice(0, 4);
   const extra = media.length - visible.length;
 
-  const Tile = ({ item, index, className }: { item: MemoryMedia; index: number; className?: string }) => (
+  const Tile = ({
+    item,
+    index,
+    className,
+  }: {
+    item: MemoryMedia;
+    index: number;
+    className?: string;
+  }) => (
     <button
       onClick={() => onOpen(index)}
       className={`relative overflow-hidden bg-foreground/5 ${className ?? ""}`}
@@ -1176,11 +1270,24 @@ function Lightbox({
           <ChevronRight className="h-6 w-6" />
         </button>
       )}
-      <div onClick={(e) => e.stopPropagation()} className="max-w-full max-h-full flex flex-col items-center gap-3">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full flex flex-col items-center gap-3"
+      >
         {current.kind === "video" ? (
-          <video src={current.url} controls autoPlay playsInline className="max-w-full max-h-[85vh]" />
+          <video
+            src={current.url}
+            controls
+            autoPlay
+            playsInline
+            className="max-w-full max-h-[85vh]"
+          />
         ) : (
-          <img src={current.url} alt={`Item ${idx + 1}`} className="max-w-full max-h-[85vh] object-contain" />
+          <img
+            src={current.url}
+            alt={`Item ${idx + 1}`}
+            className="max-w-full max-h-[85vh] object-contain"
+          />
         )}
         {media.length > 1 && (
           <div className="text-white/70 text-xs font-semibold">

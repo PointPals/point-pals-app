@@ -1,15 +1,15 @@
 // Edge Function: notify-memory-expiry
-// Cron-driven: finds households whose current memory cycle ends in 4-8 days
-// and sends a reminder email + in-app notification.
+// Cron-driven: finds households whose memory-feed season ends in the next
+// 0–4 days and sends a "your memories are about to refresh" email with a
+// link to download the season montage first.
 //
-// A "cycle" is a fixed 90-day window anchored at memory_cycle_started_at.
-// We calculate the *next* cycle boundary and warn when it's approaching.
-//
-// Idempotent: stamps memory_cycle_reminded_at per household, per cycle.
+// Scheduled via the CRON_SECRET auth pattern (same as notify-trial-ending).
+// Idempotent: stamps email_memory_expiry_sent_at on each household.
+// The purge (purge-expired-memories) refuses to wipe any household whose
+// stamp is missing or fresher than 24 hours — nobody loses memories unwarned.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendResendTemplate } from "../_shared/resend-send.ts";
-import { TEMPLATES } from "../_shared/email-templates.ts";
+import { sendResendHtml } from "../_shared/resend-send.ts";
 import { APP_URL, FROM_ADDRESS } from "../_shared/emails/base.ts";
 
 const corsHeaders = {
@@ -19,21 +19,52 @@ const corsHeaders = {
 
 function formatNzDate(iso: string): string {
   const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
-  return d.toLocaleDateString("en-NZ", {
-    month: "long", day: "numeric", year: "numeric", timeZone: "Pacific/Auckland",
-  });
+  return d.toLocaleDateString("en-NZ", { month: "long", day: "numeric", year: "numeric", timeZone: "Pacific/Auckland" });
 }
 
-/**
- * Count posts in the current cycle for a household.
- */
-async function postCountInCycle(supabase: ReturnType<typeof createClient>, householdId: string, cycleStart: string): Promise<number> {
-  const { count } = await supabase
-    .from("memory_posts")
-    .select("*", { count: "exact", head: true })
-    .eq("household_id", householdId)
-    .gte("created_at", cycleStart);
-  return count ?? 0;
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function buildEmailHtml(vars: {
+  firstName: string;
+  familyName: string;
+  cycleEndDate: string;
+  memoryCount: number;
+  retentionDays: number;
+  exportUrl: string;
+  keepUrl: string;
+}): string {
+  const plural = vars.memoryCount === 1 ? "memory" : "memories";
+  return `
+<div style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; color: #2d2a26;">
+  <h1 style="font-size: 22px; margin: 0 0 16px;">Your memory feed refreshes soon 📸</h1>
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${escapeHtml(vars.firstName)},</p>
+  <p style="font-size: 15px; line-height: 1.6;">
+    The <strong>${escapeHtml(vars.familyName)}</strong> family's memory feed refreshes on
+    <strong>${escapeHtml(vars.cycleEndDate)}</strong>. That means the
+    <strong>${vars.memoryCount} ${plural}</strong> from this season will be cleared to make room
+    for the next one — we keep photos and videos of your family for one
+    ${vars.retentionDays}-day season, then delete them for good. It's a privacy feature, not a
+    storage limit: we don't hoard your kids' photos.
+  </p>
+  <p style="font-size: 15px; line-height: 1.6;">
+    Before the refresh, you can turn this season into a keepsake:
+  </p>
+  <p style="margin: 24px 0;">
+    <a href="${vars.exportUrl}"
+       style="background: #2d2a26; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-block;">
+      Download your season montage
+    </a>
+  </p>
+  <p style="font-size: 13px; line-height: 1.6; color: #6b6660;">
+    Prefer to keep the feed as it is? You can switch off the seasonal refresh any time in
+    <a href="${vars.keepUrl}" style="color: #6b6660;">Settings → Your data</a>.
+  </p>
+  <p style="font-size: 13px; line-height: 1.6; color: #6b6660; margin-top: 24px;">
+    — The PointPals team
+  </p>
+</div>`.trim();
 }
 
 Deno.serve(async (req) => {
@@ -64,16 +95,20 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ── FIND SEASONS ENDING IN 0–4 DAYS ─────────────────────────────────────
+  // Window starts at "now" (not +1 day like trial-ending) so a household
+  // whose end date slipped past is still warned before the purge — the purge
+  // requires this stamp to be at least 24h old before it will touch anything.
   const now = new Date();
-  const nowIso = now.toISOString();
+  const windowEnd = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString();
 
-  // ── FETCH ALL HOUSEHOLDS WITH A CYCLE ANCHOR ────────────────────────────
-  // We'll iterate and check each one rather than trying to encode 90-day
-  // math in SQL (the "current cycle boundary" calculation is clearest in JS).
   const { data: households, error: hhErr } = await supabase
     .from("households")
-    .select("id, name, memory_cycle_started_at, memory_cycle_reminded_at, memory_auto_purge")
-    .not("memory_cycle_started_at", "is", null);
+    .select("id, name, memory_retention_days, memory_cycle_ends_at")
+    .eq("memory_retention_enabled", true)
+    .is("email_memory_expiry_sent_at", null)
+    .gte("memory_cycle_ends_at", now.toISOString())
+    .lte("memory_cycle_ends_at", windowEnd);
 
   if (hhErr) {
     console.error("household query error:", hhErr.message);
@@ -84,40 +119,32 @@ Deno.serve(async (req) => {
   }
 
   if (!households || households.length === 0) {
-    console.log("No households with a memory cycle anchor.");
+    console.log("No households with a memory season ending in 0–4 days.");
     return new Response(JSON.stringify({ ok: true, sent: 0 }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  console.log(`Found ${households.length} households with a memory season ending soon.`);
 
   let sent = 0;
   const errors: string[] = [];
 
   for (const hh of households) {
     try {
-      const anchor = new Date(hh.memory_cycle_started_at);
-      const msSinceAnchor = now.getTime() - anchor.getTime();
-      const daysSinceAnchor = msSinceAnchor / (24 * 60 * 60 * 1000);
-
-      // Which cycle number are we in? (0-indexed)
-      const cycleNumber = Math.floor(daysSinceAnchor / 90);
-      // When does this cycle end?
-      const cycleEnd = new Date(anchor.getTime() + (cycleNumber + 1) * 90 * 24 * 60 * 60 * 1000);
-      // When does the next cycle start?
-      const nextCycleStart = new Date(cycleEnd.getTime());
-      const daysUntilEnd = (cycleEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000);
-
-      // Only alert if the cycle ends in 4–8 days (window for reminder).
-      if (daysUntilEnd < 4 || daysUntilEnd > 8) continue;
-
-      // Idempotency: skip if reminded_at is within this cycle (within last 85 days).
-      if (hh.memory_cycle_reminded_at) {
-        const remindedSince = now.getTime() - new Date(hh.memory_cycle_reminded_at).getTime();
-        const daysSinceReminded = remindedSince / (24 * 60 * 60 * 1000);
-        if (daysSinceReminded < 85) continue;
+      // Only email households that actually have memories to lose. Empty
+      // feeds are rolled over silently by purge-expired-memories.
+      const { count } = await supabase
+        .from("memory_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("household_id", hh.id);
+      const memoryCount = count ?? 0;
+      if (memoryCount === 0) {
+        console.log(`Household ${hh.id} has an empty feed — skipping email`);
+        continue;
       }
 
-      // ── FIND PRIMARY ADMIN ──────────────────────────────────────────────
+      // Primary admin/parent member (oldest = billing contact)
       const { data: members, error: memErr } = await supabase
         .from("household_members")
         .select("user_id")
@@ -131,34 +158,32 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const userId = members[0].user_id;
-      const { data: userData } = await supabase.auth.admin.getUserById(userId);
-      if (!userData?.user?.email) {
-        console.warn(`User ${userId} not found or has no email — skipping`);
+      const { data: userData, error: userErr } = await supabase.auth.admin.getUserById(
+        members[0].user_id,
+      );
+      if (userErr || !userData?.user?.email) {
+        console.warn(`User ${members[0].user_id} not found or has no email — skipping`);
         continue;
       }
 
       const email = userData.user.email;
       const meta = userData.user.user_metadata ?? {};
       const firstName = meta.first_name || meta.display_name || email.split("@")[0] || "there";
+      const cycleEndDate = hh.memory_cycle_ends_at ? formatNzDate(hh.memory_cycle_ends_at) : "soon";
 
-      const expiryDate = formatNzDate(cycleEnd.toISOString());
-      const postCount = await postCountInCycle(supabase, hh.id, new Date(anchor.getTime() + cycleNumber * 90 * 24 * 60 * 60 * 1000).toISOString());
-
-      // ── SEND EMAIL ──────────────────────────────────────────────────────
-      const result = await sendResendTemplate(resendKey, {
+      const result = await sendResendHtml(resendKey, {
         to: email,
-        templateId: TEMPLATES.MEMORY_EXPIRY_WARNING,
         from: FROM_ADDRESS,
-        variables: {
-          first_name: firstName,
-          family_name: hh.name,
-          expiry_date: expiryDate,
-          post_count: postCount,
-          memories_url: `${APP_URL}/memories`,
-          montage_url: `${APP_URL}/memories?export=montage`,
-          auto_purge: hh.memory_auto_purge ? "Yes" : "No",
-        },
+        subject: `Your memory feed refreshes on ${cycleEndDate} — download your montage first`,
+        html: buildEmailHtml({
+          firstName,
+          familyName: hh.name,
+          cycleEndDate,
+          memoryCount,
+          retentionDays: hh.memory_retention_days ?? 90,
+          exportUrl: `${APP_URL}/memories`,
+          keepUrl: `${APP_URL}/settings`,
+        }),
       });
 
       if (!result.ok) {
@@ -167,14 +192,13 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // ── STAMP IDEMPOTENCY ──────────────────────────────────────────────
       await supabase
         .from("households")
-        .update({ memory_cycle_reminded_at: nowIso })
+        .update({ email_memory_expiry_sent_at: new Date().toISOString() })
         .eq("id", hh.id);
 
       sent++;
-      console.log(`Sent memory-expiry reminder to ${email} (${hh.name}), ${Math.round(daysUntilEnd)} days until purge`);
+      console.log(`Sent memory-expiry email to ${email} (${hh.name})`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`Error processing household ${hh.id}: ${msg}`);
@@ -184,6 +208,8 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify({ ok: true, sent, errors: errors.length > 0 ? errors : undefined }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
   );
 });
