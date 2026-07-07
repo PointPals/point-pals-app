@@ -19,21 +19,22 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthLayout() {
-  const { household, hydrated } = useApp();
+  const { household, hydrated, needsHousehold } = useApp();
   const navigate = useNavigate();
 
-  // Route guard (§5): if the 14-day trial has expired, bounce to settings
-  // (which renders the Paywall component with the upgrade CTA).
-  // We wait for hydration so the guard doesn't fire before bootLive loads
+  // Route guards (§5): redirect based on account state.
+  // We wait for hydration so the guards don't fire before bootLive loads
   // the household data.
   useEffect(() => {
     if (!hydrated) return;
-    if (household.subscriptionStatus === "free") {
+    if (needsHousehold) {
+      navigate({ to: "/welcome-back" });
+    } else if (household.subscriptionStatus === "free") {
       navigate({ to: "/settings" });
     }
-  }, [household.subscriptionStatus, hydrated, navigate]);
+  }, [needsHousehold, household.subscriptionStatus, hydrated, navigate]);
 
-  if (!hydrated || household.subscriptionStatus === "free") {
+  if (!hydrated || needsHousehold || household.subscriptionStatus === "free") {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/30 border-t-foreground" />

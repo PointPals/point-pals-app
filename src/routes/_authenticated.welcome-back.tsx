@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Sparkles, Users, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sparkles, Users, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
+import { sendTrialWelcome } from "@/lib/emails.functions";
+
+const PENDING_CODE_KEY = "pointpals.pending.invite.code";
 
 export const Route = createFileRoute("/_authenticated/welcome-back")({
   component: WelcomeBackPage,
@@ -26,6 +29,44 @@ function WelcomeBackPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
+
+  // Auto-accept an invite code stashed by the join page's Google button.
+  useEffect(() => {
+    const pendingCode = sessionStorage.getItem(PENDING_CODE_KEY);
+    if (!pendingCode) return;
+    sessionStorage.removeItem(PENDING_CODE_KEY);
+
+    const doAccept = async () => {
+      setAccepting(true);
+      const { data: result, error } = await supabase.rpc("accept_invite", {
+        invite_code: pendingCode,
+      });
+
+      if (error || !(result as { ok?: boolean })?.ok) {
+        setErr((result as { error?: string })?.error ?? "Could not accept invite. The code may be expired or invalid.");
+        setAccepting(false);
+        return;
+      }
+
+      await refreshFromServer();
+      setAccepting(false);
+      navigate({ to: "/" });
+    };
+
+    doAccept();
+  }, []);
+
+  if (accepting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Accepting invite…</p>
+        </div>
+      </div>
+    );
+  }
 
   const createFamily = async () => {
     const trimmed = name.trim() || "My Family";
@@ -38,6 +79,8 @@ function WelcomeBackPage() {
       return;
     }
     // Trigger already added us as admin — reload the app-store from the server.
+    // Fire welcome email (idempotent server-side).
+    sendTrialWelcome().catch(() => {});
     await refreshFromServer();
     setBusy(false);
     navigate({ to: "/onboarding" });

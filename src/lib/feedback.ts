@@ -21,9 +21,6 @@
 
 type ChimeKind = "positive" | "needs-work";
 
-import positiveChime from "@/assets/audio/positive-chime.mp3.asset.json";
-import negativeChime from "@/assets/audio/negative-chime.mp3.asset.json";
-
 // Module-level prefs, kept in sync by the settings store (src/lib/settings.ts).
 // Defaults: sound on, haptics on — overridden as soon as settings hydrate.
 export const feedbackPrefs = {
@@ -118,29 +115,11 @@ const DESCENDING = [587.33, 493.88, 392.0]; // D5 B4 G4 — calm, settling (not 
 
 export function playChime(kind: ChimeKind) {
   if (!feedbackPrefs.sound) return;
-  playSample(kind === "positive" ? positiveChime.url : negativeChime.url, 0.9);
-}
-
-// Cached HTMLAudioElement per URL. Instantiated on first call (within a user
-// gesture) which unlocks iOS Safari playback for subsequent plays.
-const sampleCache = new Map<string, HTMLAudioElement>();
-function playSample(url: string, volume = 1) {
-  if (typeof Audio === "undefined") return;
-  let el = sampleCache.get(url);
-  if (!el) {
-    el = new Audio(url);
-    el.preload = "auto";
-    sampleCache.set(url, el);
-  }
-  try {
-    el.currentTime = 0;
-    el.volume = volume;
-    void el.play().catch(() => {
-      /* autoplay denied — will succeed on next tap */
-    });
-  } catch {
-    /* no-op */
-  }
+  withAudio((ac) => {
+    const tones = kind === "positive" ? ASCENDING : DESCENDING;
+    const dur = 0.35;
+    tones.forEach((f, i) => note(ac, f, i * 0.1, dur, 0.14));
+  });
 }
 
 // Soft glassy "clink" for a marble landing in the jar — a short high ping with
