@@ -46,7 +46,7 @@ ALTER TABLE households
   ADD COLUMN memory_montage_jobs jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 -- ── Grant (service_role already has all; add to authenticated for reads) ────
-GRANT ALL ON households(memory_cycle_started_at, memory_cycle_reminded_at, memory_auto_purge, memory_montage_jobs) TO authenticated;
+GRANT ALL (memory_cycle_started_at, memory_cycle_reminded_at, memory_auto_purge, memory_montage_jobs) ON households TO authenticated;
 
 -- ============================================================================
 -- Cron: notify-memory-expiry – runs daily at 10:00 UTC (10 PM NZT)
