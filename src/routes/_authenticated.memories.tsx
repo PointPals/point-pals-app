@@ -17,6 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  Film,
+  Download,
 } from "lucide-react";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import {
@@ -32,6 +34,7 @@ import type { MemoryCommentEntry, MemoryMedia } from "@/lib/memories";
 import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { trackParent } from "@/lib/analytics";
+import { startMontage, pollMontage, montageErrorMessage } from "@/lib/montage";
 
 export const Route = createFileRoute("/_authenticated/memories")({
   component: MemoriesPage,
@@ -89,6 +92,54 @@ function MemoriesPage() {
     };
   }, [household.memory_cycle_started_at, household.memory_auto_purge]);
 
+  // ── Montage export (render-montage edge fn, polled until the MP4 lands) ─
+  const [montageState, setMontageState] = useState<
+    | { phase: "idle" }
+    | { phase: "working"; jobId?: string }
+    | { phase: "ready"; url: string }
+    | { phase: "error"; message: string }
+  >({ phase: "idle" });
+  const montagePollingRef = useRef(false);
+  useEffect(() => () => {
+    montagePollingRef.current = false;
+  }, []);
+
+  const createMontage = useCallback(async () => {
+    setMontageState({ phase: "working" });
+    trackParent("montage_requested", {});
+    const started = await startMontage(household.id);
+    if (!started.ok) {
+      setMontageState({ phase: "error", message: montageErrorMessage(started.error) });
+      return;
+    }
+    if (started.status === "done" && started.url) {
+      setMontageState({ phase: "ready", url: started.url });
+      return;
+    }
+    // Poll until the render lands (every 5s, up to ~5 minutes).
+    setMontageState({ phase: "working", jobId: started.jobId });
+    montagePollingRef.current = true;
+    for (let attempt = 0; attempt < 60 && montagePollingRef.current; attempt++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      if (!montagePollingRef.current) return;
+      const res = await pollMontage(household.id, started.jobId);
+      if (!res.ok) {
+        setMontageState({ phase: "error", message: montageErrorMessage(res.error) });
+        return;
+      }
+      if (res.status === "done" && res.url) {
+        setMontageState({ phase: "ready", url: res.url });
+        return;
+      }
+    }
+    if (montagePollingRef.current) {
+      setMontageState({
+        phase: "error",
+        message: "The montage is taking longer than usual — check back in a few minutes.",
+      });
+    }
+  }, [household.id]);
+
   return (
     <div className="space-y-6 pb-8">
       <div>
@@ -100,26 +151,59 @@ function MemoriesPage() {
 
       {/* 🔔 Memory cycle banner */}
       {cycleInfo && (
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-center gap-3 text-sm">
-          <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
-          <div className="flex-1 min-w-0">
-            <span className="font-semibold">
-              Cycle {cycleInfo.cycleNumber}
-            </span>
-            <span className="text-muted-foreground">
-              {' '}— {cycleInfo.daysRemaining} day{cycleInfo.daysRemaining !== 1 ? "s" : ""} until
-              the memory feed refreshes.
-              {cycleInfo.autoPurge
-                ? " Older memories will be automatically removed."
-                : " Your auto-purge is off — memories stay until you delete them."}
-            </span>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 space-y-2 text-sm">
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold">
+                Cycle {cycleInfo.cycleNumber}
+              </span>
+              <span className="text-muted-foreground">
+                {' '}— {cycleInfo.daysRemaining} day{cycleInfo.daysRemaining !== 1 ? "s" : ""} until
+                the memory feed refreshes.
+                {cycleInfo.autoPurge
+                  ? " Older memories will be automatically removed."
+                  : " Your auto-purge is off — memories stay until you delete them."}
+              </span>
+            </div>
+            <a
+              href="/faq#memory-retention"
+              className="shrink-0 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              How this works
+            </a>
           </div>
-          <a
-            href="/faq#memory-retention"
-            className="shrink-0 text-xs font-semibold text-primary underline-offset-2 hover:underline"
-          >
-            How this works
-          </a>
+          <div className="pl-8">
+            {montageState.phase === "ready" ? (
+              <a
+                href={montageState.url}
+                download
+                className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-xs font-semibold hover:opacity-90 transition"
+              >
+                <Download className="h-4 w-4" /> Download your montage (MP4)
+              </a>
+            ) : (
+              <button
+                onClick={() => void createMontage()}
+                disabled={montageState.phase === "working"}
+                className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-4 py-2 text-xs font-semibold hover:bg-muted transition disabled:opacity-60"
+              >
+                {montageState.phase === "working" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Making your montage — takes a
+                    minute or two…
+                  </>
+                ) : (
+                  <>
+                    <Film className="h-4 w-4" /> Create video montage
+                  </>
+                )}
+              </button>
+            )}
+            {montageState.phase === "error" && (
+              <p className="mt-1.5 text-xs text-destructive">{montageState.message}</p>
+            )}
+          </div>
         </div>
       )}
 

@@ -5,13 +5,13 @@
 // Safety gates (never deletes without explicit consent):
 // 1. Only processes households with memory_auto_purge = true (opt-in).
 // 2. Only deletes if the reminder was sent (memory_cycle_reminded_at is set
-//    within this cycle — i.e., the household was warned).
-// 3. Never deletes a post that was exported to montage this cycle
-//    (montage_exported_at >= cycle_start).
-// 4. Soft-deletes to a shadow table first, then hard-deletes 7 days later
-//    if the household hasn't restored them (via a secondary cron).
-//    For v1, we skip the grace window and hard-delete immediately, since
-//    the data is already 90+ days old and the household was warned.
+//    within this cycle — i.e., the household was warned) AND the reminder is
+//    at least 24h old (a late reminder never precedes a same-day purge).
+// 3. Supports {"dry_run": true} — reports what would be deleted without
+//    touching anything. Recommended for the first production runs.
+//
+// Montage exports live in the private "exports" bucket, so originals always
+// purge with their season — nothing here needs to know about montages.
 //
 // 🛑 v1 safety: we hard-delete, but only after double-checking the
 //    household was warned AND they haven't opted out.
@@ -43,8 +43,10 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  // {"dry_run": true} → report what would be purged, delete nothing.
+  const dryRun = await req.json().then((b) => b?.dry_run === true).catch(() => false);
+
   const now = new Date();
-  const nowIso = now.toISOString();
 
   // ── FETCH HOUSEHOLDS WITH AUTO-PURGE ENABLED ────────────────────────────
   const { data: households, error: hhErr } = await supabase
@@ -86,26 +88,27 @@ Deno.serve(async (req) => {
 
       // Safety gate: did we warn this household within this cycle?
       // The reminder fires 4-8 days before the cycle end. If the reminder
-      // was sent within the last 85 days, we consider this cycle warned.
+      // was sent within the last 90 days, we consider this cycle warned —
+      // but never purge within 24h of a reminder (a late reminder, e.g.
+      // after an email outage, must not precede a same-day purge).
       let warned = false;
       if (hh.memory_cycle_reminded_at) {
         const reminded = new Date(hh.memory_cycle_reminded_at);
         const daysSinceReminded = (now.getTime() - reminded.getTime()) / (24 * 60 * 60 * 1000);
-        warned = daysSinceReminded < 90;
+        warned = daysSinceReminded >= 1 && daysSinceReminded < 90;
       }
 
       if (!warned) {
-        console.log(`Household ${hh.id}: not warned this cycle — skipping purge`);
+        console.log(`Household ${hh.id}: not warned this cycle (or warned <24h ago) — skipping purge`);
         continue;
       }
 
       // ── FIND STORAGE PATHS TO DELETE ────────────────────────────────────
       const { data: postsToDelete, error: fetchErr } = await supabase
         .from("memory_posts")
-        .select("id, storage_path")
+        .select("id, storage_path, media_paths")
         .eq("household_id", hh.id)
-        .lt("created_at", cycleBoundary.toISOString())
-        .is("montage_exported_at", null); // Don't delete exported posts
+        .lt("created_at", cycleBoundary.toISOString());
 
       if (fetchErr) {
         console.error(`Error fetching posts for household ${hh.id}: ${fetchErr.message}`);
@@ -121,9 +124,25 @@ Deno.serve(async (req) => {
       console.log(`Household ${hh.id}: ${postsToDelete.length} posts to purge`);
 
       // ── DELETE FROM STORAGE (memories bucket) ───────────────────────────
-      const storagePaths = postsToDelete
-        .map((p) => p.storage_path)
-        .filter((p): p is string => !!p);
+      // Media lives either in storage_path (single-media posts) or in the
+      // media_paths jsonb array ([{path, kind}, …] — composer v2). Both must
+      // go, or the "purge" leaves the actual files behind.
+      const storagePaths = postsToDelete.flatMap((p) => {
+        const paths: string[] = [];
+        if (p.storage_path) paths.push(p.storage_path);
+        if (Array.isArray(p.media_paths)) {
+          for (const m of p.media_paths as { path?: string }[]) {
+            if (m?.path) paths.push(m.path);
+          }
+        }
+        return paths;
+      });
+
+      if (dryRun) {
+        totalDeleted += postsToDelete.length;
+        console.log(`[dry run] Household ${hh.id}: would purge ${postsToDelete.length} posts, ${storagePaths.length} storage objects`);
+        continue;
+      }
 
       if (storagePaths.length > 0) {
         const { error: storageErr } = await supabase.storage
@@ -159,7 +178,7 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, deleted: totalDeleted, errors: errors.length > 0 ? errors : undefined }),
+    JSON.stringify({ ok: true, dry_run: dryRun || undefined, deleted: totalDeleted, errors: errors.length > 0 ? errors : undefined }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
