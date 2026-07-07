@@ -722,6 +722,8 @@ export const INITIAL_HOUSEHOLD = {
   sharedJarEnabled: true,
   activeRewardName: null,
   activeRewardTarget: null,
+  memory_cycle_started_at: null,
+  memory_auto_purge: true,
 };
 
 const DAY = 1000 * 60 * 60 * 24;

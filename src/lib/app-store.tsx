@@ -64,6 +64,8 @@ export type Household = {
   sharedJarEnabled: boolean;
   activeRewardName: string | null;
   activeRewardTarget: number | null;
+  memory_cycle_started_at: string | null;
+  memory_auto_purge: boolean;
 };
 
 // A reversible award batch, kept only until its undo window closes (§2).

@@ -473,6 +473,83 @@ const SECTIONS: FaqSection[] = [
       },
     ],
   },
+  {
+    heading: "Privacy & data",
+    items: [
+      {
+        id: "memory-retention",
+        question: "How long are my family's memories kept?",
+        content: (
+          <>
+            <p>
+              Your Memory Feed runs on a fixed 90-day cycle, aligned with the New Zealand Privacy
+              Act 2020 data-minimisation principle. Every 90 days, the cycle turns over and posts
+              from the previous cycle are automatically removed.
+            </p>
+            <p>
+              We send a reminder email about 7 days before your cycle ends so you have time to
+              export or save what matters. You can download a ZIP of all original photos (and an
+              MP4 montage if available) at any time during the cycle.
+            </p>
+            <p>
+              You can also disable auto-purge in Settings → Your data. If turned off, your
+              memories stay indefinitely until you delete them manually.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: "montage-export",
+        question: "Can I download or print my memories?",
+        content: (
+          <>
+            <p>
+              Yes. During your 90-day cycle you can export:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>
+                <strong>ZIP of originals</strong> — all the original photos in high resolution,
+                perfect for printing on Snapfish, sending to grandparents, or keeping as a backup.
+              </li>
+              <li>
+                <strong>MP4 video montage</strong> — a shareable movie of your memories. This
+                is a paid add-on (covering the third-party render service).
+              </li>
+            </ul>
+            <p className="mt-2">
+              Links stay live for 7 days after your cycle turns over, so you can still grab
+              anything you missed.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: "data-security",
+        question: "How do you keep my family's data safe?",
+        content: (
+          <>
+            <p>
+              PointPals uses industry-standard security:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>All data encrypted in transit (TLS 1.3) and at rest.</li>
+              <li>Photo storage is private — each family can only see their own uploads.</li>
+              <li>GPS and metadata stripped from all photo uploads automatically.</li>
+              <li>No third-party analytics track your children.</li>
+              <li>Database locked down with per-row security policies.</li>
+            </ul>
+            <p className="mt-2">
+              See our{' '}
+              <a href="/privacy" className="underline hover:text-foreground">
+                Privacy Policy
+              </a>{' '}
+              for the full details.
+            </p>
+          </>
+        ),
+      },
+    ],
+  },
 ];
 
 const TINTS = [

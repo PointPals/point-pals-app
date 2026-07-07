@@ -562,6 +562,25 @@ function SettingsPage() {
               <Trash2 className="h-4 w-4" /> Delete all data
             </button>
           </div>
+          <div className="border-t border-border/40 pt-3 mt-2">
+            <ToggleRow
+              icon={<RefreshCw className="h-4 w-4" />}
+              label="Auto-purge memory feed every 90 days"
+              desc="When on, memories older than the current 90-day cycle are automatically removed. We'll email you a reminder first."
+              checked={household.memory_auto_purge !== false}
+              onChange={async (v) => {
+                const { supabase } = await import("@/integrations/supabase/client");
+                await (supabase.from("households") as any)
+                  .update({ memory_auto_purge: v })
+                  .eq("id", household.id);
+              }}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              <a href="/faq#memory-retention" className="underline hover:text-foreground">
+                Learn about 90-day retention cycles
+              </a>
+            </p>
+          </div>
         </div>
       </section>
       )}

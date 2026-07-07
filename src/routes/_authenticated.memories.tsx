@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useApp } from "@/lib/app-store";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import {
   Camera,
   ImagePlus,
@@ -15,8 +16,8 @@ import {
   Play,
   ChevronLeft,
   ChevronRight,
+  CalendarDays,
 } from "lucide-react";
-import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import {
   useMemories,
@@ -64,6 +65,30 @@ function MemoriesPage() {
     });
   }, []);
 
+  // ── Memory cycle info (90-day retention) ────────────────────────────────
+  const cycleInfo = useMemo(() => {
+    const anchor = household.memory_cycle_started_at
+      ? new Date(household.memory_cycle_started_at)
+      : null;
+    if (!anchor) return null;
+
+    const now = Date.now();
+    const msSinceAnchor = now - anchor.getTime();
+    const daysSinceAnchor = msSinceAnchor / (24 * 60 * 60 * 1000);
+    const cycleNumber = Math.floor(daysSinceAnchor / 90);
+    const cycleStart = new Date(anchor.getTime() + cycleNumber * 90 * 24 * 60 * 60 * 1000);
+    const cycleEnd = new Date(cycleStart.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const msRemaining = cycleEnd.getTime() - now;
+    const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
+
+    return {
+      cycleNumber: cycleNumber + 1,
+      daysRemaining,
+      cycleEnd,
+      autoPurge: household.memory_auto_purge !== false,
+    };
+  }, [household.memory_cycle_started_at, household.memory_auto_purge]);
+
   return (
     <div className="space-y-6 pb-8">
       <div>
@@ -72,6 +97,31 @@ function MemoriesPage() {
           Little moments, kept. Add a photo and tag who was there.
         </p>
       </div>
+
+      {/* 🔔 Memory cycle banner */}
+      {cycleInfo && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-center gap-3 text-sm">
+          <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold">
+              Cycle {cycleInfo.cycleNumber}
+            </span>
+            <span className="text-muted-foreground">
+              {' '}— {cycleInfo.daysRemaining} day{cycleInfo.daysRemaining !== 1 ? "s" : ""} until
+              the memory feed refreshes.
+              {cycleInfo.autoPurge
+                ? " Older memories will be automatically removed."
+                : " Your auto-purge is off — memories stay until you delete them."}
+            </span>
+          </div>
+          <a
+            href="/faq#memory-retention"
+            className="shrink-0 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            How this works
+          </a>
+        </div>
+      )}
 
       {canAward ? (
         <Composer householdId={household.id} kids={kids} />

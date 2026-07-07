@@ -78,6 +78,41 @@ function Privacy() {
         </li>
       </ul>
 
+      <H2>Data retention — Memory Feed</H2>
+      <p>
+        Your Memory Feed (photos, captions, audio notes, and comments) runs on a
+        fixed 90-day cycle aligned with the{' '}
+        <a className="underline" href="/faq#memory-retention">
+          New Zealand Privacy Act 2020 data-minimisation principle
+        </a>
+        . Here's how it works:
+      </p>
+      <ul className="list-disc pl-5 space-y-1.5">
+        <li>
+          <strong>90-day cycles</strong>: your household's memory cycle starts on
+          the day you create your account. Every 90 days the cycle turns over and
+          posts from the previous cycle are automatically removed.
+        </li>
+        <li>
+          <strong>Advance notice</strong>: we send a reminder email ~7 days before
+          your cycle ends so you have time to save or export what matters.
+        </li>
+        <li>
+          <strong>Export before purge</strong>: you can download a ZIP of all
+          original photos (or an MP4 video montage if available) at any time
+          during your cycle. Links stay live for 7 days after the cycle turns.
+        </li>
+        <li>
+          <strong>Opt out</strong>: you can disable auto-purge in Settings → Your
+          data. If turned off, your memories are kept indefinitely until you
+          delete them manually, but we still send the reminder.
+        </li>
+        <li>
+          <strong>Already-exported posts</strong>: memories that were included in
+          a montage export are never auto-deleted.
+        </li>
+      </ul>
+
       <H2>Contact</H2>
       <p>
         Email{" "}
