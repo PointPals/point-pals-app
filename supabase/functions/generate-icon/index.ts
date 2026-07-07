@@ -1,14 +1,13 @@
-// AI icon generation (§9) — RATE-LIMITED per household so generation costs stay
+// AI icon generation — RATE-LIMITED per household so generation costs stay
 // predictable. Each household gets a capped number of generations per calendar
 // month; premium households get a higher cap. The ledger lives in
-// public.icon_generations (see 0001_init.sql).
+// public.icon_generations.
 //
 // Deploy: `supabase functions deploy generate-icon`
-// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY
+// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY, RESEND_API_KEY
 //
-// Uses the Google Gemini API (Imagen 3 / Gemini 2.0 Flash) to generate
-// on-brand PointPals icons. The style prompt ensures visual consistency with
-// the existing icon set.
+// Uses the Google Gemini API to generate on-brand PointPals icons. The style
+// prompt ensures visual consistency with the existing icon set.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
@@ -19,13 +18,13 @@ const admin = createClient(
 );
 
 const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY") ?? "";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
 // Monthly caps by entitlement — tune freely; this is the cost guardrail.
 const FREE_MONTHLY_CAP = 10;
 const PREMIUM_MONTHLY_CAP = 120;
 
 // Style prompt to keep generated icons visually consistent with the existing set.
-// Paste the user's style preferences into this constant.
 const STYLE_PROMPT = `A single icon illustration only — no background tile, no coloured card, no sticker border. Output on a fully transparent background (PNG with alpha channel). Flat-but-dimensional custom icon style — friendly, slightly rounded, chunky illustration with soft gradients and gentle highlights, a soft warm-charcoal outline (not pure black). Soft pastel colour palette — dusty blue, buttercream yellow, sage green, blush pink, lilac, warm sand, seafoam. No text, no letters, no numbers, no watermark, no photorealism, no rendered human faces (use an object stand-in instead, e.g. a toothbrush rather than a child brushing teeth). Square canvas, generous padding, centred.`;
 
 function monthStartISO(): string {
@@ -33,12 +32,71 @@ function monthStartISO(): string {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
 }
 
-/** Call the Gemini 2.0 Flash (Imagen) API to generate an image. */
+/** Classify a Gemini error to determine alerting and logging behaviour. */
+function classifyGeminiError(httpStatus: number, body: string) {
+  const lower = body.toLowerCase();
+  if (httpStatus === 429 || lower.includes("quota") || lower.includes("rate_limit") || lower.includes("resource_exhausted")) {
+    return "quota_exceeded";
+  }
+  if (httpStatus === 400 && lower.includes("api_key")) {
+    return "invalid_key";
+  }
+  if (httpStatus === 404 && lower.includes("not found")) {
+    return "model_not_found";
+  }
+  return "gemini_error";
+}
+
+/** Log an error to the icon_generation_errors table. */
+async function logError(householdId: string | null, fnName: string, errorType: string, message: string, httpStatus: number | null, rawBody: string) {
+  try {
+    await admin.from("icon_generation_errors").insert({
+      household_id: householdId ?? null,
+      function_name: fnName,
+      error_type: errorType,
+      error_message: message.slice(0, 2000),
+      http_status: httpStatus,
+      raw_response: rawBody.slice(0, 4000),
+    });
+  } catch {
+    // Best-effort
+  }
+}
+
+/** Send an alert email to support@pointpals.co.nz for billing/quota errors. */
+async function sendBillingAlert(errorType: string, message: string) {
+  if (!RESEND_API_KEY) return;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "PointPals Alerts <alerts@pointpals.co.nz>",
+        to: "support@pointpals.co.nz",
+        subject: `⚠️ Gemini API Alert — ${errorType === "quota_exceeded" ? "Spend cap / quota reached" : "API key issue"}`,
+        html: `<p><strong>Gemini API Alert — ${errorType}</strong></p>
+<p>Error: ${message.replace(/</g, "&lt;").slice(0, 1000)}</p>
+<p>Time: ${new Date().toISOString()}</p>
+<p>Action needed: Check your Google Cloud billing and API key settings.</p>`,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn("Billing alert email failed:", text);
+    }
+  } catch (e) {
+    console.warn("Failed to send billing alert:", e);
+  }
+}
+
+/** Call Gemini 2.0 Flash to generate an icon image. */
 async function generateImage(prompt: string): Promise<Uint8Array> {
   const fullPrompt = `${STYLE_PROMPT}\n\n${prompt}`;
 
-  // Gemini 2.0 Flash with image generation via Imagen
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GOOGLE_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -75,7 +133,6 @@ async function generateImage(prompt: string): Promise<Uint8Array> {
   );
 
   if (!imagePart?.inlineData?.data) {
-    // The model may return text instead if generation is blocked
     const text = parts.map((p: { text?: string }) => p.text ?? "").join(" ").trim();
     throw new Error(text ? `Gemini returned text instead of image: "${text.slice(0, 200)}"` : "No image returned by Gemini");
   }
@@ -91,8 +148,11 @@ async function generateImage(prompt: string): Promise<Uint8Array> {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  let householdId: string | null = null;
   try {
-    const { householdId, prompt } = await req.json();
+    const body = await req.json();
+    householdId = body.householdId;
+    const { prompt } = body;
     if (!householdId || !prompt) return json({ error: "Missing householdId/prompt" }, 400);
     if (!GOOGLE_API_KEY) {
       return json({ error: "GOOGLE_API_KEY not configured. Ask your admin to set it as a Supabase secret." }, 500);
@@ -157,6 +217,35 @@ Deno.serve(async (req) => {
       remaining: cap - (count ?? 0) - 1,
     });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : "generation failed" }, 500);
+    const message = e instanceof Error ? e.message : "generation failed";
+
+    if (message.includes("Gemini API error")) {
+      const statusMatch = message.match(/error (\d+):/);
+      const httpStatus = statusMatch ? parseInt(statusMatch[1]) : null;
+      const errorType = classifyGeminiError(httpStatus ?? 0, message);
+      await logError(householdId, "generate-icon", errorType, message, httpStatus, message);
+
+      if (errorType === "quota_exceeded" || errorType === "invalid_key") {
+        (async () => { await sendBillingAlert(errorType, message); })();
+      }
+
+      if (errorType === "quota_exceeded") {
+        return json({
+          error: "Sorry, the AI icon service has reached its monthly usage limit. Please try again next month, or contact support.",
+        }, 429);
+      }
+      if (errorType === "invalid_key") {
+        return json({
+          error: "Icon service is not fully configured yet — the admin needs to set up the Google API key.",
+        }, 500);
+      }
+      if (errorType === "model_not_found") {
+        return json({
+          error: "Icon generation AI needs an update — this is a server-side issue that will be fixed soon.",
+        }, 500);
+      }
+    }
+
+    return json({ error: message }, 500);
   }
 });
