@@ -1,4 +1,5 @@
 import "./lib/error-capture";
+import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -48,7 +49,13 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      // Wrap the handler with Sentry to capture server-side errors and traces
+      const sentryHandler = wrapFetchWithSentry({
+        fetch(req: Request) {
+          return handler.fetch(req, env, ctx);
+        },
+      });
+      const response = await sentryHandler.fetch(request);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);

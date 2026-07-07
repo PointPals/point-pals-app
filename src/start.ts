@@ -1,3 +1,7 @@
+import {
+  sentryGlobalFunctionMiddleware,
+  sentryGlobalRequestMiddleware,
+} from "@sentry/tanstackstart-react";
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
@@ -19,6 +23,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware],
+  // Sentry middleware goes first to capture errors in other middleware
+  requestMiddleware: [sentryGlobalRequestMiddleware, errorMiddleware],
+  functionMiddleware: [sentryGlobalFunctionMiddleware, attachSupabaseAuth],
 }));
