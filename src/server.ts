@@ -1,5 +1,4 @@
 import "./lib/error-capture";
-import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -17,6 +16,21 @@ async function getServerEntry(): Promise<ServerEntry> {
     );
   }
   return serverEntryPromise;
+}
+
+// Optional Sentry server integration — gracefully skipped if the package
+// isn't installed (e.g. Lovable dev environment).
+async function maybeWrapWithSentry(
+  fetch: (req: Request) => Promise<Response> | Response,
+): Promise<(req: Request) => Promise<Response> | Response> {
+  try {
+    const { wrapFetchWithSentry } = await import("@sentry/tanstackstart-react");
+    const sentryHandler = wrapFetchWithSentry({ fetch });
+    return (req) => sentryHandler.fetch(req);
+  } catch {
+    // Sentry not available — return unwrapped handler
+    return fetch;
+  }
 }
 
 // h3 swallows in-handler throws into a normal 500 Response with body
@@ -49,13 +63,10 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
-      // Wrap the handler with Sentry to capture server-side errors and traces
-      const sentryHandler = wrapFetchWithSentry({
-        fetch(req: Request) {
-          return handler.fetch(req, env, ctx);
-        },
+      const wrappedHandler = await maybeWrapWithSentry(async (req: Request) => {
+        return handler.fetch(req, env, ctx);
       });
-      const response = await sentryHandler.fetch(request);
+      const response = await wrappedHandler(request);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);

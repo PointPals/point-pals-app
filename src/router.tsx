@@ -9,7 +9,6 @@ import "./instrument-init";
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import * as Sentry from "@sentry/tanstackstart-react";
 
 export const getRouter = () => {
   const queryClient = new QueryClient();
@@ -21,11 +20,15 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
   });
 
-  // Sentry browser tracing for TanStack Router navigation
+  // Sentry browser tracing for TanStack Router navigation (client-only)
   if (!router.isServer) {
-    Sentry.addIntegration(
-      Sentry.tanstackRouterBrowserTracingIntegration(router),
-    );
+    import("@sentry/tanstackstart-react").then((Sentry) => {
+      Sentry.addIntegration(
+        Sentry.tanstackRouterBrowserTracingIntegration(router),
+      );
+    }).catch(() => {
+      // Sentry not available — skip router tracing
+    });
   }
 
   return router;
