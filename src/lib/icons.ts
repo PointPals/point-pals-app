@@ -20,7 +20,6 @@ const ICON_FILES: string[] = [
   "bath-or-shower.png",
   "get-dressed.png",
   "get-ready-for-bed.png",
-  "went-to-bed-by-yourself.png",
   "stayed-in-bed-all-night.png",
   "woke-up-on-time.png",
   "getting-out-the-door-on-time.png",
