@@ -4,10 +4,11 @@
 // public.icon_generations.
 //
 // Deploy: `supabase functions deploy generate-icon`
-// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY, RESEND_API_KEY
+// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, RESEND_API_KEY
 //
-// Uses the Google Gemini API to generate on-brand PointPals icons. The style
-// prompt ensures visual consistency with the existing icon set.
+// Uses Google Gemini 2.0 Flash (gemini-2.0-flash-exp) to generate on-brand
+// PointPals icons. The style prompt ensures visual consistency with the
+// existing icon set.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
@@ -17,7 +18,7 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY") ?? "";
+const GOOGLE_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? Deno.env.get("GOOGLE_API_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
 // Monthly caps by entitlement — tune freely; this is the cost guardrail.
@@ -96,7 +97,7 @@ async function sendBillingAlert(errorType: string, message: string) {
 async function generateImage(prompt: string): Promise<Uint8Array> {
   const fullPrompt = `${STYLE_PROMPT}\n\n${prompt}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_API_KEY}`;
 
   const res = await fetch(url, {
     method: "POST",

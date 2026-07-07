@@ -123,7 +123,7 @@ function RewardsPage() {
           <div className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                What are you working toward?
+                What are you working towards?
               </label>
               <input
                 value={rewardName}

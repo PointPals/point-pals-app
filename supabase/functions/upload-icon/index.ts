@@ -1,9 +1,9 @@
 // Background-removal edge function — strips the background from a user-uploaded
-// photo using Gemini 2.0 Flash (Imagen), producing a transparent PNG that sits
+// photo using Gemini 2.0 Flash (Imagen via gemini-2.0-flash-exp), producing a transparent PNG that sits
 // on the coloured tiles alongside the pre-made registry icons.
 //
 // Deploy: `supabase functions deploy upload-icon`
-// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY, RESEND_API_KEY
+// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, RESEND_API_KEY
 //
 // Rate-limited per household via public.icon_generations (shared cap with AI
 // generation — see generate-icon for details).
@@ -16,7 +16,7 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY") ?? "";
+const GOOGLE_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? Deno.env.get("GOOGLE_API_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
 const FREE_MONTHLY_CAP = 10;
@@ -89,7 +89,7 @@ async function sendBillingAlert(errorType: string, message: string) {
 
 /** Call Gemini 2.0 Flash to remove the background from the uploaded image. */
 async function removeBackground(imageBase64: string, mimeType: string): Promise<Uint8Array> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_API_KEY}`;
 
   const res = await fetch(url, {
     method: "POST",
