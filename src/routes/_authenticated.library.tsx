@@ -8,9 +8,9 @@ import { CompanionPicker } from "@/components/CompanionPicker";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
-import { ICON_KEYS, iconUrl } from "@/lib/icons";
+import { ICON_KEYS, iconUrl, storageUrl } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Pencil, X, Check, Wand2 } from "lucide-react";
+import { Trash2, Pencil, X, Check, Wand2, Upload, Image } from "lucide-react";
 
 function IconPickerGrid({
   selected,
@@ -19,7 +19,44 @@ function IconPickerGrid({
   selected: string | null;
   onSelect: (key: string) => void;
 }) {
+  const { household } = useApp();
   const [aiOpen, setAiOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [userIcons, setUserIcons] = useState<
+    { id: string; storagePath: string; label: string }[]
+  >([]);
+  const [loadingIcons, setLoadingIcons] = useState(true);
+
+  // Fetch custom icons for this household
+  useEffect(() => {
+    if (!household?.id) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingIcons(true);
+      // @ts-expect-error - user_icons not in supabase types
+const { data, error } = await (supabase.from("user_icons") as any)
+        .select("id, storage_path, label")
+        .eq("household_id", household.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!cancelled && !error && data) {
+        setUserIcons(
+          data.map((r: { id: string; storage_path: string; label: string }) => ({
+            id: r.id,
+            storagePath: r.storage_path,
+            label: r.label,
+          })),
+        );
+      }
+      if (!cancelled) setLoadingIcons(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [household?.id]);
+
+  const hasUserIcons = userIcons.length > 0;
 
   return (
     <div>
@@ -27,15 +64,72 @@ function IconPickerGrid({
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Icon
         </label>
-        <button
-          type="button"
-          onClick={() => setAiOpen((v) => !v)}
-          className="tap text-[11px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1"
-        >
-          <Wand2 className="w-3 h-3" />
-          {aiOpen ? "Close" : "AI generate"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setUploadOpen((v) => !v);
+              if (!uploadOpen) setAiOpen(false);
+            }}
+            className={`tap text-[11px] font-semibold flex items-center gap-1 ${
+              uploadOpen
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Upload className="w-3 h-3" />
+            {uploadOpen ? "Close" : "Upload"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAiOpen((v) => !v);
+              if (!aiOpen) setUploadOpen(false);
+            }}
+            className={`tap text-[11px] font-semibold flex items-center gap-1 ${
+              aiOpen
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Wand2 className="w-3 h-3" />
+            {aiOpen ? "Close" : "AI generate"}
+          </button>
+        </div>
       </div>
+
+      {uploadOpen && (
+        <UploadIconPanel
+          onComplete={(url) => {
+            onSelect(url);
+            setUploadOpen(false);
+            // Refetch user icons so the new one appears immediately
+            if (household?.id) {
+              // @ts-expect-error
+              (supabase.from("user_icons") as any)
+                .select("id, storage_path, label")
+                .eq("household_id", household.id)
+                .is("deleted_at", null)
+                .order("created_at", { ascending: false })
+                .limit(50)
+                .then(({ data, error }: { data: any; error: any }) => {
+                  if (!error && data) {
+                    setUserIcons(
+                      data.map(
+                        (r: { id: string; storage_path: string; label: string }) => ({
+                          id: r.id,
+                          storagePath: r.storage_path,
+                          label: r.label,
+                        }),
+                      ),
+                    );
+                  }
+                });
+            }
+          }}
+          onClose={() => setUploadOpen(false)}
+        />
+      )}
 
       {aiOpen && (
         <AiIconPanel
@@ -48,6 +142,45 @@ function IconPickerGrid({
       )}
 
       <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2">
+        {/* User-uploaded icons (shown at the top) */}
+        {loadingIcons && (
+          <div className="text-xs text-muted-foreground text-center py-2">
+            Loading custom icons…
+          </div>
+        )}
+        {hasUserIcons && (
+          <>
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5 mb-2 pb-2 border-b border-border/40">
+              {userIcons.map((u) => {
+                const url = storageUrl(u.storagePath);
+                const on = selected === url;
+                return (
+                  <button
+                    type="button"
+                    key={u.id}
+                    onClick={() => onSelect(url)}
+                    aria-pressed={on}
+                    title={u.label || "Custom icon"}
+                    className={`tap aspect-square rounded-xl bg-card flex items-center justify-center transition ${
+                      on
+                        ? "ring-2 ring-foreground scale-95"
+                        : "hover:scale-105 border border-border/60"
+                    }`}
+                  >
+                    <img
+                      src={url}
+                      alt={u.label || "Custom icon"}
+                      className="w-[86%] h-[86%] object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Registry icons */}
         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
           {ICON_KEYS.map((k) => {
             const on = selected === k;
@@ -776,6 +909,169 @@ function AiIconPanel({
 }
 
 // ─── Edit Panel (shared between chores & skills) ──────────────────────────────
+
+
+// ─── Upload Icon Panel ────────────────────────────────
+
+function UploadIconPanel({
+  onComplete,
+  onClose,
+}: {
+  onComplete: (iconUrl: string) => void;
+  onClose: () => void;
+}) {
+  const { household } = useApp();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [label, setLabel] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setError(null);
+    setResult(null);
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const upload = async () => {
+    if (!selectedFile || !household?.id) return;
+    setUploading(true);
+    setError(null);
+    setResult(null);
+    try {
+      // Read the file as base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => {
+          const dataUrl = r.result as string;
+          const comma = dataUrl.indexOf(",");
+          resolve(comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl);
+        };
+        r.onerror = () => reject(new Error("Failed to read file"));
+        r.readAsDataURL(selectedFile);
+      });
+
+      const { data, error: fnErr } = await supabase.functions.invoke("upload-icon", {
+        body: {
+          householdId: household.id,
+          imageBase64: base64,
+          mimeType: selectedFile.type || "image/jpeg",
+          label: label.trim() || undefined,
+        },
+      });
+      if (fnErr) throw fnErr;
+      if (data.error) throw new Error(data.error);
+      console.log("Icon uploaded:", data);
+      setResult(data.url ?? data.storagePath);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="card-soft p-4 space-y-3 border border-dashed border-muted-foreground/30 animate-pop-in">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold flex items-center gap-2">
+          <Upload className="w-4 h-4" /> Upload your own icon
+        </h4>
+        <button onClick={onClose} className="tap text-muted-foreground hover:text-foreground">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Pick a photo of anything — we’ll strip the background and turn it into an icon.
+      </p>
+
+      {/* Hidden file input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFile}
+      />
+
+      {!preview && (
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="tap w-full rounded-xl border-2 border-dashed border-border py-8 text-muted-foreground hover:border-foreground hover:text-foreground transition flex flex-col items-center gap-2"
+        >
+          <Image className="w-8 h-8" />
+          <span className="text-sm font-semibold">Tap to choose a photo</span>
+          <span className="text-xs">Works best with a clear subject on a plain background</span>
+        </button>
+      )}
+
+      {preview && (
+        <div className="flex flex-col items-center gap-3">
+          <img src={preview} alt="Preview" className="max-h-40 rounded-xl object-contain border border-border" />
+          {!result && !uploading && (
+            <div className="w-full space-y-2">
+              <input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Name this icon (optional)"
+                className="w-full bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-sm text-center"
+              />
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setPreview(null);
+                    setLabel("");
+                  }}
+                  className="tap rounded-full border border-border px-4 py-2 text-sm font-semibold text-muted-foreground"
+                >
+                  Remove
+                </button>
+                <button
+                  onClick={upload}
+                  className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
+                >
+                  {uploading ? <span className="animate-spin">⟳</span> : <Upload className="w-3.5 h-3.5" />}
+                  {uploading ? "Processing…" : "Upload & clean"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {uploading && !result && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+          <span className="animate-spin">⟳</span> Removing background…
+        </div>
+      )}
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {result && (
+        <div className="flex flex-col items-center gap-2">
+          <img src={result} alt="Cleaned icon" className="w-24 h-24 rounded-xl object-contain border border-border" />
+          <button
+            onClick={() => {
+              onComplete(result);
+            }}
+            className="tap rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-semibold"
+          >
+            Use this icon
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function EditPanel({
   item,

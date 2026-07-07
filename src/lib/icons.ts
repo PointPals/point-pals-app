@@ -115,3 +115,15 @@ export function isIconKey(key: string): boolean {
 }
 
 export const ICON_KEYS = ICON_FILES.slice();
+
+// ─── User-uploaded icon helpers ──────────────────────────────────────────
+
+/**
+ * Returns the public storage URL for a user-uploaded icon given its
+ * storage_path (e.g. "uploads/{householdId}/{uuid}.png").
+ * Pass through the icon value directly — if it's already a full URL the
+ * callers (IconTile) treat it as-is.
+ */
+export function storageUrl(storagePath: string): string {
+  return `${SUPABASE_ASSET_BASE}/${encodeURIComponent(storagePath)}`;
+}
