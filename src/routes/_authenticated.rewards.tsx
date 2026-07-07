@@ -33,8 +33,9 @@ function RewardsPage() {
     setSplitMode,
     setSharedJarEnabled,
     setPersonalTarget,
+    resetRewardCycle,
   } = useApp();
-  const { activeReward, setActiveReward, claimReward, rewardHistory } = useCorrection();
+  const { activeReward, setActiveReward, claimReward, clearActiveReward, rewardHistory } = useCorrection();
   const [rewardName, setRewardName] = useState(activeReward?.name ?? "");
   const [rewardTarget, setRewardTargetLocal] = useState(
     activeReward?.targetPoints ?? household.rewardTarget,
@@ -64,6 +65,13 @@ function RewardsPage() {
     setRewardTarget(Math.max(10, rewardTarget));
     setEditing(false);
   }, [rewardName, rewardTarget, setActiveReward, setRewardTarget]);
+
+  const handleRestartReward = useCallback(() => {
+    if (!window.confirm("Restart reward? This will reset all points to 0 and clear the current reward.")) return;
+    resetRewardCycle();
+    clearActiveReward();
+    setEditing(true);
+  }, [resetRewardCycle, clearActiveReward]);
 
   const handleClaimReward = useCallback(() => {
     const name = activeReward?.name ?? "Family reward";
@@ -191,6 +199,12 @@ function RewardsPage() {
                 className="flex-1 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold hover:bg-muted transition"
               >
                 Change reward
+              </button>
+              <button
+                onClick={handleRestartReward}
+                className="flex-1 rounded-full border border-destructive/40 text-destructive px-5 py-2.5 text-sm font-semibold hover:bg-destructive/10 transition"
+              >
+                Restart reward
               </button>
               {reached && (
                 <button

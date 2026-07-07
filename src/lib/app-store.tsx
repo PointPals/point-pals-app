@@ -788,7 +788,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     resetRewardCycle: () => {
       setState((s) => ({
         ...s,
-        kids: s.kids.map((k) => ({ ...k, currentPoints: 0 })),
+        kids: s.kids.map((k) => ({ ...k, currentPoints: 0, personalPool: 0 })),
         household: { ...s.household, sharedPool: 0 },
       }));
       if (live) {
@@ -800,7 +800,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             async () =>
               await supabase
                 .from("kids")
-                .update({ current_points: 0 } as never)
+                .update({ current_points: 0, personal_pool: 0 } as never)
                 .eq("id", kid.id),
           );
         }

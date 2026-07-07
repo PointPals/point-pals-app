@@ -58,7 +58,7 @@ export function KidBadge({
 
         {/* Point bubble — top-right of the avatar, outside the circle */}
         <div
-          className={`absolute -top-1 -right-2 min-w-[24px] h-[24px] rounded-full flex items-center justify-center shadow-sm px-1.5 transition-transform ${
+          className={`absolute -top-1 -right-2 min-w-[24px] h-[24px] rounded-full flex items-center justify-center shadow-sm px-1.5 z-10 transition-transform ${
             flash === "up"
               ? "scale-125"
               : flash === "down"

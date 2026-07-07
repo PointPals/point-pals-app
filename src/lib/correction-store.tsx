@@ -22,6 +22,7 @@ type CorrectionCtx = {
   rewardHistory: RewardHistory[];
   claimReward: (rewardName: string, targetPoints: number) => void;
   setActiveReward: (name: string, targetPoints: number) => void;
+  clearActiveReward: () => void;
   activeReward: ActiveReward;
 };
 
@@ -145,9 +146,13 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
     setActiveRewardState({ name, targetPoints });
   }, []);
 
+  const clearActiveReward = useCallback(() => {
+    setActiveRewardState(null);
+  }, []);
+
   return (
     <CorrectionCtxProvider.Provider
-      value={{ rewardHistory, claimReward, setActiveReward, activeReward }}
+      value={{ rewardHistory, claimReward, setActiveReward, clearActiveReward, activeReward }}
     >
       {children}
     </CorrectionCtxProvider.Provider>

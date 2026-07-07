@@ -106,9 +106,9 @@ function HomePage() {
        * the visual hero is the marble jar rather than a headline. */}
       <h1 className="sr-only">Our Family Jar</h1>
       {/* Kid row — tap to open the award modal */}
-      <section aria-labelledby="kids-heading" className="pt-5">
+      <section aria-labelledby="kids-heading" className="pt-6">
         <h2 id="kids-heading" className="sr-only">Kids</h2>
-        <div className="flex flex-wrap gap-4 justify-center sm:flex-nowrap sm:gap-5 sm:overflow-x-auto sm:justify-start sm:pb-2 sm:-mx-1 sm:px-1">
+        <div className="flex flex-wrap gap-4 justify-center sm:flex-nowrap sm:gap-5 sm:justify-start sm:pb-2 sm:-mx-1 sm:px-1">
           {kids.map((kid) => (
             <div key={kid.id} className="flex flex-col items-center gap-1.5">
               <KidBadge
