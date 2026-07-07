@@ -26,6 +26,7 @@ function IconPickerGrid({
     { id: string; storagePath: string; label: string }[]
   >([]);
   const [loadingIcons, setLoadingIcons] = useState(true);
+  const [brokenIcons, setBrokenIcons] = useState<Set<string>>(new Set());
 
   // Fetch custom icons for this household
   useEffect(() => {
@@ -196,12 +197,33 @@ const { data, error } = await (supabase.from("user_icons") as any)
                         : "hover:scale-105 border border-border/60"
                     }`}
                   >
-                    <img
-                      src={url}
-                      alt={u.label || "Custom icon"}
-                      className="w-[86%] h-[86%] object-contain pointer-events-none"
-                      draggable={false}
-                    />
+                    {brokenIcons.has(u.id) ? (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm(`Remove "${u.label || "Custom icon"}"? It can\'t be loaded.`)) return;
+                          try {
+                            const { supabase } = await import("@/integrations/supabase/client");
+                            // @ts-expect-error user_icons not in types
+                            await (supabase.from("user_icons") as any).update({ deleted_at: new Date().toISOString() }).eq("id", u.id);
+                            setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
+                          } catch {}
+                        }}
+                        className="w-full h-full flex items-center justify-center"
+                        title="Broken icon — click to remove"
+                      >
+                        <Trash2 className="w-6 h-6 text-destructive" />
+                      </button>
+                    ) : (
+                      <img
+                        src={url}
+                        alt={u.label || "Custom icon"}
+                        className="w-[86%] h-[86%] object-contain pointer-events-none"
+                        draggable={false}
+                        onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
+                      />
+                    )}
                   </button>
                 );
               })}
