@@ -124,7 +124,7 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
 
       {/* Per-kid contribution legend: each kid's colour dot + how many of the
           jar's *positive* points they put in over the recent event window. */}
-      {kids.length > 0 && (
+      {kids.length > 0 && household.sharedPool > 0 && (
         <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
           {kids.map((k) => {
             const contributed = history
@@ -138,7 +138,7 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
                   style={{ backgroundColor: PASTEL_HEX[k.color] }}
                 />
                 <span className="font-medium text-foreground">{k.name}</span>
-                <span>· {contributed}</span>
+                <span>· {Math.min(contributed, household.sharedPool)}</span>
               </div>
             );
           })}

@@ -169,6 +169,13 @@ function buildDesired(
     });
   }
 
+  // If the fallback value indicates the jar should have fewer marbles than the
+  // event log builds (e.g. after a reward cycle reset), trim the list so the jar
+  // empties truthfully.
+  while (list.length > desiredCount) {
+    list.pop();
+  }
+
   // Cap: keep the newest `cap` marbles so an old jar full of ancient events
   // doesn't stall the physics.
   if (list.length > cap) list.splice(0, list.length - cap);
