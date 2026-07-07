@@ -101,7 +101,7 @@ function SettingsPage() {
         .is("used_at", null)
         .order("created_at", { ascending: false }),
     ]);
-    setMembers(m ?? []);
+    setMembers((m ?? []) as unknown as typeof members);
     setInvites(inv ?? []);
     setMembersLoading(false);
   }
@@ -129,7 +129,7 @@ function SettingsPage() {
     const displayName = myDisplayName.trim() || null;
     const { error } = await supabase
       .from("household_members")
-      .update({ display_name: displayName })
+      .update({ display_name: displayName } as never)
       .eq("household_id", household.id)
       .eq("user_id", userId);
     setSavingName(false);
