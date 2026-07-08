@@ -288,7 +288,10 @@ async function loadOnce() {
                 : [];
           const media: MemoryMedia[] = await Promise.all(
             list.map(async (item) => ({
-              url: await signedUrl(item.path).catch(() => ""),
+              url: await signedUrl(item.path).catch((e) => {
+                console.warn("[memories] signedUrl failed for", item.path, e);
+                return "";
+              }),
               kind: item.kind,
               path: item.path,
             })),
@@ -305,7 +308,12 @@ async function loadOnce() {
             storagePath: first?.path,
             media,
             audioPath: r.audio_path ?? undefined,
-            audioUrl: r.audio_path ? await signedUrl(r.audio_path).catch(() => undefined) : undefined,
+            audioUrl: r.audio_path
+              ? await signedUrl(r.audio_path).catch((e) => {
+                  console.warn("[memories] signedUrl(audio) failed for", r.audio_path, e);
+                  return undefined;
+                })
+              : undefined,
           };
         }),
       );
