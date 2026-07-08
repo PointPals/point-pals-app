@@ -28,25 +28,29 @@ async function sendResendTemplate(
   to: string,
   data: Record<string, unknown> = {},
 ): Promise<void> {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  const resendKey  = Deno.env.get("RESEND_API_KEY");
-  if (!lovableKey || !resendKey) {
-    console.error(`[stripe-webhook] Missing LOVABLE_API_KEY/RESEND_API_KEY, skipping ${key}`);
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) {
+    console.error(`[stripe-webhook] Missing RESEND_API_KEY, skipping ${key}`);
     return;
   }
+  // Direct Resend API (the old Lovable gateway needed LOVABLE_API_KEY and
+  // stopped working off Lovable hosting). Variables are stringified — the
+  // dashboard editor substitutes them via {{handlebars}} placeholders.
+  const variables: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    variables[k] = v === null || v === undefined ? "" : typeof v === "string" ? v : String(v);
+  }
   try {
-    const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": resendKey,
+        Authorization: `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
         from: "PointPals <hello@pointpals.co.nz>",
         to: [to],
-        template_id: RESEND_TEMPLATES[key],
-        data,
+        template: { id: RESEND_TEMPLATES[key], variables },
       }),
     });
     if (!res.ok) {
