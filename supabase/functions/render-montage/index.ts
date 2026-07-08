@@ -19,6 +19,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { sendResendHtml } from "../_shared/resend-send.ts";
+import { APP_URL, FROM_ADDRESS } from "../_shared/emails/base.ts";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -241,6 +243,148 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
 
 // ── STATUS: poll the provider, land the MP4 in our own bucket ─────────────
 
+function buildMontageReadyHtml(vars: {
+  firstName: string;
+  familyName: string;
+  seasonLabel: string;
+  memoryCount: number;
+  hasVideos: boolean;
+  downloadUrl: string;
+  expiresInHours: number;
+  seasonLimit: number;
+}): string {
+  const plural = vars.memoryCount === 1 ? "memory" : "memories";
+  const videosSuffix = vars.hasVideos ? ` and videos` : ``;
+  return `
+<div style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; color: #2d2a26;">
+  <h1 style="font-size: 22px; margin: 0 0 8px;">Your season montage is ready \uD83C\uDFAC</h1>
+  <p style="font-size: 14px; color: #6b6660; margin: 0 0 20px;">${escapeHtml(vars.familyName)} \u00B7 ${escapeHtml(vars.seasonLabel)}</p>
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${escapeHtml(vars.firstName)},</p>
+  <p style="font-size: 15px; line-height: 1.6;">
+    Your family's season montage is ready to download! We've stitched together
+    <strong>${vars.memoryCount} ${plural}</strong>${videosSuffix} from this season, and
+    it's all yours to keep forever.
+  </p>
+  <p style="font-size: 15px; line-height: 1.6;">This link expires in ${vars.expiresInHours} hours:</p>
+  <p style="margin: 24px 0;">
+    <a href="${escapeHtml(vars.downloadUrl)}"
+       style="background: #2d2a26; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-block;">
+      Download montage (MP4)
+    </a>
+  </p>
+  <p style="font-size: 13px; line-height: 1.5; color: #6b6660;">
+    Free tier: up to ${vars.seasonLimit} montage per season.
+    <a href="${APP_URL}/memories" style="color: #6b6660;">View your memories</a>
+  </p>
+  <p style="font-size: 13px; line-height: 1.5; color: #6b6660; margin-top: 24px;">
+    \u2014 PointPals
+  </p>
+</div>`.trim();
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function sendMontageReadyEmail(
+  householdId: string,
+  jobId: string,
+  outputPath: string,
+): Promise<void> {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) {
+    console.log("No RESEND_API_KEY — skipping montage-ready email");
+    return;
+  }
+
+  try {
+    // Household name
+    const { data: hh } = await admin
+      .from("households")
+      .select("name, memory_cycle_started_at, memory_cycle_ends_at")
+      .eq("id", householdId)
+      .maybeSingle();
+    if (!hh) {
+      console.warn(`Household ${householdId} not found — skipping email`);
+      return;
+    }
+
+    // Job detail (post_count, cycle_ends_at)
+    const { data: jobRow } = await admin
+      .from("montage_jobs")
+      .select("post_count, cycle_ends_at")
+      .eq("id", jobId)
+      .maybeSingle();
+
+    // Primary admin/parent for the billing contact
+    const { data: members } = await admin
+      .from("household_members")
+      .select("user_id")
+      .eq("household_id", householdId)
+      .in("role", ["admin", "parent"])
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (!members || members.length === 0) {
+      console.warn(`Household ${householdId} has no admin/parent — skipping email`);
+      return;
+    }
+
+    const { data: userData } = await admin.auth.admin.getUserById(members[0].user_id);
+    if (!userData?.user?.email) {
+      console.warn(`User ${members[0].user_id} has no email — skipping`);
+      return;
+    }
+
+    const email = userData.user.email;
+    const meta = userData.user.user_metadata ?? {};
+    const firstName = meta.first_name || meta.display_name || email.split("@")[0] || "there";
+    const seasonLabel = hh.memory_cycle_ends_at
+      ? `${formatNzDate(hh.memory_cycle_started_at)} \u2013 ${formatNzDate(hh.memory_cycle_ends_at)}`
+      : "this season";
+
+    // Check if the household is on a paid tier for the season limit message
+    const { data: hhSub } = await admin
+      .from("households")
+      .select("subscription_status")
+      .eq("id", householdId)
+      .maybeSingle();
+    const paid = hhSub?.subscription_status === "active" || hhSub?.subscription_status === "trialing";
+
+    const { data: signed } = await admin.storage
+      .from("exports")
+      .createSignedUrl(outputPath, SIGNED_DOWNLOAD_TTL);
+    if (!signed?.signedUrl) {
+      console.warn("Could not sign export URL for email — skipping");
+      return;
+    }
+
+    const result = await sendResendHtml(resendKey, {
+      to: email,
+      from: FROM_ADDRESS,
+      subject: `Your ${hh.name} family season montage is ready \uD83C\uDFAC`,
+      html: buildMontageReadyHtml({
+        firstName,
+        familyName: hh.name,
+        seasonLabel,
+        memoryCount: jobRow?.post_count ?? 0,
+        hasVideos: false, // simplified — we don't track this per-job
+        downloadUrl: signed.signedUrl,
+        expiresInHours: Math.floor(SIGNED_DOWNLOAD_TTL / 3600),
+        seasonLimit: paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON,
+      }),
+    });
+
+    if (result.ok) {
+      console.log(`Montage-ready email sent to ${email} (${hh.name})`);
+    } else {
+      console.warn(`Failed to send montage-ready email to ${email}: ${result.status}`);
+    }
+  } catch (e) {
+    // Log but don't fail — the render already succeeded
+    console.error("sendMontageReadyEmail error:", e instanceof Error ? e.message : String(e));
+  }
+}
+
 async function handleStatus(householdId: string, jobId: string): Promise<Response> {
   const { data: job } = await admin
     .from("montage_jobs")
@@ -296,10 +440,23 @@ async function handleStatus(householdId: string, jobId: string): Promise<Respons
     return json({ ok: true, status: "rendering" }); // retry next poll
   }
 
-  await admin
+  // ── Idempotent done transition ─────────────────────────────────────
+  // Check current DB status so concurrent polls don't double-send email.
+  const { data: current } = await admin
     .from("montage_jobs")
-    .update({ status: "done", output_path: outputPath })
-    .eq("id", job.id);
+    .select("status")
+    .eq("id", job.id)
+    .single();
+
+  if (current?.status !== "done") {
+    await admin
+      .from("montage_jobs")
+      .update({ status: "done", output_path: outputPath })
+      .eq("id", job.id);
+
+    // Fire-and-forget: send email notification (logged internally)
+    void sendMontageReadyEmail(householdId, jobId, outputPath);
+  }
 
   const { data: signed } = await admin.storage
     .from("exports")
