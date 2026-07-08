@@ -28,34 +28,40 @@ function IconPickerGrid({
   const [loadingIcons, setLoadingIcons] = useState(true);
   const [brokenIcons, setBrokenIcons] = useState<Set<string>>(new Set());
 
-  // Fetch custom icons for this household
+  // Fetch custom icons for this household — reused after uploads and AI
+  // generations so new icons appear in the grid immediately.
+  const loadUserIcons = useCallback(async () => {
+    if (!household?.id) return;
+    // @ts-expect-error - user_icons not in supabase types
+    const { data, error } = await (supabase.from("user_icons") as any)
+      .select("id, storage_path, label")
+      .eq("household_id", household.id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (!error && data) {
+      setUserIcons(
+        data.map((r: { id: string; storage_path: string; label: string }) => ({
+          id: r.id,
+          storagePath: r.storage_path,
+          label: r.label,
+        })),
+      );
+    }
+  }, [household?.id]);
+
   useEffect(() => {
     if (!household?.id) return;
     let cancelled = false;
     (async () => {
       setLoadingIcons(true);
-      // @ts-expect-error - user_icons not in supabase types
-const { data, error } = await (supabase.from("user_icons") as any)
-        .select("id, storage_path, label")
-        .eq("household_id", household.id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (!cancelled && !error && data) {
-        setUserIcons(
-          data.map((r: { id: string; storage_path: string; label: string }) => ({
-            id: r.id,
-            storagePath: r.storage_path,
-            label: r.label,
-          })),
-        );
-      }
+      await loadUserIcons();
       if (!cancelled) setLoadingIcons(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [household?.id]);
+  }, [household?.id, loadUserIcons]);
 
   const storageKey = household?.id ? `icon-visibility-${household.id}` : null;
   const [showAll, setShowAll] = useState(false);
@@ -153,28 +159,7 @@ const { data, error } = await (supabase.from("user_icons") as any)
             onSelect(url);
             setUploadOpen(false);
             // Refetch user icons so the new one appears immediately
-            if (household?.id) {
-              // @ts-expect-error
-              (supabase.from("user_icons") as any)
-                .select("id, storage_path, label")
-                .eq("household_id", household.id)
-                .is("deleted_at", null)
-                .order("created_at", { ascending: false })
-                .limit(50)
-                .then(({ data, error }: { data: any; error: any }) => {
-                  if (!error && data) {
-                    setUserIcons(
-                      data.map(
-                        (r: { id: string; storage_path: string; label: string }) => ({
-                          id: r.id,
-                          storagePath: r.storage_path,
-                          label: r.label,
-                        }),
-                      ),
-                    );
-                  }
-                });
-            }
+            void loadUserIcons();
           }}
           onClose={() => setUploadOpen(false)}
         />
@@ -185,12 +170,18 @@ const { data, error } = await (supabase.from("user_icons") as any)
           onSelect={(url) => {
             onSelect(url);
             setAiOpen(false);
+            // The generated icon is saved to user_icons server-side — refetch
+            // so it lands in the grid instead of seeming to vanish.
+            void loadUserIcons();
           }}
           onClose={() => setAiOpen(false)}
         />
       )}
 
-      <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2">
+      {/* overscroll-contain stops iOS handing the gesture to the page before
+          the inner grid reaches its last row; the trailing spacer guarantees
+          the final row clears the container edge on every browser. */}
+      <div className="mt-2 max-h-60 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-muted/40 p-2">
         {manageMode ? (
           <div className="text-[11px] font-semibold text-muted-foreground text-center mt-1 mb-1.5 px-2">
             Tap an icon to hide or show it — tap a custom icon to delete it. Tap "Done" when
@@ -320,6 +311,7 @@ const { data, error } = await (supabase.from("user_icons") as any)
             );
           })}
         </div>
+        <div className="h-3" aria-hidden />
       </div>
     </div>
   );
