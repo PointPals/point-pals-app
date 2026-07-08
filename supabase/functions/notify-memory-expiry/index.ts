@@ -9,8 +9,66 @@
 // stamp is missing or fresher than 24 hours — nobody loses memories unwarned.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendResendTemplate } from "../_shared/resend-send.ts";
-import { APP_URL, FROM_ADDRESS } from "../_shared/emails/base.ts";
+
+// ── Inline shared helpers ─────────────────────────────────────────────────
+
+const RESEND_API_URL = "https://api.resend.com/emails";
+const APP_URL = "https://pointpals.co.nz";
+const FROM_ADDRESS = "PointPals <hello@pointpals.co.nz>";
+
+interface ResendTemplateOptions {
+  to: string | string[];
+  templateId: string;
+  variables?: Record<string, unknown>;
+  from: string;
+  subject?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
+}
+
+function stringifyVars(vars?: Record<string, unknown>): Record<string, string> {
+  if (!vars) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars)) {
+    if (v === null || v === undefined) {
+      out[k] = "";
+    } else if (typeof v === "string") {
+      out[k] = v;
+    } else {
+      out[k] = String(v);
+    }
+  }
+  return out;
+}
+
+async function sendResendTemplate(
+  apiKey: string,
+  opts: ResendTemplateOptions,
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const to = Array.isArray(opts.to) ? opts.to : [opts.to];
+  const payload: Record<string, unknown> = {
+    from: opts.from,
+    to,
+    template: {
+      id: opts.templateId,
+      variables: stringifyVars(opts.variables),
+    },
+  };
+  if (opts.subject) payload.subject = opts.subject;
+  if (opts.replyTo) payload.reply_to = opts.replyTo;
+  if (opts.headers) payload.headers = opts.headers;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  return { ok: res.ok, status: res.status, body };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

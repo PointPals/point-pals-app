@@ -18,9 +18,82 @@
 // "stage" sandbox, default "v1"), SHOTSTACK_SOUNDTRACK_URL (optional music).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, json } from "../_shared/cors.ts";
-import { sendResendTemplate } from "../_shared/resend-send.ts";
-import { APP_URL, FROM_ADDRESS } from "../_shared/emails/base.ts";
+
+// ── Inline shared helpers (avoid _shared/ import bundling issues) ──────────
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, stripe-signature",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+const RESEND_API_URL = "https://api.resend.com/emails";
+const APP_URL = "https://pointpals.co.nz";
+const FROM_ADDRESS = "PointPals <hello@pointpals.co.nz>";
+
+interface ResendTemplateOptions {
+  to: string | string[];
+  templateId: string;
+  variables?: Record<string, unknown>;
+  from: string;
+  subject?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
+}
+
+function stringifyVars(vars?: Record<string, unknown>): Record<string, string> {
+  if (!vars) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars)) {
+    if (v === null || v === undefined) {
+      out[k] = "";
+    } else if (typeof v === "string") {
+      out[k] = v;
+    } else {
+      out[k] = String(v);
+    }
+  }
+  return out;
+}
+
+async function sendResendTemplate(
+  apiKey: string,
+  opts: ResendTemplateOptions,
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const to = Array.isArray(opts.to) ? opts.to : [opts.to];
+  const payload: Record<string, unknown> = {
+    from: opts.from,
+    to,
+    template: {
+      id: opts.templateId,
+      variables: stringifyVars(opts.variables),
+    },
+  };
+  if (opts.subject) payload.subject = opts.subject;
+  if (opts.replyTo) payload.reply_to = opts.replyTo;
+  if (opts.headers) payload.headers = opts.headers;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  return { ok: res.ok, status: res.status, body };
+}
+
+// ── End of inlined helpers ─────────────────────────────────────────────────
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -243,8 +316,6 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
 
 // ── STATUS: poll the provider, land the MP4 in our own bucket ─────────────
 
-
-
 async function sendMontageReadyEmail(
   householdId: string,
   jobId: string,
@@ -301,7 +372,6 @@ async function sendMontageReadyEmail(
       ? `${formatNzDate(hh.memory_cycle_started_at)} \u2013 ${formatNzDate(hh.memory_cycle_ends_at)}`
       : "this season";
 
-    // Check if the household is on a paid tier for the season limit message
     const { data: hhSub } = await admin
       .from("households")
       .select("subscription_status")
@@ -406,7 +476,6 @@ async function handleStatus(householdId: string, jobId: string): Promise<Respons
   }
 
   // ── Idempotent done transition ─────────────────────────────────────
-  // Check current DB status so concurrent polls don't double-send email.
   const { data: current } = await admin
     .from("montage_jobs")
     .select("status")
