@@ -1,1 +1,27 @@
 project_id = "tcpbvcgvtwrqsrzerwwr"
+
+# Functions that are NOT called with a Supabase user JWT must opt out of the
+# platform's gateway JWT check, or every request 401s before the function's
+# own auth runs:
+#  - the cron functions authenticate via the x-cron-secret header (pg_cron
+#    sends no JWT);
+#  - stripe-webhook verifies Stripe's signature (Stripe sends no JWT).
+# With these entries, `supabase functions deploy <name>` applies the right
+# setting automatically — no need to remember --no-verify-jwt. Dashboard
+# redeploys can re-enable the check; re-deploy via CLI (or re-toggle
+# "Enforce JWT verification" off) if a function suddenly starts 401ing.
+
+[functions.notify-trial-ending]
+verify_jwt = false
+
+[functions.notify-nurture-sequence]
+verify_jwt = false
+
+[functions.notify-memory-expiry]
+verify_jwt = false
+
+[functions.purge-expired-memories]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
