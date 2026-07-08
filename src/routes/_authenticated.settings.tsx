@@ -244,9 +244,17 @@ function SettingsPage() {
 
   const revokeInvite = async (id: string) => {
     if (!window.confirm("Revoke this invite? The code will stop working immediately.")) return;
-    const { error } = await supabase.from("household_invites").delete().eq("id", id);
-    if (error) {
-      setInviteError(error.message);
+    // .select() so RLS silently deleting 0 rows surfaces as a failure instead
+    // of the invite "coming back" on the next page load.
+    const { data, error } = await supabase
+      .from("household_invites")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error || !data || data.length === 0) {
+      setInviteError(
+        error?.message ?? "Couldn't revoke that invite — only household admins can revoke invites.",
+      );
       return;
     }
     setInvites((prev) => prev.filter((i) => i.id !== id));

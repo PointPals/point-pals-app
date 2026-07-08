@@ -125,6 +125,22 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2, 10);
 
+  // Live mode: the reward also lives on the households row so it survives
+  // sign-out/sign-in and shows up on every family member's device.
+  const persistActiveReward = useCallback(
+    (reward: ActiveReward) => {
+      if (!live || !household.id) return;
+      void db
+        .from("households")
+        .update({
+          active_reward_name: reward?.name ?? null,
+          active_reward_target: reward?.targetPoints ?? null,
+        })
+        .eq("id", household.id);
+    },
+    [live, household.id],
+  );
+
   const claimReward = useCallback(
     (rewardName: string, targetPoints: number) => {
       const entry: RewardHistory = {
@@ -151,17 +167,23 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
       // (allTimePoints untouched), and the parent is prompted for a new reward.
       resetRewardCycle();
       setActiveRewardState(null);
+      persistActiveReward(null);
     },
-    [live, household.id, kids, resetRewardCycle],
+    [live, household.id, kids, resetRewardCycle, persistActiveReward],
   );
 
-  const setActiveReward = useCallback((name: string, targetPoints: number) => {
-    setActiveRewardState({ name, targetPoints });
-  }, []);
+  const setActiveReward = useCallback(
+    (name: string, targetPoints: number) => {
+      setActiveRewardState({ name, targetPoints });
+      persistActiveReward({ name, targetPoints });
+    },
+    [persistActiveReward],
+  );
 
   const clearActiveReward = useCallback(() => {
     setActiveRewardState(null);
-  }, []);
+    persistActiveReward(null);
+  }, [persistActiveReward]);
 
   return (
     <CorrectionCtxProvider.Provider

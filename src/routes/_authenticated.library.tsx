@@ -10,7 +10,7 @@ import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
 import { ICON_KEYS, iconUrl, storageUrl } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Pencil, X, Check, Wand2, Upload, Image, Eye, EyeOff } from "lucide-react";
+import { Trash2, Pencil, X, Check, Wand2, Upload, Image, Eye, EyeOff, RefreshCw } from "lucide-react";
 
 function IconPickerGrid({
   selected,
@@ -84,8 +84,15 @@ const { data, error } = await (supabase.from("user_icons") as any)
     [storageKey],
   );
 
+  // Manage mode: tapping a tile hides/shows (or deletes a custom icon)
+  // instead of selecting. A dedicated mode beats a tiny per-tile eye overlay,
+  // which on touch screens stole taps meant to select the icon.
+  const [manageMode, setManageMode] = useState(false);
+
   const hasUserIcons = userIcons.length > 0;
-  const visibleIcons = showAll ? ICON_KEYS : ICON_KEYS.filter((k) => !hiddenKeys.has(k) || selected === k);
+  const visibleIcons = manageMode || showAll
+    ? ICON_KEYS
+    : ICON_KEYS.filter((k) => !hiddenKeys.has(k) || selected === k);
   const hiddenCount = ICON_KEYS.filter((k) => hiddenKeys.has(k)).length;
 
   return (
@@ -95,6 +102,18 @@ const { data, error } = await (supabase.from("user_icons") as any)
           Icon
         </label>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setManageMode((v) => !v)}
+            className={`tap text-[11px] font-semibold flex items-center gap-1 ${
+              manageMode
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Eye className="w-3 h-3" />
+            {manageMode ? "Done" : "Hide icons"}
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -172,17 +191,23 @@ const { data, error } = await (supabase.from("user_icons") as any)
       )}
 
       <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2">
-        {/* Show/hide toggle for registry icons */}
-        {hiddenCount > 0 && (
-          <div className="flex items-center justify-end mt-1.5 mb-0.5 px-0.5">
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="tap text-[11px] font-semibold text-muted-foreground hover:text-foreground transition"
-            >
-              {showAll ? `Show fewer (${ICON_KEYS.length - hiddenCount} visible)` : `Show all (${ICON_KEYS.length} icons)`}
-            </button>
+        {manageMode ? (
+          <div className="text-[11px] font-semibold text-muted-foreground text-center mt-1 mb-1.5 px-2">
+            Tap an icon to hide or show it — tap a custom icon to delete it. Tap "Done" when
+            finished.
           </div>
+        ) : (
+          hiddenCount > 0 && (
+            <div className="flex items-center justify-end mt-1.5 mb-0.5 px-0.5">
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="tap text-[11px] font-semibold text-muted-foreground hover:text-foreground transition"
+              >
+                {showAll ? `Show fewer (${ICON_KEYS.length - hiddenCount} visible)` : `Show all (${ICON_KEYS.length} icons)`}
+              </button>
+            </div>
+          )
         )}
 
         {/* Single combined grid: user/custom icons first, then registry icons */}
@@ -196,15 +221,27 @@ const { data, error } = await (supabase.from("user_icons") as any)
           {hasUserIcons && userIcons.map((u) => {
             const url = storageUrl(u.storagePath);
             const on = selected === url;
+            const removeIcon = async () => {
+              if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
+              try {
+                const { supabase } = await import("@/integrations/supabase/client");
+                // @ts-expect-error user_icons not in types
+                await (supabase.from("user_icons") as any).update({ deleted_at: new Date().toISOString() }).eq("id", u.id);
+                setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
+              } catch {}
+            };
             return (
               <button
                 type="button"
                 key={u.id}
-                onClick={() => { if (!brokenIcons.has(u.id)) onSelect(url); }}
+                onClick={() => {
+                  if (manageMode || brokenIcons.has(u.id)) void removeIcon();
+                  else onSelect(url);
+                }}
                 aria-pressed={on}
-                title={u.label || "Custom icon"}
-                className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative group ${
-                  on
+                title={manageMode ? "Delete icon" : u.label || "Custom icon"}
+                className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative ${
+                  on && !manageMode
                     ? "ring-2 ring-foreground scale-95"
                     : "hover:scale-105 border border-border/60"
                 } ${brokenIcons.has(u.id) ? "bg-destructive/10" : ""}`}
@@ -220,23 +257,14 @@ const { data, error } = await (supabase.from("user_icons") as any)
                     onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
                   />
                 )}
-                <button
-                  type="button"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
-                    try {
-                      const { supabase } = await import("@/integrations/supabase/client");
-                      // @ts-expect-error user_icons not in types
-                      await (supabase.from("user_icons") as any).update({ deleted_at: new Date().toISOString() }).eq("id", u.id);
-                      setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
-                    } catch {}
-                  }}
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                  title="Delete icon"
-                >
-                  <Trash2 className="w-3 h-3 text-destructive" />
-                </button>
+                {manageMode && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center"
+                  >
+                    <Trash2 className="w-3 h-3 text-destructive" />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -245,25 +273,29 @@ const { data, error } = await (supabase.from("user_icons") as any)
           {visibleIcons.map((k) => {
             const on = selected === k;
             const hidden = hiddenKeys.has(k);
+            const act = () => {
+              if (manageMode) toggleHidden(k);
+              else if (!on) onSelect(k);
+            };
             return (
               <div
                 key={k}
                 role="button"
                 tabIndex={0}
                 aria-pressed={on}
-                aria-label={`Icon ${k}${hidden ? " (hidden)" : ""}`}
-                onClick={() => { if (!on && !hidden) onSelect(k); }}
+                aria-label={manageMode ? `${hidden ? "Show" : "Hide"} icon ${k}` : `Icon ${k}`}
+                onClick={act}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    if (!on && !hidden) onSelect(k);
+                    act();
                   }
                 }}
                 className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative cursor-pointer ${
-                  on
+                  on && !manageMode
                     ? "ring-2 ring-foreground scale-95"
                     : "hover:scale-105 border border-border/60"
-                } ${hidden ? "opacity-40" : ""}`}
+                } ${manageMode && hidden ? "opacity-40" : ""}`}
               >
                 <img
                   src={iconUrl(k)}
@@ -272,21 +304,18 @@ const { data, error } = await (supabase.from("user_icons") as any)
                   className="w-[86%] h-[86%] object-contain pointer-events-none"
                   draggable={false}
                 />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleHidden(k);
-                  }}
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center opacity-30 hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                  title={hidden ? "Show icon" : "Hide icon"}
-                >
-                  {hidden ? (
-                    <EyeOff className="w-3 h-3 text-muted-foreground" />
-                  ) : (
-                    <Eye className="w-3 h-3 text-muted-foreground" />
-                  )}
-                </button>
+                {manageMode && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center"
+                  >
+                    {hidden ? (
+                      <EyeOff className="w-3 h-3 text-muted-foreground" />
+                    ) : (
+                      <Eye className="w-3 h-3 text-muted-foreground" />
+                    )}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -1361,8 +1390,8 @@ function FamilyTab() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Each kid can take home a printable weekly chart — colour it in by hand, and points still get
-        tapped into the app as usual. Tap a kid to edit their name, colour, or mascot.
+        Each user can take home a printable weekly chart — colour it in by hand, and points still
+        get tapped into the app as usual. Tap a user to edit their name, colour, or mascot.
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

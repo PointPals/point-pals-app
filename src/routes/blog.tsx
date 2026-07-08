@@ -89,7 +89,7 @@ const POSTS = [
       "Meet Sunny, Pip, Bramble, Fern, Marlow, Coda, Ridge and Ziggy — the playful PointPals characters that help make chores, kindness and family habits fun.",
     keywords: "PointPals characters, kids chore app characters, family chore app, rewards for kids, positive behaviour app",
     title: "Meet the PointPals: The Characters Behind the Family Chore App",
-    image: imgCharacters,
+    image: BLOG_CHARACTERS,
     content: <CharactersPost />,
   },
   {

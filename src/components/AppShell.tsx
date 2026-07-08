@@ -229,18 +229,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {activeReward ? "Working towards" : "Family pool"}
+            {/* Reward name lives on the small label line (truncated) so the
+                jar count always stays visible — on mobile a long prize title
+                used to swallow the numbers entirely. */}
+            <div className="text-right min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate max-w-[140px] sm:max-w-[220px] ml-auto">
+                {activeReward ? activeReward.name : "Family pool"}
               </div>
-              <div className="font-display text-2xl font-bold leading-none mt-1">
-                {activeReward ? (
-                  <span className="truncate max-w-[140px] sm:max-w-[200px] inline-block align-middle">
-                    {activeReward.name}
-                  </span>
-                ) : (
-                  household.sharedPool
-                )}
+              <div className="font-display text-2xl font-bold leading-none mt-1 whitespace-nowrap">
+                {household.sharedPool}
                 <span className="text-muted-foreground text-base font-sans font-normal">
                   {" "}
                   / {activeReward ? activeReward.targetPoints : household.rewardTarget}

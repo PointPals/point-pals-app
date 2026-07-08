@@ -71,8 +71,6 @@ export function mapHousehold(row: DbHousehold): Household {
     sharedJarEnabled: (row as { shared_jar_enabled?: boolean }).shared_jar_enabled ?? true,
     activeRewardName: (row as { active_reward_name?: string | null }).active_reward_name ?? null,
     activeRewardTarget: (row as { active_reward_target?: number | null }).active_reward_target ?? null,
-    memory_cycle_started_at: (row as { memory_cycle_started_at?: string | null }).memory_cycle_started_at ?? null,
-    memory_auto_purge: (row as { memory_auto_purge?: boolean }).memory_auto_purge ?? true,
   };
 }
 
