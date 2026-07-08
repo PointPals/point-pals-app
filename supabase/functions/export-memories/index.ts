@@ -1,31 +1,31 @@
-// Edge Function: export-memories
+// Edge Function: export-memories (v2 — hardened)
+//
 // Downloads all media files from the current memory season for a household,
 // bundles them into a ZIP archive, uploads to the private exports bucket,
 // and returns a short-lived signed download URL.
 //
-// POST /export-memories   (caller: signed-in household member)
+// POST /export-memories
 //   { householdId: "uuid" }
-//     → { ok: true, download_url: "https://...", count: 42, size_mb: 12.3 }
-//     → { ok: false, error: "..." }
-//
-// Privacy: the ZIP lives in the private "exports" bucket and is served via
-// a 1-hour signed URL. No media leaves our infrastructure unauthenticated.
+//     → { ok: true, format:"zip", download_url:"...", count:42, size_mb:12.3 }
+//     → { ok: true, format:"urls", count:3, urls:[...] }  (fallback)
+//     → { ok: false, error:"..." }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 
-// Try JSZip first — it uses pure JS and works in Deno via esm.sh
+// Try JSZip — pure-JS zip, works in Deno via esm.sh
 let JSZip: typeof import("jszip");
 try {
   JSZip = (await import("https://esm.sh/jszip@3.10.1")).default;
 } catch {
-  // If JSZip fails to load, set a flag so we fall back to listing URLs
-  console.warn("JSZip not available — will list download URLs instead");
+  console.warn("JSZip not available");
   JSZip = null as unknown as typeof import("jszip").default;
 }
 
 const SIGNED_DOWNLOAD_TTL = 3600; // 1 hour
-const MAX_ARCHIVE_SIZE = 80 * 1024 * 1024; // 80 MB — soft cap for serverless
+const MAX_ARCHIVE_SIZE = 80 * 1024 * 1024; // 80 MB
+const MEMORIES_BUCKET = "memories";
+const EXPORTS_BUCKET = "exports";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     const { householdId } = await req.json();
     if (!householdId) return json({ ok: false, error: "householdId is required" }, 400);
 
-    // ── AUTH: signed-in member of this household ─────────────────────
+    // ── AUTH ────────────────────────────────────────────────────────
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -52,87 +52,60 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!member) return json({ ok: false, error: "Not a member of this household" }, 403);
 
-    // ── Gather season info ───────────────────────────────────────────
-    const { data: hh } = await supabase
-      .from("households")
-      .select("name, memory_cycle_started_at, memory_retention_enabled")
-      .eq("id", householdId)
-      .maybeSingle();
-    if (!hh) return json({ ok: false, error: "Household not found" }, 404);
-
-    // ── Fetch all memory posts for this household (current season) ──
+    // ── Fetch memories ──────────────────────────────────────────────
     const { data: posts, error: postErr } = await supabase
       .from("memory_posts")
-      .select("id, storage_path, media_type, media_paths, created_at, caption")
+      .select("id, storage_path, media_type, media_paths, caption")
       .eq("household_id", householdId)
       .order("created_at", { ascending: true });
 
     if (postErr) return json({ ok: false, error: postErr.message }, 500);
-    if (!posts || posts.length === 0) {
-      return json({ ok: false, error: "No memories to export" }, 400);
-    }
+    if (!posts || posts.length === 0)
+      return json({ ok: false, error: "No memories to export" }, 404);
 
-    // ── Collect all media file paths ─────────────────────────────────
+    // ── Collect file paths ──────────────────────────────────────────
     const filePaths: { path: string; name: string }[] = [];
     for (const post of posts) {
-      // media_paths (newer format with typed items)
       if (Array.isArray(post.media_paths) && post.media_paths.length > 0) {
         for (const m of post.media_paths) {
           if (m?.path) {
-            const ext = (m.path.split(".").pop() || "jpg").toLowerCase();
-            filePaths.push({
-              path: m.path,
-              name: `${post.id.slice(0, 8)}-${m.path.split("/").pop() || `file.${ext}`}`,
-            });
+            const fileName = m.path.split("/").pop() || `file.${(m.path.split(".").pop() || "jpg").toLowerCase()}`;
+            filePaths.push({ path: m.path, name: `${post.id.slice(0, 8)}-${fileName}` });
           }
         }
       }
-      // storage_path (legacy single-file posts)
       if (post.storage_path && !filePaths.some((f) => f.path === post.storage_path)) {
-        const ext = (post.media_type || "image");
         const name = post.storage_path.split("/").pop() || `memory-${post.id.slice(0, 8)}`;
-        filePaths.push({
-          path: post.storage_path,
-          name: `${post.id.slice(0, 8)}-${name}`,
-        });
+        filePaths.push({ path: post.storage_path, name: `${post.id.slice(0, 8)}-${name}` });
       }
     }
 
-    if (filePaths.length === 0) {
+    if (filePaths.length === 0)
       return json({ ok: false, error: "No media files found on these memories" }, 400);
-    }
 
-    // ── Check total size before downloading ──────────────────────────
-    // We estimate size by HEAD request on the first few files; if it
-    // looks large, warn and fall back to a listing with signed URLs.
-    let totalBytes = 0;
+    // ── Get signed URLs for all files ────────────────────────────────
     const signedUrls: string[] = [];
-
     for (const fp of filePaths) {
-      // Get a signed URL so we can HEAD/GET the file
       const { data: signed } = await supabase.storage
-        .from("memories")
+        .from(MEMORIES_BUCKET)
         .createSignedUrl(fp.path, SIGNED_DOWNLOAD_TTL);
-      if (!signed?.signedUrl) continue;
-      signedUrls.push(signed.signedUrl);
+      if (signed?.signedUrl) signedUrls.push(signed.signedUrl);
     }
 
-    if (signedUrls.length === 0) {
+    if (signedUrls.length === 0)
       return json({ ok: false, error: "Could not access any media files" }, 500);
-    }
 
-    // ── Try to build a ZIP archive ───────────────────────────────────
+    // ── Build ZIP ────────────────────────────────────────────────────
     if (JSZip) {
       try {
-        const result = await buildZipArchive(supabase, filePaths, signedUrls, householdId);
-        if (result) return result;
+        const zipResult = await buildZip(supabase, filePaths, signedUrls, householdId);
+        if (zipResult) return zipResult;
       } catch (zipErr) {
-        console.warn("ZIP build failed, falling back to listing:", zipErr);
+        console.warn("ZIP build failed, falling back:", zipErr);
       }
     }
 
-    // ── Fallback: return list of signed download URLs ────────────────
-    console.warn("Returning individual signed URLs for household", householdId);
+    // ── Fallback: return signed URLs ────────────────────────────────
     return json({
       ok: true,
       format: "urls",
@@ -148,47 +121,46 @@ Deno.serve(async (req) => {
   }
 });
 
-/**
- * Download all files, zip them, upload to exports bucket, return signed URL.
- * Returns a Response or null (to trigger the URL-list fallback).
- */
-async function buildZipArchive(
+async function buildZip(
   supabase: ReturnType<typeof createClient>,
   filePaths: { path: string; name: string }[],
   signedUrls: string[],
   householdId: string,
 ): Promise<Response | null> {
+  // Ensure exports bucket exists
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.some((b) => b.name === EXPORTS_BUCKET)) {
+    const { error: createErr } = await supabase.storage.createBucket(EXPORTS_BUCKET, {
+      public: false,
+      fileSizeLimit: 100 * 1024 * 1024,
+    });
+    if (createErr) {
+      console.warn("Could not create exports bucket:", createErr.message);
+      return null;
+    }
+    console.log("Created exports bucket");
+  }
+
   const zip = new JSZip();
   let totalBytes = 0;
 
   for (let i = 0; i < filePaths.length; i++) {
-    const fp = filePaths[i];
     const url = signedUrls[i];
     if (!url) continue;
-
     try {
       const res = await fetch(url);
       if (!res.ok) continue;
-
       const buf = await res.arrayBuffer();
       totalBytes += buf.byteLength;
-
-      // Soft cap: if we've exceeded 80 MB, stop adding files but
-      // still zip what we have (and note it in the response metadata).
       if (totalBytes > MAX_ARCHIVE_SIZE) {
-        console.warn(`Archive exceeded ${MAX_ARCHIVE_SIZE / 1024 / 1024} MB — truncating at ${i} files`);
-        // Add a note to the zip
         zip.file("_NOTE.txt",
-          `This export was truncated at ${i} of ${filePaths.length} files ` +
-          `because the archive exceeded ${MAX_ARCHIVE_SIZE / 1024 / 1024} MB.\n` +
-          `For the remaining files, use the individual URLs from the Settings page.`
+          `Export truncated at ${i} of ${filePaths.length} files (> ${MAX_ARCHIVE_SIZE / 1024 / 1024} MB).\n` +
+          `Use individual URLs from Settings for the rest.`
         );
         break;
       }
-
-      zip.file(fp.name, new Uint8Array(buf));
-    } catch (fetchErr) {
-      console.warn(`Failed to download ${fp.path}:`, fetchErr);
+      zip.file(filePaths[i].name, new Uint8Array(buf));
+    } catch {
       continue;
     }
   }
@@ -196,30 +168,36 @@ async function buildZipArchive(
   const fileCount = Object.keys(zip.files).filter((k) => !zip.files[k].dir).length;
   if (fileCount === 0) return null;
 
-  // Generate the ZIP blob
   const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
-  const outputPath = `${householdId}/memories-export-${Date.now()}.zip`;
+  const outputPath = `${householdId}/export-${Date.now()}.zip`;
 
   const { error: upErr } = await supabase.storage
-    .from("exports")
+    .from(EXPORTS_BUCKET)
     .upload(outputPath, await zipBlob.arrayBuffer(), {
       contentType: "application/zip",
       upsert: false,
     });
 
   if (upErr) {
-    console.error("exports upload failed:", upErr.message);
-    return null;
+    console.error("Upload failed:", upErr.message);
+    // Try with upsert
+    const { error: upErr2 } = await supabase.storage
+      .from(EXPORTS_BUCKET)
+      .upload(outputPath, await zipBlob.arrayBuffer(), {
+        contentType: "application/zip",
+        upsert: true,
+      });
+    if (upErr2) {
+      console.error("Upload (retry) failed:", upErr2.message);
+      return null;
+    }
   }
 
   const { data: signed } = await supabase.storage
-    .from("exports")
+    .from(EXPORTS_BUCKET)
     .createSignedUrl(outputPath, SIGNED_DOWNLOAD_TTL);
 
-  if (!signed?.signedUrl) {
-    console.error("Could not sign export URL");
-    return null;
-  }
+  if (!signed?.signedUrl) return null;
 
   return json({
     ok: true,

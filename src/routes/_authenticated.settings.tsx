@@ -130,11 +130,21 @@ function SettingsPage() {
         return;
       }
       if (result.format === "zip" && result.download_url) {
-        // Trigger browser download
-        window.open(result.download_url, "_blank");
+        // Trigger browser download via hidden link (window.open can be blocked by popup blockers)
+        const a = document.createElement("a");
+        a.href = result.download_url;
+        a.download = `pointpals-memories-${Date.now()}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else if (result.format === "urls" && result.urls) {
-        // Fallback: open the first URL to start, log the rest
-        window.open(result.urls[0], "_blank");
+        // Fallback: open the first URL
+        const a = document.createElement("a");
+        a.href = result.urls[0];
+        a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
         if (result.urls.length > 1) {
           setExportError(
             `${result.urls.length} files available — downloading first one. ` +
