@@ -93,6 +93,76 @@ export function pollMontage(householdId: string, jobId: string): Promise<Montage
   return invokeRenderMontage({ householdId, action: "status", jobId });
 }
 
+// ── Background montage job ─────────────────────────────────────────────────
+// The render takes a minute or two, and parents wander off to other pages
+// while it cooks. The job state lives here at module level (not in the
+// banner component), so polling keeps running across route changes and the
+// banner simply re-attaches to it when the user comes back.
+
+export type MontageUiState =
+  | { phase: "idle" }
+  | { phase: "working"; jobId?: string }
+  | { phase: "ready"; url: string }
+  | { phase: "error"; message: string };
+
+let montageUiState: MontageUiState = { phase: "idle" };
+const montageListeners = new Set<() => void>();
+
+function setMontageUiState(next: MontageUiState) {
+  montageUiState = next;
+  montageListeners.forEach((l) => l());
+}
+
+export function getMontageUiState(): MontageUiState {
+  return montageUiState;
+}
+
+/** Subscribe to montage job updates (useSyncExternalStore-compatible). */
+export function subscribeMontageUiState(cb: () => void): () => void {
+  montageListeners.add(cb);
+  return () => montageListeners.delete(cb);
+}
+
+/** Reset an error/ready state back to idle (e.g. to allow another render). */
+export function resetMontageUiState() {
+  if (montageUiState.phase !== "working") setMontageUiState({ phase: "idle" });
+}
+
+/** Kick off (or re-attach to) a montage render; polls every 5s for up to
+ * ~5 minutes regardless of which page the user is on. */
+export async function createMontageInBackground(householdId: string): Promise<void> {
+  if (montageUiState.phase === "working") return; // already cooking
+
+  setMontageUiState({ phase: "working" });
+  const started = await startMontage(householdId);
+  if (!started.ok) {
+    setMontageUiState({ phase: "error", message: montageErrorMessage(started.error) });
+    return;
+  }
+  if (started.status === "done" && started.url) {
+    setMontageUiState({ phase: "ready", url: started.url });
+    return;
+  }
+
+  setMontageUiState({ phase: "working", jobId: started.jobId });
+  for (let attempt = 0; attempt < 60; attempt++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const res = await pollMontage(householdId, started.jobId);
+    if (!res.ok) {
+      setMontageUiState({ phase: "error", message: montageErrorMessage(res.error) });
+      return;
+    }
+    if (res.status === "done" && res.url) {
+      setMontageUiState({ phase: "ready", url: res.url });
+      return;
+    }
+  }
+  setMontageUiState({
+    phase: "error",
+    message: "The montage is taking longer than usual — check back in a few minutes.",
+  });
+}
+
 /** Export all household memories as a ZIP archive (or list of signed URLs). */
 export type ExportMemoriesResult =
   | { ok: true; format: "zip"; download_url: string; count: number; total_files: number; size_mb: number; expires_in_seconds: number }

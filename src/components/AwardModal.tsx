@@ -92,9 +92,11 @@ export function AwardModal({
     };
   }, [onClose]);
 
-  // Focus search when switching to chores tab
+  // Focus search when switching to chores tab — but only on devices with a
+  // physical keyboard. On touch devices focusing pops the on-screen keyboard
+  // over the whole icon grid before the parent can see it.
   useEffect(() => {
-    if (tab === "chores") {
+    if (tab === "chores" && !window.matchMedia("(pointer: coarse)").matches) {
       setTimeout(() => searchRef.current?.focus(), 100);
     }
   }, [tab]);

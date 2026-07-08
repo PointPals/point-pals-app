@@ -11,6 +11,7 @@
 // existing icon set.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Image as RasterImage } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 
 // ── Inline shared helpers ─────────────────────────────────────────────────
 const corsHeaders = {
@@ -40,7 +41,51 @@ const FREE_MONTHLY_CAP = 10;
 const PREMIUM_MONTHLY_CAP = 120;
 
 // Style prompt to keep generated icons visually consistent with the existing set.
-const STYLE_PROMPT = `A single icon illustration only — no background tile, no coloured card, no sticker border. Output on a fully transparent background (PNG with alpha channel). Flat-but-dimensional custom icon style — friendly, slightly rounded, chunky illustration with soft gradients and gentle highlights, a soft warm-charcoal outline (not pure black). Soft pastel colour palette — dusty blue, buttercream yellow, sage green, blush pink, lilac, warm sand, seafoam. No text, no letters, no numbers, no watermark, no photorealism, no rendered human faces (use an object stand-in instead, e.g. a toothbrush rather than a child brushing teeth). Square canvas, generous padding, centred.`;
+// NOTE: the image model can't emit real alpha — asking for "transparent" gets a
+// painted checkerboard. We ask for a plain white background instead and knock
+// it out ourselves (see makeBackgroundTransparent).
+const STYLE_PROMPT = `A single icon illustration only — no background tile, no coloured card, no sticker border, no drop shadow. Plain solid pure white (#FFFFFF) background filling the whole canvas — never a checkerboard or grey "transparency" pattern. Flat-but-dimensional custom icon style — friendly, slightly rounded, chunky illustration with soft gradients and gentle highlights, a soft warm-charcoal outline (not pure black). Soft pastel colour palette — dusty blue, buttercream yellow, sage green, blush pink, lilac, warm sand, seafoam. No text, no letters, no numbers, no watermark, no photorealism, no rendered human faces (use an object stand-in instead, e.g. a toothbrush rather than a child brushing teeth). Square canvas, generous padding, centred.`;
+
+/** Knock out the solid white background so icons sit cleanly on coloured
+ * tiles: flood-fill from the canvas edges, clearing near-white pixels. White
+ * INSIDE the artwork (e.g. book pages) is unreachable from the edges and
+ * survives. Accepts PNG or JPEG bytes; always returns PNG. */
+async function makeBackgroundTransparent(bytes: Uint8Array): Promise<Uint8Array> {
+  const img = await RasterImage.decode(bytes);
+  const { width, height } = img;
+  const visited = new Uint8Array(width * height);
+  const stack: number[] = [];
+
+  // ImageScript pixel coordinates are 1-based.
+  const tryPush = (x: number, y: number) => {
+    const i = (y - 1) * width + (x - 1);
+    if (visited[i]) return;
+    const [r, g, b, a] = RasterImage.colorToRGBA(img.getPixelAt(x, y));
+    if (a > 0 && r > 238 && g > 238 && b > 238) {
+      visited[i] = 1;
+      stack.push(x, y);
+    }
+  };
+
+  for (let x = 1; x <= width; x++) {
+    tryPush(x, 1);
+    tryPush(x, height);
+  }
+  for (let y = 1; y <= height; y++) {
+    tryPush(1, y);
+    tryPush(width, y);
+  }
+  while (stack.length > 0) {
+    const y = stack.pop() as number;
+    const x = stack.pop() as number;
+    img.setPixelAt(x, y, 0x00000000);
+    if (x > 1) tryPush(x - 1, y);
+    if (x < width) tryPush(x + 1, y);
+    if (y > 1) tryPush(x, y - 1);
+    if (y < height) tryPush(x, y + 1);
+  }
+  return await img.encode();
+}
 
 function monthStartISO(): string {
   const d = new Date();
@@ -199,8 +244,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Generate the image via Gemini
-    const imageBytes = await generateImage(prompt);
+    // Generate the image via Gemini, then knock the white background out so
+    // the icon sits cleanly on coloured tiles. If post-processing fails for
+    // any reason, fall back to the raw image rather than failing the request.
+    let imageBytes = await generateImage(prompt);
+    try {
+      imageBytes = await makeBackgroundTransparent(imageBytes);
+    } catch (e) {
+      console.warn("Background removal failed, using raw image:", e instanceof Error ? e.message : e);
+    }
 
     // Upload to Supabase Storage
     const filename = `generated/${householdId}/${crypto.randomUUID()}.png`;

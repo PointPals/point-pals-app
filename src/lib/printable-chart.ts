@@ -87,12 +87,14 @@ export function companionForKid(kid: Kid): Companion {
   return COMPANIONS[h % COMPANIONS.length];
 }
 
-/** Chores that belong on a weekly chart: anything recurring (daily/weekly). */
+/** Chores that belong on a weekly chart: every chore on the household's list.
+ * Custom chores default to recurrence "none", and filtering those out made
+ * user-created chores silently vanish from the printable PDF. */
 export function weeklyChores(chores: Chore[]): Chore[] {
-  // "Must-do" daily chores first, then weekly ones — this order also drives which
-  // chores survive if we ever have to truncate to fit one page.
-  const rank = (c: Chore) => (c.recurrence === "daily" ? 0 : 1);
-  return chores.filter((c) => c.recurrence !== "none").sort((a, b) => rank(a) - rank(b));
+  // Daily chores first, then one-off/custom, then weekly — this order also drives
+  // which chores survive if we ever have to truncate to fit one page.
+  const rank = (c: Chore) => (c.recurrence === "daily" ? 0 : c.recurrence === "none" ? 1 : 2);
+  return [...chores].sort((a, b) => rank(a) - rank(b));
 }
 
 // ---- colour helpers -------------------------------------------------------

@@ -29,25 +29,8 @@ export function SplashScreen() {
         }}
       />
 
-      {/* Logo — Ziggy mascot + wordmark */}
-      <div className="relative z-10 mb-6 flex flex-col items-center">
-        {/* Ziggy: fits inside the frame, not squashed */}
-        <img
-          src={COMPANION_URLS.ziggy}
-          alt="PointPals"
-          className="h-24 w-auto max-w-[120px] mx-auto mb-3 select-none object-contain"
-          draggable={false}
-        />
-        <h1 className="font-display text-3xl font-bold text-center tracking-tight">
-          PointPals
-        </h1>
-        <p className="text-sm text-muted-foreground text-center mt-1 max-w-[260px]">
-          Family chores &amp; behaviour, made kind
-        </p>
-      </div>
-
-      {/* Orbiting marbles */}
-      <div className="relative w-48 h-48 mt-2">
+      {/* Orbiting marbles first — the marble jar is the app's signature. */}
+      <div className="relative w-48 h-48 mb-2">
         <div className="absolute inset-0 flex items-center justify-center">
           {/* Orbit ring */}
           <div
@@ -84,6 +67,23 @@ export function SplashScreen() {
             animation: "pp-pulse 2s ease-in-out infinite",
           }}
         />
+      </div>
+
+      {/* Logo — Ziggy mascot + wordmark */}
+      <div className="relative z-10 mt-6 flex flex-col items-center">
+        {/* Ziggy: fits inside the frame, not squashed */}
+        <img
+          src={COMPANION_URLS.ziggy}
+          alt="PointPals"
+          className="h-24 w-auto max-w-[120px] mx-auto mb-3 select-none object-contain"
+          draggable={false}
+        />
+        <h1 className="font-display text-3xl font-bold text-center tracking-tight">
+          PointPals
+        </h1>
+        <p className="text-sm text-muted-foreground text-center mt-1 max-w-[260px]">
+          Family chores &amp; behaviour, made kind
+        </p>
       </div>
 
       <p className="relative z-10 mt-8 text-xs text-muted-foreground/50 animate-pulse tracking-wider uppercase">

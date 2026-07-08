@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useSyncExternalStore } from "react";
 import {
   Camera,
   ImagePlus,
@@ -33,9 +33,9 @@ import {
 import type { MemoryCommentEntry, MemoryMedia } from "@/lib/memories";
 import {
   fetchSeasonInfo,
-  startMontage,
-  pollMontage,
-  montageErrorMessage,
+  createMontageInBackground,
+  subscribeMontageUiState,
+  getMontageUiState,
   type SeasonInfo,
 } from "@/lib/montage";
 import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
@@ -121,13 +121,11 @@ function MemoriesPage() {
 
 function SeasonBanner({ householdId }: { householdId: string }) {
   const [season, setSeason] = useState<SeasonInfo | null>(null);
-  const [montageState, setMontageState] = useState<
-    | { phase: "idle" }
-    | { phase: "working"; jobId?: string }
-    | { phase: "ready"; url: string }
-    | { phase: "error"; message: string }
-  >({ phase: "idle" });
-  const pollingRef = useRef(false);
+  // The montage job runs at module level (src/lib/montage.ts) so it keeps
+  // polling while the user browses other pages; the banner just re-attaches.
+  const montageState = useSyncExternalStore(subscribeMontageUiState, getMontageUiState, () => ({
+    phase: "idle" as const,
+  }));
 
   useEffect(() => {
     let cancelled = false;
@@ -136,7 +134,6 @@ function SeasonBanner({ householdId }: { householdId: string }) {
     });
     return () => {
       cancelled = true;
-      pollingRef.current = false;
     };
   }, [householdId]);
 
@@ -149,40 +146,9 @@ function SeasonBanner({ householdId }: { householdId: string }) {
     year: "numeric",
   });
 
-  const createMontage = async () => {
-    setMontageState({ phase: "working" });
+  const createMontage = () => {
     trackParent("montage_requested", {});
-    const started = await startMontage(householdId);
-    if (!started.ok) {
-      setMontageState({ phase: "error", message: montageErrorMessage(started.error) });
-      return;
-    }
-    if (started.status === "done" && started.url) {
-      setMontageState({ phase: "ready", url: started.url });
-      return;
-    }
-    // Poll until the render lands (every 5s, up to ~5 minutes).
-    setMontageState({ phase: "working", jobId: started.jobId });
-    pollingRef.current = true;
-    for (let attempt = 0; attempt < 60 && pollingRef.current; attempt++) {
-      await new Promise((r) => setTimeout(r, 5000));
-      if (!pollingRef.current) return;
-      const res = await pollMontage(householdId, started.jobId);
-      if (!res.ok) {
-        setMontageState({ phase: "error", message: montageErrorMessage(res.error) });
-        return;
-      }
-      if (res.status === "done" && res.url) {
-        setMontageState({ phase: "ready", url: res.url });
-        return;
-      }
-    }
-    if (pollingRef.current) {
-      setMontageState({
-        phase: "error",
-        message: "The montage is taking longer than usual — check back in a few minutes.",
-      });
-    }
+    void createMontageInBackground(householdId);
   };
 
   return (
@@ -214,20 +180,22 @@ function SeasonBanner({ householdId }: { householdId: string }) {
           <a
             href={montageState.url}
             download
+            target="_blank"
+            rel="noopener"
             className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
           >
             <Download className="h-4 w-4" /> Download your montage (MP4)
           </a>
         ) : (
           <button
-            onClick={() => void createMontage()}
+            onClick={createMontage}
             disabled={montageState.phase === "working"}
             className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-60"
           >
             {montageState.phase === "working" ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Making your montage — takes a minute or
-                two…
+                <Loader2 className="h-4 w-4 animate-spin" /> Making your montage — keep using the
+                app, it'll be ready here in a minute or two…
               </>
             ) : (
               <>
