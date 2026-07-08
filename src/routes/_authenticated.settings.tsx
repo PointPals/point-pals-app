@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/dialog";
 import { submitContactForm } from "@/lib/emails.functions";
 import { fetchSeasonInfo, setSeasonRefreshEnabled } from "@/lib/montage";
+import { exportMemoriesZip } from "@/lib/montage";
 
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
@@ -95,6 +96,9 @@ function SettingsPage() {
   // Seasonal memory refresh (retention opt-out). null = not loaded / demo mode.
   const [seasonRefresh, setSeasonRefresh] = useState<boolean | null>(null);
   const [seasonDays, setSeasonDays] = useState(90);
+  const [memoryCount, setMemoryCount] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   useEffect(() => {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
@@ -103,12 +107,46 @@ function SettingsPage() {
         setSeasonDays(s.retentionDays);
       }
     });
+    // Count memories for this household
+    void supabase
+      .from("memory_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("household_id", household.id)
+      .then(({ count }) => { if (count !== null) setMemoryCount(count); });
   }, [isLive, household.id]);
   async function saveSeasonRefresh(enabled: boolean) {
     setSeasonRefresh(enabled); // optimistic
     const ok = await setSeasonRefreshEnabled(household.id, enabled);
     if (!ok) setSeasonRefresh(!enabled);
     else trackParent("memory_season_refresh_toggled", { enabled });
+  }
+  async function handleExportMemories() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const result = await exportMemoriesZip(household.id);
+      if (!result.ok) {
+        setExportError(result.error ?? "Export failed");
+        return;
+      }
+      if (result.format === "zip" && result.download_url) {
+        // Trigger browser download
+        window.open(result.download_url, "_blank");
+      } else if (result.format === "urls" && result.urls) {
+        // Fallback: open the first URL to start, log the rest
+        window.open(result.urls[0], "_blank");
+        if (result.urls.length > 1) {
+          setExportError(
+            `${result.urls.length} files available — downloading first one. ` +
+            `Open Settings again to download the rest.`
+          );
+        }
+      }
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
   }
   const [members, setMembers] = useState<
     { user_id: string; role: string; created_at: string; display_name: string | null }[]
@@ -600,6 +638,38 @@ function SettingsPage() {
             </div>
             {isLive && seasonRefresh !== null && (
               <div className="border-t border-border/60 -mx-4 mt-1">
+                {/* Memory count + season info */}
+                <div className="px-4 pt-4 pb-2">
+                  <p className="text-xs text-muted-foreground">
+                    {seasonRefresh
+                      ? `Your memories cycle every ${seasonDays} days. When the season ends, the feed is cleared and a video montage is emailed to you.`
+                      : `Seasonal refresh is off — memories stay forever. No montage video will be created.`}
+                  </p>
+                  {seasonRefresh && memoryCount > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => void handleExportMemories()}
+                        disabled={exporting}
+                        className="tap inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:opacity-50"
+                      >
+                        {exporting ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Preparing…</>
+                        ) : (
+                          <><Download className="h-4 w-4" /> Download all memories</>
+                        )}
+                      </button>
+                      <Link
+                        to="/memories"
+                        className="tap inline-flex items-center gap-2 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition"
+                      >
+                        <Trash2 className="h-4 w-4" /> Curate feed
+                      </Link>
+                    </div>
+                  )}
+                  {exportError && (
+                    <p className="mt-2 text-xs text-destructive">{exportError}</p>
+                  )}
+                </div>
                 <ToggleRow
                   icon={<RefreshCw className="h-4 w-4" />}
                   label="Seasonal memory refresh"

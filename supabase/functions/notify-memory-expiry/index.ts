@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
       const result = await sendResendTemplate(resendKey, {
         to: email,
         from: FROM_ADDRESS,
-        subject: `Your memory feed refreshes on ${cycleEndDate} — download your montage first`,
+        subject: `Your memory feed refreshes on ${cycleEndDate} — save your memories`,
         templateId: "f2ebbe00-23ea-42e6-bb75-be7f6f555ac1",
         variables: {
           first_name: firstName,
@@ -140,7 +140,8 @@ Deno.serve(async (req) => {
           memory_count: memoryCount,
           memory_plural: memoryPlural,
           retention_days: String(hh.memory_retention_days ?? 90),
-          export_url: `${APP_URL}/memories`,
+          settings_url: `${APP_URL}/settings`,
+          memories_url: `${APP_URL}/memories`,
           keep_url: `${APP_URL}/settings`,
           unsubscribe_url: "https://pointpals.co.nz/settings",
         },

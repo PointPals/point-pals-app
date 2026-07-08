@@ -93,6 +93,47 @@ export function pollMontage(householdId: string, jobId: string): Promise<Montage
   return invokeRenderMontage({ householdId, action: "status", jobId });
 }
 
+/** Export all household memories as a ZIP archive (or list of signed URLs). */
+export type ExportMemoriesResult =
+  | { ok: true; format: "zip"; download_url: string; count: number; total_files: number; size_mb: number; expires_in_seconds: number }
+  | { ok: true; format: "urls"; count: number; urls: string[]; expires_in_seconds: number }
+  | { ok: false; error: string };
+
+export async function exportMemoriesZip(householdId: string): Promise<ExportMemoriesResult> {
+  const { data, error } = await supabase.functions.invoke("export-memories", {
+    body: { householdId },
+  });
+  if (error) {
+    const ctx = (error as { context?: Response }).context;
+    let msg = error.message || "export failed";
+    if (ctx && typeof ctx.json === "function") {
+      const payload = await ctx.json().catch(() => null);
+      if (payload?.error) msg = payload.error;
+    }
+    return { ok: false, error: msg };
+  }
+  const out = data as ExportMemoriesResult | null;
+  if (!out || !out.ok) return { ok: false, error: (out as { error?: string })?.error ?? "export failed" };
+  if (out.format === "zip") {
+    return {
+      ok: true,
+      format: "zip",
+      download_url: out.download_url,
+      count: out.count,
+      total_files: out.total_files,
+      size_mb: out.size_mb,
+      expires_in_seconds: out.expires_in_seconds,
+    };
+  }
+  return {
+    ok: true,
+    format: "urls",
+    count: out.count,
+    urls: out.urls,
+    expires_in_seconds: out.expires_in_seconds,
+  };
+}
+
 /** Human-readable copy for montage error codes. */
 export function montageErrorMessage(code: string): string {
   switch (code) {
