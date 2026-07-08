@@ -145,7 +145,7 @@ function withTimeout<T>(p: Promise<T>): Promise<T> {
   ]);
 }
 
-const SIGNED_TTL = 60 * 60; // 1 hour
+const SIGNED_TTL = 7 * 24 * 60 * 60; // 7 days — long enough for daily browsing without expiring mid-session
 
 async function signedUrl(path: string): Promise<string> {
   const { data, error } = await withTimeout(
