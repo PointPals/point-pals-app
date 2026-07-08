@@ -317,8 +317,17 @@ async function loadOnce() {
           };
         }),
       );
-      const localIds = new Set(memories.map((m) => m.id));
-      memories = sortWall([...memories, ...remote.filter((m) => !localIds.has(m.id))]);
+      // Merge fresh remote data into memory list — this REPLACES stale
+      // entries (with expired signed URLs) from IndexedDB with new ones.
+      const remoteMap = new Map(remote.map((m) => [m.id, m]));
+      memories = sortWall(
+        memories
+          .map((m) => remoteMap.get(m.id) ?? m)
+          .concat(remote.filter((r) => !memories.some((m) => m.id === r.id))),
+      );
+      // Persist fresh signed URLs to IndexedDB so next navigation
+      // doesn't serve expired ones.
+      for (const m of remote) await idbPut(m).catch(() => {});
       emit();
     }
   } catch {
