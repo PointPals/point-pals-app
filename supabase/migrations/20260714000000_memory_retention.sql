@@ -19,36 +19,9 @@ alter table public.households
   add column if not exists memory_cycle_ends_at timestamptz,
   add column if not exists email_memory_expiry_sent_at timestamptz;
 
--- Derived: cycle end = anchor + retention days. Kept as a plain column
--- (timestamptz + interval is not immutable, so no generated column) and
--- recomputed by trigger whenever the row is written.
-update public.households
-   set memory_cycle_ends_at = memory_cycle_started_at + make_interval(days => memory_retention_days)
- where memory_cycle_ends_at is null;
-
-create or replace function public.sync_memory_cycle_ends_at()
-returns trigger
-language plpgsql
-set search_path = public
-as $$
-begin
-  new.memory_cycle_ends_at :=
-    new.memory_cycle_started_at + make_interval(days => new.memory_retention_days);
-  return new;
-end;
-$$;
-revoke execute on function public.sync_memory_cycle_ends_at() from public, anon, authenticated;
-
--- BEFORE triggers fire alphabetically: households_billing_guard runs first and
--- freezes the guarded inputs, then this recomputes the derived end date.
-drop trigger if exists households_memory_cycle_sync on public.households;
-create trigger households_memory_cycle_sync
-  before insert or update on public.households
-  for each row execute function public.sync_memory_cycle_ends_at();
-
--- Guard the cycle machinery from client writes. memory_retention_enabled stays
--- client-editable (the opt-out toggle in Settings); the anchor, day count and
--- idempotency stamp are written only by the cron edge functions.
+-- ── Guard function must be replaced BEFORE the UPDATE backfill ──────────
+-- The households_billing_guard trigger fires on UPDATE; the old function
+-- may reference columns that don't exist yet or use stale column names.
 create or replace function public.guard_household_billing_columns()
 returns trigger
 language plpgsql
@@ -77,6 +50,33 @@ begin
   return new;
 end;
 $$;
+
+-- Derived: cycle end = anchor + retention days. Kept as a plain column
+-- (timestamptz + interval is not immutable, so no generated column) and
+-- recomputed by trigger whenever the row is written.
+update public.households
+   set memory_cycle_ends_at = memory_cycle_started_at + make_interval(days => memory_retention_days)
+ where memory_cycle_ends_at is null;
+
+create or replace function public.sync_memory_cycle_ends_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.memory_cycle_ends_at :=
+    new.memory_cycle_started_at + make_interval(days => new.memory_retention_days);
+  return new;
+end;
+$$;
+revoke execute on function public.sync_memory_cycle_ends_at() from public, anon, authenticated;
+
+-- BEFORE triggers fire alphabetically: households_billing_guard runs first and
+-- freezes the guarded inputs, then this recomputes the derived end date.
+drop trigger if exists households_memory_cycle_sync on public.households;
+create trigger households_memory_cycle_sync
+  before insert or update on public.households
+  for each row execute function public.sync_memory_cycle_ends_at();
 
 -- Cron jobs query by cycle end across all households.
 create index if not exists households_memory_cycle_ends_idx

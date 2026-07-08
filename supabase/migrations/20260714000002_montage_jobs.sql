@@ -36,6 +36,7 @@ grant all on public.montage_jobs to service_role;
 
 -- Members can watch their household's jobs; all writes go through the
 -- service-role edge function (no insert/update/delete policies).
+drop policy if exists montage_jobs_select on public.montage_jobs;
 create policy montage_jobs_select on public.montage_jobs
   for select to authenticated using (public.is_member(household_id));
 
