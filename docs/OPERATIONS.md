@@ -86,9 +86,65 @@ Point UptimeRobot / Better Uptime at the deployed root URL (`/`) on a 5-minute
 interval and alert to the support inbox. The service worker serves a cached
 shell if the origin briefly blips.
 
-## 6. Transactional email
+## 6. Transactional email (Resend)
 
-Keep the existing **Resend** integration for receipts / password resets.
+All email goes **directly to the Resend API** (`api.resend.com/emails`) using
+hosted templates — the old Lovable connector gateway (needed
+`LOVABLE_API_KEY`) is gone. Two runtimes send email, each needing
+`RESEND_API_KEY`:
+
+- **Vercel env** — `sendTrialWelcome` (fires on signup) and the contact form.
+- **Supabase function secrets** — `notify-nurture-sequence`,
+  `notify-trial-ending`, `notify-memory-expiry`, `stripe-webhook`,
+  `generate-icon` (billing alerts).
+
+### Template checklist
+
+Every template below must exist in the Resend dashboard **and be published**
+(drafts are rejected at send time). If a template contains a `{{variable}}`
+not listed here, give it a default value in the editor or the send fails
+validation; templates must also define default from/subject.
+
+| Template (dashboard name)   | ID          | Sender                  | Variables provided by code |
+|-----------------------------|-------------|-------------------------|----------------------------|
+| Welcome-PointPals           | `c47b8f0c…` | signup server fn        | `first_name` |
+| Parenting-Tip-StartSmall    | `f8fbb7b8…` | nurture cron (day 3)    | `first_name` |
+| Parenting-Tip-LabelPraise   | `d12adf3c…` | nurture cron (day 7)    | `first_name` |
+| Habit-Fading-Tips           | `c61044aa…` | nurture cron (month 1)  | `first_name`, `trial_end_date` |
+| Trial-Ending-Soon           | `929843c3…` | trial-ending cron       | `pct_full`, `first_name`, `trial_end_date`, `family_name`, `total_points`, `streak`, `checkout_url` |
+| Subscription-Receipt        | `f349804b…` | stripe-webhook          | `amount`, `currency` |
+| Subscription-Renewal        | `af7030c6…` | stripe-webhook          | `amount`, `currency`, `period_end`, `month` |
+| Payment-Failed              | `be31e3d1…` | stripe-webhook          | `amount`, `currency` |
+| Subscription-Cancelled      | `9bbe49aa…` | stripe-webhook          | — |
+| Contact-Confirmation        | `267dc7da…` | contact form            | `first_name` |
+| Memory-Expiry-Warning       | `f2ebbe00…` | memory-expiry cron      | `first_name`, `family_name`, `cycle_end_date`, `memory_count`, `memory_plural`, `retention_days`, `settings_url`, `memories_url`, `keep_url`, `unsubscribe_url` |
+
+(Full IDs live in `src/lib/emails.server.ts`, `_shared/email-templates.ts`,
+`stripe-webhook/index.ts`, and `notify-memory-expiry/index.ts`.)
+
+### Verifying the cron side
+
+```sql
+select jobname, schedule, active from cron.job order by jobname;
+```
+
+Expected jobs: `notify-nurture-day3/day7/month1`-style entries,
+`notify-trial-ending`, `notify-memory-expiry`, `purge-expired-memories` —
+each posts to its edge function with the Vault `CRON_SECRET`. ⚠️ If a job
+posting to `/api/public/hooks/email-cron` (the legacy Vercel route) appears,
+**unschedule it**: it duplicates the nurture/trial-ending functions but sends
+without variables, so it either fails validation or beats the personalised
+email to the idempotency stamp.
+
+### Manual smoke test
+
+```bash
+curl -X POST "https://<ref>.supabase.co/functions/v1/notify-trial-ending" \
+  -H "x-cron-secret: $CRON_SECRET" -H "Content-Type: application/json" -d '{}'
+```
+
+(Repeat per function; each returns `{ok, sent, errors}` and only emails
+households inside its trigger window, stamping idempotency columns.)
 
 ## 7. Rate limiting (§9)
 

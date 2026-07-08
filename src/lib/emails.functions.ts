@@ -68,16 +68,15 @@ export const submitContactForm = createServerFn({ method: "POST" })
       data: { first_name: data.name.split(" ")[0] ?? data.name },
     });
 
-    // Forward the raw message to the support inbox as plain text.
-    const lovableKey = process.env.LOVABLE_API_KEY;
+    // Forward the raw message to the support inbox as plain text — direct
+    // Resend API (the old Lovable gateway stopped working off Lovable hosting).
     const resendKey = process.env.RESEND_API_KEY;
-    if (lovableKey && resendKey) {
-      await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+    if (resendKey) {
+      await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${lovableKey}`,
-          "X-Connection-Api-Key": resendKey,
+          Authorization: `Bearer ${resendKey}`,
         },
         body: JSON.stringify({
           from: "PointPals Contact <hello@pointpals.co.nz>",

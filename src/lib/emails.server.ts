@@ -1,11 +1,12 @@
-// Server-only Resend template sender. Uses the Lovable connector gateway so
-// the RESEND_API_KEY secret never leaves the server runtime.
+// Server-only Resend template sender — calls the Resend API directly
+// (the old Lovable connector gateway required LOVABLE_API_KEY and stopped
+// working once the app moved off Lovable hosting).
 //
-// Each PointPals lifecycle email is pre-authored in the Resend dashboard;
-// we address them by template ID here so copy/design changes don't ship
-// with the app.
+// Each PointPals lifecycle email is pre-authored (and PUBLISHED) in the
+// Resend dashboard; we address them by template ID here so copy/design
+// changes don't ship with the app.
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
+const RESEND_API_URL = "https://api.resend.com/emails";
 
 export const RESEND_FROM = "PointPals <hello@pointpals.co.nz>";
 export const SUPPORT_INBOX = "support@pointpals.co.nz";
@@ -35,36 +36,47 @@ type SendOptions = {
   bcc?: string | string[];
 };
 
+// Resend substitutes {{handlebars}} placeholders with strings — stringify
+// every variable so numbers/booleans render rather than erroring.
+function stringifyVars(vars?: Record<string, unknown>): Record<string, string> {
+  if (!vars) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars)) {
+    out[k] = v === null || v === undefined ? "" : typeof v === "string" ? v : String(v);
+  }
+  return out;
+}
+
 /**
  * Send a Resend-hosted template. Failures are logged and swallowed — email is
  * fire-and-forget so it never blocks a signup/webhook/cron cycle.
  */
 export async function sendTemplate(opts: SendOptions): Promise<{ ok: boolean; id?: string; error?: string }> {
-  const lovableKey = process.env.LOVABLE_API_KEY;
   const resendKey = process.env.RESEND_API_KEY;
-  if (!lovableKey || !resendKey) {
-    console.error("[emails] Missing LOVABLE_API_KEY or RESEND_API_KEY");
+  if (!resendKey) {
+    console.error("[emails] Missing RESEND_API_KEY");
     return { ok: false, error: "missing_credentials" };
   }
   const templateId = EMAIL_TEMPLATES[opts.templateKey];
   const body: Record<string, unknown> = {
     from: RESEND_FROM,
     to: Array.isArray(opts.to) ? opts.to : [opts.to],
-    template_id: templateId,
+    template: {
+      id: templateId,
+      variables: stringifyVars(opts.data),
+    },
   };
   if (opts.subject) body.subject = opts.subject;
-  if (opts.data) body.data = opts.data;
   if (opts.replyTo) body.reply_to = opts.replyTo;
   if (opts.cc) body.cc = Array.isArray(opts.cc) ? opts.cc : [opts.cc];
   if (opts.bcc) body.bcc = Array.isArray(opts.bcc) ? opts.bcc : [opts.bcc];
 
   try {
-    const res = await fetch(`${GATEWAY_URL}/emails`, {
+    const res = await fetch(RESEND_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": resendKey,
+        Authorization: `Bearer ${resendKey}`,
       },
       body: JSON.stringify(body),
     });
