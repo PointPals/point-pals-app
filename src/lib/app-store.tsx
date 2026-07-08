@@ -87,6 +87,7 @@ type Ctx = {
   history: PointEvent[];
   streakByKid: Record<string, number>;
   hydrated: boolean;
+  loading: boolean;
   mode: "demo" | "live";
   needsHousehold: boolean;
   awardPoints: (
@@ -192,6 +193,7 @@ function computeStreaks(
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Persisted>(initialState);
   const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"demo" | "live">("demo");
   const [needsHousehold, setNeedsHousehold] = useState(false);
   const householdIdRef = useRef<string | null>(null);
@@ -354,17 +356,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      if (data.session?.user) void bootLive(data.session.user.id);
+      if (data.session?.user) {
+        void bootLive(data.session.user.id).then(() => {
+          if (!cancelled) setLoading(false);
+        });
+      } else {
+        if (!cancelled) setLoading(false);
+      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        void bootLive(session.user.id);
+        setLoading(true);
+        void bootLive(session.user.id).then(() => {
+          if (!cancelled) setLoading(false);
+        });
       } else if (event === "SIGNED_OUT") {
         householdIdRef.current = null;
         userIdRef.current = null;
         setMode("demo");
         setNeedsHousehold(false);
         setState(initialState());
+        if (!cancelled) setLoading(false);
       }
     });
     return () => {
@@ -501,6 +513,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     history,
     streakByKid,
     hydrated,
+    loading,
     mode,
     needsHousehold,
     refreshFromServer: async () => {

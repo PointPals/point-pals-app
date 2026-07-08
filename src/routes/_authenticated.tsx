@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthLayout() {
-  const { household, hydrated, needsHousehold } = useApp();
+  const { household, hydrated, loading, needsHousehold } = useApp();
   const navigate = useNavigate();
 
   // Route guards (§5): redirect based on account state.
@@ -35,7 +35,7 @@ function AuthLayout() {
     }
   }, [needsHousehold, household.subscriptionStatus, hydrated, navigate]);
 
-  if (!hydrated || needsHousehold || household.subscriptionStatus === "free") {
+  if (loading || !hydrated || needsHousehold || household.subscriptionStatus === "free") {
     return <SplashScreen />;
   }
 
