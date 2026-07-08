@@ -19,7 +19,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { sendResendHtml } from "../_shared/resend-send.ts";
+import { sendResendTemplate } from "../_shared/resend-send.ts";
 import { APP_URL, FROM_ADDRESS } from "../_shared/emails/base.ts";
 
 const admin = createClient(
@@ -243,87 +243,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
 
 // ── STATUS: poll the provider, land the MP4 in our own bucket ─────────────
 
-function buildMontageReadyHtml(vars: {
-  firstName: string;
-  familyName: string;
-  seasonLabel: string;
-  memoryCount: number;
-  hasVideos: boolean;
-  downloadUrl: string;
-  expiresInHours: number;
-  seasonLimit: number;
-}): string {
-  const plural = vars.memoryCount === 1 ? "memory" : "memories";
-  const videosSuffix = vars.hasVideos ? ` and videos` : ``;
-  const escape = escapeHtml;
-  return `
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FBF7EC;">
-  <tr>
-    <td align="center" style="padding:32px 16px;">
-      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#FFFFFF;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(60,47,38,0.08);">
-        <!-- Header -->
-        <tr>
-          <td style="background:linear-gradient(135deg,#C7B0EE 0%,#F9F6EF 100%);padding:32px 48px 28px;text-align:center;">
-            <img src="https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/pointpals.logo.png" alt="PointPals" width="160" style="height:auto;display:block;margin:0 auto 16px;" />
-            <div style="display:inline-block;background-color:#FFFFFF;border-radius:100px;padding:6px 18px;">
-              <span style="font-size:12px;font-weight:700;color:#8A7F72;letter-spacing:0.08em;text-transform:uppercase;">\uD83C\uDFAC Montage ready</span>
-            </div>
-          </td>
-        </tr>
-        <!-- Body -->
-        <tr>
-          <td style="padding:40px 48px 16px;">
-            <h1 style="margin:0 0 16px;font-family:'Zain','Georgia',serif;font-size:28px;font-weight:800;color:#3C2F26;line-height:1.25;">
-              Your season montage is ready \uD83C\uDFAC
-            </h1>
-            <p style="margin:0 0 16px;font-size:15px;color:#5C5247;line-height:1.7;">Hi ${escape(vars.firstName)},</p>
-            <p style="margin:0 0 16px;font-size:15px;color:#5C5247;line-height:1.7;">
-              The <strong>${escape(vars.familyName)}</strong> family's season montage is ready to download! We've stitched together <strong>${vars.memoryCount} ${plural}</strong>${videosSuffix} from ${escape(vars.seasonLabel)}, and it's all yours to keep forever.
-            </p>
-            <p style="margin:0 0 24px;font-size:15px;color:#5C5247;line-height:1.7;">
-              This link expires in <strong>${vars.expiresInHours} hours</strong>, so grab it while it's hot:
-            </p>
-            <!-- CTA -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
-              <tr>
-                <td align="center">
-                  <a href="${escape(vars.downloadUrl)}" style="display:inline-block;background-color:#3C2F26;color:#FBF7EC;font-family:'Nunito Sans','Helvetica Neue',Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:100px;">Download montage (MP4) →</a>
-                </td>
-              </tr>
-            </table>
-            <!-- Info box -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
-              <tr>
-                <td style="background:linear-gradient(135deg,#C7B0EE,#E2D5F5);border-radius:16px;padding:24px 28px;">
-                  <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#3C2F26;text-transform:uppercase;letter-spacing:0.07em;">How it's made</p>
-                  <p style="margin:0;font-size:15px;color:#5C5247;line-height:1.7;">Your montage was created from the memories in your feed, arranged in the order they were added. Each season you can create up to <strong>${vars.seasonLimit}</strong> free montages.</p>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:0;font-size:13px;color:#B5AFA9;text-align:center;line-height:1.6;">
-              \uD83D\uDCA1 <strong style="color:#8A7F72;">Tip:</strong> On mobile, tap and hold the download link, then choose <em>\u201CSave to Files\u201D</em> to keep it in your camera roll.
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color:#F9F6EF;padding:24px 48px;border-top:1px solid #EEE9E0;">
-            <p style="margin:0;font-size:12px;color:#B5AFA9;line-height:1.6;">
-              PointPals · hello@pointpals.co.nz · Proudly NZ-made \uD83C\uDDF3\uD83C\uDDFF<br />
-              <a href="https://pointpals.co.nz/privacy" style="color:#B5AFA9;">Unsubscribe</a> ·
-              <a href="https://pointpals.co.nz/privacy" style="color:#B5AFA9;">Privacy</a> ·
-              <a href="${APP_URL}/memories" style="color:#B5AFA9;">Your memories</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>`.trim();
-}
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 async function sendMontageReadyEmail(
   householdId: string,
@@ -397,20 +317,26 @@ async function sendMontageReadyEmail(
       return;
     }
 
-    const result = await sendResendHtml(resendKey, {
+    const memoryPlural = (jobRow?.post_count ?? 0) === 1 ? "memory" : "memories";
+
+    const result = await sendResendTemplate(resendKey, {
       to: email,
       from: FROM_ADDRESS,
       subject: `Your ${hh.name} family season montage is ready \uD83C\uDFAC`,
-      html: buildMontageReadyHtml({
-        firstName,
-        familyName: hh.name,
-        seasonLabel,
-        memoryCount: jobRow?.post_count ?? 0,
-        hasVideos: false, // simplified — we don't track this per-job
-        downloadUrl: signed.signedUrl,
-        expiresInHours: Math.floor(SIGNED_DOWNLOAD_TTL / 3600),
-        seasonLimit: paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON,
-      }),
+      templateId: "0988eb46-0a1b-4564-8f59-d4b241a336d9",
+      variables: {
+        first_name: firstName,
+        family_name: hh.name,
+        season_label: seasonLabel,
+        memory_count: String(jobRow?.post_count ?? 0),
+        memory_plural: memoryPlural,
+        has_videos: "false",
+        download_url: signed.signedUrl,
+        expires_in_hours: String(Math.floor(SIGNED_DOWNLOAD_TTL / 3600)),
+        season_limit: String(paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON),
+        memories_url: `${APP_URL}/memories`,
+        unsubscribe_url: "https://pointpals.co.nz/settings",
+      },
     });
 
     if (result.ok) {
