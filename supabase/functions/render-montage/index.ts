@@ -243,6 +243,8 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
   // ── Build the Shotstack edit: title card, then one clip per item.
   // Sources are 24h signed URLs — the render service never sees the bucket.
   // Track 0 = video/images, Track 1 = caption overlays.
+  // Captions use the "html" asset type so they layer over the image/video
+  // (Shotstack title assets render full-width cards that push content down).
   const videoClips: Record<string, unknown>[] = [];
   const captionClips: Record<string, unknown>[] = [];
   let cursor = 0;
@@ -266,13 +268,14 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     length: TITLE_SECONDS,
     transition: { in: "fade", out: "fade" },
   });
-  // Empty caption clip to keep tracks aligned
+  // Empty caption overlay to keep tracks aligned during title card
   captionClips.push({
     asset: {
-      type: "title",
-      text: "",
-      style: "chunk",
-      size: "small",
+      type: "html",
+      html: "",
+      css: "",
+      width: 1920,
+      height: 1080,
     },
     start: cursor,
     length: TITLE_SECONDS,
@@ -305,16 +308,25 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     }
 
     // Caption overlay: display the caption text at the bottom of the frame.
-    // Truncate to 120 chars, flatten newlines for single-line display.
+    // Truncate to 120 chars, flatten newlines, escape HTML entities.
     const captionText = item.caption
       ? item.caption.replace(/\n/g, " ").substring(0, 120)
       : "";
+    const safeText = captionText
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const html = safeText
+      ? `<div style="font-family:system-ui,sans-serif;font-size:16px;color:#fff;background:rgba(0,0,0,.6);padding:8px 16px;border-radius:8px;width:fit-content;max-width:92%;margin:24px auto 0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${safeText}</div>`
+      : "";
     captionClips.push({
       asset: {
-        type: "title",
-        text: captionText,
-        style: "chunk",
-        size: "xx-small",
+        type: "html",
+        html,
+        css: "div{text-align:center}",
+        width: 1920,
+        height: 1080,
       },
       start: cursor,
       length: dur,
