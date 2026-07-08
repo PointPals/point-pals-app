@@ -172,67 +172,7 @@ const { data, error } = await (supabase.from("user_icons") as any)
       )}
 
       <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-muted/40 p-2">
-        {/* User-uploaded icons (shown at the top) */}
-        {loadingIcons && (
-          <div className="text-xs text-muted-foreground text-center py-2">
-            Loading custom icons…
-          </div>
-        )}
-        {hasUserIcons && (
-          <>
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5 mb-2 pb-2 border-b border-border/40">
-              {userIcons.map((u) => {
-                const url = storageUrl(u.storagePath);
-                const on = selected === url;
-                return (
-                  <button
-                    type="button"
-                    key={u.id}
-                    onClick={() => { if (!brokenIcons.has(u.id)) onSelect(url); }}
-                    aria-pressed={on}
-                    title={u.label || "Custom icon"}
-                    className={`tap aspect-square rounded-xl bg-card flex items-center justify-center transition relative group ${
-                      on
-                        ? "ring-2 ring-foreground scale-95"
-                        : "hover:scale-105 border border-border/60"
-                    } ${brokenIcons.has(u.id) ? "bg-destructive/10" : ""}`}
-                  >
-                    {brokenIcons.has(u.id) ? (
-                      <Trash2 className="w-6 h-6 text-destructive" />
-                    ) : (
-                      <img
-                        src={url}
-                        alt={u.label || "Custom icon"}
-                        className="w-[86%] h-[86%] object-contain pointer-events-none"
-                        draggable={false}
-                        onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
-                        try {
-                          const { supabase } = await import("@/integrations/supabase/client");
-                          // @ts-expect-error user_icons not in types
-                          await (supabase.from("user_icons") as any).update({ deleted_at: new Date().toISOString() }).eq("id", u.id);
-                          setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
-                        } catch {}
-                      }}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                      title="Delete icon"
-                    >
-                      <Trash2 className="w-3 h-3 text-destructive" />
-                    </button>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* Registry icons */}
+        {/* Show/hide toggle for registry icons */}
         {hiddenCount > 0 && (
           <div className="flex items-center justify-end mt-1.5 mb-0.5 px-0.5">
             <button
@@ -244,7 +184,64 @@ const { data, error } = await (supabase.from("user_icons") as any)
             </button>
           </div>
         )}
+
+        {/* Single combined grid: user/custom icons first, then registry icons */}
+        {loadingIcons && (
+          <div className="text-xs text-muted-foreground text-center py-2">
+            Loading custom icons…
+          </div>
+        )}
         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
+          {/* User-uploaded / AI-generated icons */}
+          {hasUserIcons && userIcons.map((u) => {
+            const url = storageUrl(u.storagePath);
+            const on = selected === url;
+            return (
+              <button
+                type="button"
+                key={u.id}
+                onClick={() => { if (!brokenIcons.has(u.id)) onSelect(url); }}
+                aria-pressed={on}
+                title={u.label || "Custom icon"}
+                className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative group ${
+                  on
+                    ? "ring-2 ring-foreground scale-95"
+                    : "hover:scale-105 border border-border/60"
+                } ${brokenIcons.has(u.id) ? "bg-destructive/10" : ""}`}
+              >
+                {brokenIcons.has(u.id) ? (
+                  <Trash2 className="w-6 h-6 text-destructive" />
+                ) : (
+                  <img
+                    src={url}
+                    alt={u.label || "Custom icon"}
+                    className="w-[86%] h-[86%] object-contain pointer-events-none"
+                    draggable={false}
+                    onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
+                    try {
+                      const { supabase } = await import("@/integrations/supabase/client");
+                      // @ts-expect-error user_icons not in types
+                      await (supabase.from("user_icons") as any).update({ deleted_at: new Date().toISOString() }).eq("id", u.id);
+                      setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
+                    } catch {}
+                  }}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                  title="Delete icon"
+                >
+                  <Trash2 className="w-3 h-3 text-destructive" />
+                </button>
+              </button>
+            );
+          })}
+
+          {/* Registry icons (pre-made set) */}
           {visibleIcons.map((k) => {
             const on = selected === k;
             const hidden = hiddenKeys.has(k);
@@ -262,7 +259,7 @@ const { data, error } = await (supabase.from("user_icons") as any)
                     if (!on && !hidden) onSelect(k);
                   }
                 }}
-                className={`tap aspect-square rounded-xl bg-card flex items-center justify-center transition relative cursor-pointer ${
+                className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative cursor-pointer ${
                   on
                     ? "ring-2 ring-foreground scale-95"
                     : "hover:scale-105 border border-border/60"
@@ -974,11 +971,13 @@ function AiIconPanel({
       {error && <p className="text-xs text-destructive">{error}</p>}
       {result && (
         <div className="flex flex-col items-center gap-2">
-          <img
-            src={result}
-            alt="Generated icon"
-            className="w-24 h-24 rounded-xl object-contain border border-border"
-          />
+          <div className="w-24 h-24 rounded-xl overflow-hidden bg-white border border-border">
+            <img
+              src={result}
+              alt="Generated icon"
+              className="w-full h-full object-contain"
+            />
+          </div>
           <button
             onClick={() => {
               onSelect(result);
@@ -1101,7 +1100,9 @@ function UploadIconPanel({
 
       {preview && (
         <div className="flex flex-col items-center gap-3">
-          <img src={preview} alt="Preview" className="max-h-40 rounded-xl object-contain border border-border" />
+          <div className="max-h-40 rounded-xl overflow-hidden bg-white border border-border">
+            <img src={preview} alt="Preview" className="w-full h-full object-contain" />
+          </div>
           {!result && !uploading && (
             <div className="w-full space-y-2">
               <input
@@ -1144,7 +1145,9 @@ function UploadIconPanel({
 
       {result && (
         <div className="flex flex-col items-center gap-2">
-          <img src={result} alt="Cleaned icon" className="w-24 h-24 rounded-xl object-contain border border-border" />
+          <div className="w-24 h-24 rounded-xl overflow-hidden bg-white border border-border">
+            <img src={result} alt="Cleaned icon" className="w-full h-full object-contain" />
+          </div>
           <button
             onClick={() => {
               onComplete(result);

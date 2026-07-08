@@ -211,6 +211,17 @@ Deno.serve(async (req) => {
       storage_path: filename,
     });
 
+    // Save to user_icons so the generated icon appears in the library.
+    const { error: insertErr } = await admin.from("user_icons").insert({
+      household_id: householdId,
+      storage_path: filename,
+      label: prompt,
+      prompt,
+    });
+    if (insertErr) {
+      console.warn("Failed to insert user_icons record:", insertErr.message);
+    }
+
     return json({
       ok: true,
       storagePath: filename,
