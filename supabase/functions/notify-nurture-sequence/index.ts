@@ -6,14 +6,73 @@
 // Timing is relative to households.created_at (household signup date).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendResendTemplate } from "../_shared/resend-send.ts";
-import { TEMPLATES } from "../_shared/email-templates.ts";
-import { APP_URL, FROM_ADDRESS } from "../_shared/emails/base.ts";
+
+// ── Inline shared helpers (avoid _shared/ import bundling issues) ──────────
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const APP_URL = "https://pointpals.co.nz";
+const FROM_ADDRESS = "PointPals <hello@pointpals.co.nz>";
+
+// Resend hosted template IDs (mirror of _shared/email-templates.ts).
+const TEMPLATES = {
+  PARENTING_TIP_START_SMALL:  "f8fbb7b8-b955-48a6-b3aa-1079aeefd569",
+  PARENTING_TIP_LABEL_PRAISE: "d12adf3c-3874-4abf-94f3-ed04b349257c",
+  HABIT_FADING_TIPS:          "c61044aa-2146-4715-98c3-030fadc33646",
+} as const;
+
+interface ResendTemplateOptions {
+  to: string | string[];
+  templateId: string;
+  variables?: Record<string, unknown>;
+  from: string;
+  subject?: string;
+  replyTo?: string;
+}
+
+// Variables are stringified — the Resend dashboard editor substitutes them
+// via {{handlebars}} placeholders.
+function stringifyVars(vars?: Record<string, unknown>): Record<string, string> {
+  if (!vars) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars)) {
+    out[k] = v === null || v === undefined ? "" : typeof v === "string" ? v : String(v);
+  }
+  return out;
+}
+
+async function sendResendTemplate(
+  apiKey: string,
+  opts: ResendTemplateOptions,
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const to = Array.isArray(opts.to) ? opts.to : [opts.to];
+  const payload: Record<string, unknown> = {
+    from: opts.from,
+    to,
+    template: {
+      id: opts.templateId,
+      variables: stringifyVars(opts.variables),
+    },
+  };
+  if (opts.subject) payload.subject = opts.subject;
+  if (opts.replyTo) payload.reply_to = opts.replyTo;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  return { ok: res.ok, status: res.status, body };
+}
+
+// ── End of inlined helpers ─────────────────────────────────────────────────
 
 // Helper: format a UTC ISO string as a readable NZ date (e.g. "9 July 2026").
 function formatNzDate(iso: string): string {
