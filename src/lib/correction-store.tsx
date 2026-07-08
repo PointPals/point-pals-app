@@ -63,6 +63,15 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Live mode: hydrate active reward from household row (server source of truth).
+  // IMPORTANT: Only hydrate if the DB has a value. The `else` branch that sets
+  // null is deliberately omitted to avoid a race-condition bug:
+  //   saveReward() fires TWO separate writes (persistActiveReward and
+  //   setRewardTarget). If setRewardTarget's Realtime notification arrives
+  //   first, the household has activeRewardName:null because persistActiveReward
+  //   hasn't landed yet. The old `else` would then clear activeRewardState, and
+  //   the persist-to-localStorage effect would save null — permanently losing
+  //   the reward until the user re-sets it.
+  // The reward is properly cleared via clearActiveReward() / claimReward().
   useEffect(() => {
     if (!live || !household.id) return;
     if (household.activeRewardName) {
@@ -70,10 +79,8 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
         name: household.activeRewardName,
         targetPoints: household.activeRewardTarget ?? household.rewardTarget,
       });
-    } else {
-      setActiveRewardState(null);
     }
-  }, [live, household.id, household.activeRewardName, household.activeRewardTarget]);;
+  }, [live, household.id, household.activeRewardName, household.activeRewardTarget]);
 
   // Persist on change (both modes — the active reward has no server home yet,
   // and a cached copy of history is harmless if the server list loads over it).
@@ -127,18 +134,32 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
 
   // Live mode: the reward also lives on the households row so it survives
   // sign-out/sign-in and shows up on every family member's device.
+  // We write active_reward_name/target AND reward_target atomically in one
+  // UPDATE so there's no race condition with the app-store's setRewardTarget
+  // write — both saveReward paths converge on the same single DB round-trip.
   const persistActiveReward = useCallback(
     (reward: ActiveReward) => {
       if (!live || !household.id) return;
+      // When reward is null (clear), keep reward_target at its default value
+      // but set active_reward_name/target to null.
+      const name = reward !== null ? reward.name : null;
+      const target = reward !== null ? reward.targetPoints : null;
       void db
         .from("households")
         .update({
-          active_reward_name: reward?.name ?? null,
-          active_reward_target: reward?.targetPoints ?? null,
+          reward_target: target ?? household.rewardTarget,
+          active_reward_name: name,
+          active_reward_target: target,
         })
-        .eq("id", household.id);
+        .eq("id", household.id)
+        .then(() => {
+          /* success — Realtime syncs the rest */
+        })
+        .catch((err) => {
+          console.error("persistActiveReward update failed:", err);
+        });
     },
-    [live, household.id],
+    [live, household.id, household.rewardTarget],
   );
 
   const claimReward = useCallback(
