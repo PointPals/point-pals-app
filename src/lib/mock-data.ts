@@ -154,7 +154,7 @@ export const INITIAL_KIDS: Kid[] = [
 export const INITIAL_CHORES: Chore[] = [
   {
     id: "c1",
-    name: "Made the bed",
+    name: "Makes the bed",
     icon: A("make-bed.png"),
     color: "sage",
     points: 1,
@@ -163,7 +163,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c2",
-    name: "Brushed teeth (AM)",
+    name: "Brushes teeth (AM)",
     icon: A("brushteeth-morning-bed.png"),
     color: "butter",
     points: 1,
@@ -172,7 +172,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c3",
-    name: "Brushed teeth (PM)",
+    name: "Brushes teeth (PM)",
     icon: A("brushteeth-night-bed.png"),
     color: "lilac",
     points: 1,
@@ -181,7 +181,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c4",
-    name: "Got dressed",
+    name: "Gets dressed",
     icon: A("get-dressed.png"),
     color: "sand",
     points: 1,
@@ -190,7 +190,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c5",
-    name: "Ate breakfast",
+    name: "Eats breakfast",
     icon: A("ate-breakfast.png"),
     color: "sky",
     points: 1,
@@ -199,7 +199,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c6",
-    name: "Packed bag",
+    name: "Packs bag",
     icon: A("packed-bag.png"),
     color: "sky",
     points: 1,
@@ -208,7 +208,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c7",
-    name: "Did homework",
+    name: "Does homework",
     icon: A("did-homework.png"),
     color: "lilac",
     points: 1,
@@ -217,7 +217,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c8",
-    name: "Fed pets",
+    name: "Feeds pets",
     icon: A("fed-pets.png"),
     color: "sage",
     points: 1,
@@ -226,7 +226,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c9",
-    name: "Tidied room",
+    name: "Tidies room",
     icon: A("tidied-room.png"),
     color: "sand",
     points: 1,
@@ -235,7 +235,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c10",
-    name: "Set the table",
+    name: "Sets the table",
     icon: A("set-the-table.png"),
     color: "sky",
     points: 1,
@@ -244,7 +244,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c11",
-    name: "Washed hands",
+    name: "Washes hands",
     icon: A("washed-hands.png"),
     color: "blush",
     points: 1,
@@ -253,7 +253,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c12",
-    name: "Woke up on time",
+    name: "Wakes up on time",
     icon: A("woke-up-on-time.png"),
     color: "butter",
     points: 1,
@@ -262,7 +262,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c13",
-    name: "Went to bed by yourself",
+    name: "Goes to bed on your own",
     icon: A("went-to-bed-by-yourself.png"),
     color: "lilac",
     points: 1,
@@ -289,7 +289,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c16",
-    name: "Watered plants",
+    name: "Waters plants",
     icon: A("watered-plants.png"),
     color: "butter",
     points: 1,
@@ -298,7 +298,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c17",
-    name: "Emptied dishwasher",
+    name: "Empties dishwasher",
     icon: A("emptied-or-loaded-dishwasher.png"),
     color: "sand",
     points: 1,
@@ -307,7 +307,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c18",
-    name: "Took out rubbish",
+    name: "Takes out rubbish",
     icon: A("take-out-rubbish.png"),
     color: "sky",
     points: 1,
@@ -316,7 +316,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c19",
-    name: "Vacuumed a room",
+    name: "Vacuums a room",
     icon: A("vacuumn.png"),
     color: "blush",
     points: 1,
@@ -325,7 +325,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c20",
-    name: "Swept the room",
+    name: "Sweeps the room",
     icon: A("swept-the-room.png"),
     color: "foam",
     points: 1,
@@ -334,7 +334,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c21",
-    name: "Mopped the floor",
+    name: "Mops the floor",
     icon: A("mopped-the-floor.png"),
     color: "foam",
     points: 1,
@@ -343,7 +343,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c22",
-    name: "Sorted recycling",
+    name: "Sorts recycling",
     icon: A("sorted-recycling.png"),
     color: "sage",
     points: 1,
@@ -352,7 +352,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c23",
-    name: "Drank 2L water",
+    name: "Drinks 2L water",
     icon: A("adult-drank-21L-water.png"),
     color: "sky",
     points: 1,
@@ -370,7 +370,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c25",
-    name: "Meditated / 5min silence",
+    name: "Meditates / 5min silence",
     icon: A("adult-meditated.png"),
     color: "lilac",
     points: 1,
@@ -388,7 +388,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c27",
-    name: "Ate a vegetable",
+    name: "Eats a vegetable",
     icon: A("adult-ate healthy.png"),
     color: "sage",
     points: 1,
@@ -397,7 +397,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c28",
-    name: "Took a lunch break",
+    name: "Takes a lunch break",
     icon: A("adult-took-a-lunchbreak.png"),
     color: "blush",
     points: 1,
@@ -433,7 +433,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c32",
-    name: "Paid a bill",
+    name: "Pays a bill",
     icon: A("adult-paid-a-bill.png"),
     color: "butter",
     points: 1,
@@ -442,7 +442,7 @@ export const INITIAL_CHORES: Chore[] = [
   },
   {
     id: "c33",
-    name: "Folded laundry same day",
+    name: "Folds laundry same day",
     icon: A("adult-folded-and-put-away-on-same-day.png"),
     color: "foam",
     points: 1,
@@ -470,7 +470,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "s4",
-    name: "Calmed down",
+    name: "Calms down",
     icon: A("calmed-down-after-getting-mad.png"),
     color: "lilac",
     points: 1,
@@ -478,7 +478,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "s5",
-    name: "Followed directions",
+    name: "Follows directions",
     icon: A("followed-directions.png"),
     color: "sand",
     points: 1,
@@ -486,7 +486,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "s6",
-    name: "Helped without being asked",
+    name: "Helps without being asked",
     icon: A("helped-without-being-asked.png"),
     color: "blush",
     points: 1,
@@ -518,7 +518,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "s11",
-    name: "Tried your best",
+    name: "Tries your best",
     icon: A("tried-your-best.png"),
     color: "sand",
     points: 1,
@@ -526,7 +526,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "s12",
-    name: "Used kind words",
+    name: "Uses kind words",
     icon: A("used-kindwords.png"),
     color: "butter",
     points: 1,
@@ -549,10 +549,10 @@ export const INITIAL_SKILLS: Skill[] = [
     isPositive: true,
   },
   // Needs work — negative values
-  { id: "n1", name: "Argued", icon: A("argued.png"), color: "sand", points: -1, isPositive: false },
+  { id: "n1", name: "Argues", icon: A("argued.png"), color: "sand", points: -1, isPositive: false },
   {
     id: "n2",
-    name: "Didn't follow instructions",
+    name: "Doesn't follow instructions",
     icon: A("did-not-follow-instructions.png"),
     color: "sky",
     points: -1,
@@ -560,7 +560,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n3",
-    name: "Didn't listen",
+    name: "Doesn't listen",
     icon: A("didn't-listen.png"),
     color: "lilac",
     points: -1,
@@ -568,7 +568,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n4",
-    name: "Hit or pushed",
+    name: "Hits or pushes",
     icon: A("hit-or-pushed.png"),
     color: "blush",
     points: -1,
@@ -576,7 +576,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n5",
-    name: "Made a mess",
+    name: "Makes a mess",
     icon: A("made-a-mess.png"),
     color: "sand",
     points: -1,
@@ -584,7 +584,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n6",
-    name: "Ran away",
+    name: "Runs away",
     icon: A("ran-away.png"),
     color: "foam",
     points: -1,
@@ -592,7 +592,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n7",
-    name: "Refused to share",
+    name: "Refuses to share",
     icon: A("refused-to-share.png"),
     color: "sky",
     points: -1,
@@ -608,7 +608,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n9",
-    name: "Threw things",
+    name: "Throws things",
     icon: A("threw-things.png"),
     color: "sand",
     points: -1,
@@ -616,7 +616,7 @@ export const INITIAL_SKILLS: Skill[] = [
   },
   {
     id: "n10",
-    name: "Yelled or screamed",
+    name: "Yells or screams",
     icon: A("yelled-or-screamed.png"),
     color: "butter",
     points: -1,
