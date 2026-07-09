@@ -87,7 +87,7 @@ function SignUpPage() {
     // land in state before the onboarding wizard mutates it.
     await refreshFromServer();
     // Fire-and-forget trial-welcome email (template 01).
-    sendTrialWelcome().catch(() => {});
+    sendTrialWelcome().catch((e) => console.error("[signup] welcome email failed:", e));
     navigate({ to: "/onboarding" });
   };
 

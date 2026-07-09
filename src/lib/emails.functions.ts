@@ -33,7 +33,10 @@ export const sendTrialWelcome = createServerFn({ method: "POST" })
     const result = await sendTemplate({
       templateKey: "trialWelcome",
       to: email,
-      data: { first_name: userRes?.user?.user_metadata?.name ?? "" },
+      data: {
+        first_name: userRes?.user?.user_metadata?.name ?? "",
+        trial_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      },
     });
 
     if (result.ok && hh?.id) {
