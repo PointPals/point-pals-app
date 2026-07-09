@@ -46,11 +46,45 @@ export function Paywall({ reason }: { reason?: string }) {
   };
 
   if (subscribed) {
+    const isTrialing = household.subscriptionStatus === "trialing";
+
+    if (isTrialing) {
+      return (
+        <div className="card-soft p-5">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-butter/70 px-2.5 py-1 text-xs font-bold uppercase tracking-wide">
+              Free trial
+            </span>
+            {daysLeft != null && (
+              <span className="text-sm text-muted-foreground">{daysLeft} days left</span>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You&apos;re still on your free trial — no payment needed yet. When you&apos;re ready to
+            keep the habits going, confirm your purchase below.
+          </p>
+          <button
+            onClick={go}
+            disabled={busy}
+            className="mt-3 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            Confirm purchase
+          </button>
+          {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
+        </div>
+      );
+    }
+
     return (
       <div className="card-soft p-5">
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-sage/60 px-2.5 py-1 text-xs font-bold uppercase tracking-wide">
-            {household.subscriptionStatus === "trialing" ? "Free trial" : "Active"}
+            Active
           </span>
           {daysLeft != null && (
             <span className="text-sm text-muted-foreground">{daysLeft} days left</span>
