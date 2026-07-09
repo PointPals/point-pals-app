@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useEffect } from "react";
 import { useApp } from "@/lib/app-store";
 import { useCorrection } from "@/lib/correction-store";
@@ -6,7 +6,7 @@ import { KidBadge } from "@/components/KidBadge";
 import { FamilyJarCard } from "@/components/FamilyJarCard";
 import { PersonalJarCard } from "@/components/PersonalJarCard";
 import { playFanfare, haptic, playChime } from "@/lib/feedback";
-import { ToggleRow, PersonalTargetRow } from "@/components/jar-settings";
+
 import { Gift, Target, History, Trophy, Check, PartyPopper, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/rewards")({
@@ -28,11 +28,6 @@ function RewardsPage() {
     kids,
     history,
     setRewardTarget,
-    setSplitJarsEnabled,
-    setSplitRatio,
-    setSplitMode,
-    setSharedJarEnabled,
-    setPersonalTarget,
     resetRewardCycle,
   } = useApp();
   const { activeReward, setActiveReward, claimReward, clearActiveReward, rewardHistory } = useCorrection();
@@ -234,112 +229,25 @@ function RewardsPage() {
         </>
       )}
 
-      {/* Individual jars — config + progress, moved here from Settings (§6) */}
+      {/* Individual jars — progress cards only. Config moved to Settings. */}
       {household.splitJarsEnabled && (
         <>
-          {/* Configuration */}
           <section className="space-y-3">
-            <h2 className="font-display text-xl font-bold flex items-center gap-2">
-              <Gift className="w-5 h-5" /> Individual rewards
-            </h2>
-            <div className="card-soft p-5 space-y-4">
-              <p className="text-xs text-muted-foreground">
-                Each kid has their own jar + reward. Every point award fills BOTH the shared family
-                jar and each kid&apos;s personal jar. Kids can work toward their own reward while
-                also filling the family jar together.
-              </p>
-
-              {/* Split mode: percentage vs match (1:1) */}
-              <div>
-                <span className="text-sm font-semibold">How points are split</span>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={() => setSplitMode("percentage")}
-                    className={`tap flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                      household.splitMode === "percentage"
-                        ? "border-foreground bg-foreground/5"
-                        : "border-input hover:border-foreground/50"
-                    }`}
-                  >
-                    <div className="font-semibold">Split by %</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">Shared × personal</div>
-                  </button>
-                  <button
-                    onClick={() => setSplitMode("match")}
-                    className={`tap flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                      household.splitMode === "match"
-                        ? "border-foreground bg-foreground/5"
-                        : "border-input hover:border-foreground/50"
-                    }`}
-                  >
-                    <div className="font-semibold">Match (1:1)</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">Full to both jars</div>
-                  </button>
-                </div>
-                {household.splitMode === "match" && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Every point earned goes to <strong>both</strong> jars equally. If a kid earns
-                    10 points, both the shared jar and their personal jar get +10 — easier for kids
-                    to follow.
-                  </p>
-                )}
-              </div>
-
-              {/* Percentage split slider (only visible in percentage mode) */}
-              {household.splitMode === "percentage" && (
-                <div>
-                  <span className="text-sm font-semibold">
-                    Split: {household.splitRatio}% to shared jar ·{" "}
-                    {100 - household.splitRatio}% to personal jar
-                  </span>
-                  <div className="mt-1 flex items-center gap-3">
-                    <input
-                      type="range"
-                      min={10}
-                      max={90}
-                      step={5}
-                      value={household.splitRatio}
-                      onChange={(e) => setSplitRatio(Number(e.target.value))}
-                      className="flex-1 accent-foreground"
-                    />
-                    <span className="font-display text-lg font-bold w-12 text-right">
-                      {household.splitRatio}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-                    <span>More personal</span>
-                    <span>More shared</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Shared jar toggle */}
-              <ToggleRow
-                icon={<Target className="h-4 w-4" />}
-                label="Show shared family jar"
-                desc="When off, only each kid's personal jar is shown. All points flow to personal jars and the home page shows a mini marble jar for each kid."
-                checked={household.sharedJarEnabled}
-                onChange={(v) => setSharedJarEnabled(v)}
-              />
-
-              {/* Personal targets */}
-              <div className="pt-1 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  Personal targets
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Set how many points each kid needs in their personal jar before they can claim
-                  their own reward. Set to 0 to skip that kid.
-                </p>
-                {kids.map((k) => (
-                  <PersonalTargetRow
-                    key={k.id}
-                    kid={k}
-                    onChange={(target, reward) => setPersonalTarget(k.id, target, reward)}
-                  />
-                ))}
-              </div>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-bold flex items-center gap-2">
+                <Gift className="w-5 h-5" /> Individual rewards
+              </h2>
+              <Link
+                to="/settings"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                Configure in Settings →
+              </Link>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Each kid has their own jar + reward. Every point award fills BOTH the shared family
+              jar and each kid&apos;s personal jar.
+            </p>
           </section>
 
           {/* Personal jar progress cards */}
