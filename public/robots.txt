@@ -1,0 +1,6 @@
+# PointPals — pre-launch
+# Allow full crawl once launched; for now prevent indexing
+User-agent: *
+Disallow: /
+
+Sitemap: https://www.pointpals.co.nz/sitemap.xml
