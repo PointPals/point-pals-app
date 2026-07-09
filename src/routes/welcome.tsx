@@ -133,10 +133,10 @@ function WelcomePage() {
               <BadgeCheck className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
             </div>
             <h1 className="mt-4 font-display text-[2.5rem] sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Chores that feel like a <GameWord />, not a fight.
+              Chores that don't feel like a fight.
             </h1>
             <p className="mt-5 text-lg text-foreground/80 max-w-xl">
-              Chores that don't feel like a fight. Award points for everyday tasks and kindness — each point drops a marble into a shared family jar. When it's full, your family celebrates with a reward you earned together.
+              Award points for everyday tasks and kindness — each point drops a marble into a shared family jar. When it's full, your family celebrates with a reward you earned together.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
               <Link
@@ -167,12 +167,12 @@ function WelcomePage() {
         <div className="grid sm:grid-cols-3 gap-5">
           <FeatureCard
             icon={<Sparkles className="h-5 w-5" />}
-            title="Notice the good stuff"
+            title="Notice effort"
             body="A quick tap to award points for chores, kindness, and effort — tidying up without being asked, helping a sibling, trying something hard. The chime lets your child know you noticed."
           />
           <FeatureCard
             icon={<Gift className="h-5 w-5" />}
-            title="Earn it as a team"
+            title="Earn it together"
             body="Every point drops a marble into the shared jar. Your family chooses the reward together — a park outing, movie night, camp in the lounge. Something everyone's excited about."
           />
           <FeatureCard
@@ -188,7 +188,7 @@ function WelcomePage() {
         <h2 className="text-center font-display text-2xl sm:text-3xl font-bold">How it works</h2>
         <ol className="mt-6 grid sm:grid-cols-3 gap-5">
           {[
-            "Set up your family's chores and good-behaviour skills.",
+            "Set up your family's chores and the things you want to celebrate — kindness, effort, helping without being asked.",
             "Tap to award — watch a marble drop into the jar.",
             "When it's full, it's time to celebrate the reward everyone's been working towards.",
           ].map((step, i) => (
@@ -205,11 +205,10 @@ function WelcomePage() {
       {/* evidence strip */}
       <section className="max-w-2xl mx-auto px-6 py-12 text-center">
         <p className="text-sm text-muted-foreground">
-          PointPals draws on attachment science, behavioural research, and the parenting books that
-          actually change how families work. The idea is simple: children contribute more when they
-          can <em>see</em> their effort add up — and when they feel connected to the outcome.
-          External rewards scaffold habits, but the goal is always for the habit to stick, not the
-          reward to last forever.{" "}
+          PointPals is research-backed, not gimmicky. The idea is simple: children contribute more
+          when they can <em>see</em> their effort add up — and when they feel connected to the
+          outcome. External rewards scaffold habits, but the goal is always for the habit to stick,
+          not the reward to last forever.{" "}
           <Link to="/about" className="underline hover:text-foreground">
             Read the research →
           </Link>
@@ -239,8 +238,8 @@ function WelcomePage() {
       <section className="max-w-lg mx-auto px-6 pb-16 text-center">
         <h2 className="font-display text-2xl font-bold">PointPals on your phone</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          PointPals works right in your browser — no download needed. Add it to your home screen
-          for the app-like experience. Native apps for iOS and Android are coming soon.
+          PointPals runs in your browser — no app store needed. Add it to your home screen for
+          the app-like experience. Native apps for iOS and Android are on their way.
         </p>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
@@ -316,35 +315,6 @@ function WelcomePage() {
       </footer>
       <ThemeTune />
     </div>
-  );
-}
-
-// "game" rendered in the same warm butter→pink gradient as the page
-// background, with a slow glimmer sparkle sweeping across the letters.
-function GameWord() {
-  return (
-    <span
-      className="relative inline-block bg-clip-text text-transparent"
-      style={{
-        backgroundImage:
-          "linear-gradient(100deg, #F5C64B 0%, #F19AAC 45%, #EC6FB0 100%)",
-        WebkitBackgroundClip: "text",
-      }}
-    >
-      game
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-clip-text text-transparent game-glimmer"
-        style={{
-          backgroundImage:
-            "linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.95) 50%, transparent 70%)",
-          backgroundSize: "250% 100%",
-          WebkitBackgroundClip: "text",
-        }}
-      >
-        game
-      </span>
-    </span>
   );
 }
 
