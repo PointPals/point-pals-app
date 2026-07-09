@@ -395,6 +395,10 @@ function LibraryPage() {
         <p className="text-sm text-muted-foreground">
           Add, edit, and remove anything your family tracks.
         </p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          When awarding points on the home screen, tapping a child&apos;s badge shows
+          only that child&apos;s assigned items.
+        </p>
       </div>
 
       {!canEdit && role && (
