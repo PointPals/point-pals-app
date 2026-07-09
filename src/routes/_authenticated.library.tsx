@@ -990,7 +990,6 @@ function AiIconPanel({
       });
       if (fnErr) throw fnErr;
       if (data.error) throw new Error(data.error);
-      console.log("Icon generated:", data);
       setResult(data.url ?? data.storagePath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
@@ -1136,7 +1135,6 @@ function UploadIconPanel({
       });
       if (fnErr) throw fnErr;
       if (data.error) throw new Error(data.error);
-      console.log("Icon uploaded:", data);
       setResult(data.url ?? data.storagePath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");

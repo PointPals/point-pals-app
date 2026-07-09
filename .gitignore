@@ -40,3 +40,6 @@ _up*.mjs
 # Capacitor assets config (local paths differ per developer)
 /capacitor-web/
 /capacitor-assets.json
+
+# Environment (only .env.example is committed)
+.env

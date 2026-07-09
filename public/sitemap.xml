@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.pointpals.co.nz/welcome</loc>
+    <loc>https://pointpals.co.nz/welcome</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.pointpals.co.nz/about</loc>
+    <loc>https://pointpals.co.nz/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.pointpals.co.nz/faq</loc>
+    <loc>https://pointpals.co.nz/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.pointpals.co.nz/blog</loc>
+    <loc>https://pointpals.co.nz/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.pointpals.co.nz/contact</loc>
+    <loc>https://pointpals.co.nz/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.pointpals.co.nz/privacy</loc>
+    <loc>https://pointpals.co.nz/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
