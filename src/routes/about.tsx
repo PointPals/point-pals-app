@@ -377,7 +377,7 @@ function AboutPage() {
           <p>
             Every source we've read agrees on one thing: the healthiest path is to{" "}
             <strong>fade the rewards as habits form</strong>. This is standard practice in the
-            token-economy literature — thin the reinforcement over time and let natural consequences
+            behavioural research — thin the reinforcement over time and let natural consequences
             take over. A tidy room. Pride. A smoother morning. That's the real reward.
           </p>
           <div className="rounded-2xl bg-sage/25 p-4 text-sm">

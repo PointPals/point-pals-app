@@ -205,10 +205,11 @@ function WelcomePage() {
       {/* evidence strip */}
       <section className="max-w-2xl mx-auto px-6 py-12 text-center">
         <p className="text-sm text-muted-foreground">
-          PointPals is built on token-economy research — a well-studied behavioural psychology
-          approach. External rewards scaffold habit formation for tasks that lack intrinsic
-          motivation, like chores. The goal is for the habit to stick, not for the reward to last
-          forever.{" "}
+          PointPals draws on attachment science, behavioural research, and the parenting books that
+          actually change how families work. The idea is simple: children contribute more when they
+          can <em>see</em> their effort add up — and when they feel connected to the outcome.
+          External rewards scaffold habits, but the goal is always for the habit to stick, not the
+          reward to last forever.{" "}
           <Link to="/about" className="underline hover:text-foreground">
             Read the research →
           </Link>
@@ -236,9 +237,10 @@ function WelcomePage() {
 
       {/* Download from app stores */}
       <section className="max-w-lg mx-auto px-6 pb-16 text-center">
-        <h2 className="font-display text-2xl font-bold">Get PointPals on your phone</h2>
+        <h2 className="font-display text-2xl font-bold">PointPals on your phone</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Download the NZ family chore chart app — available now on iOS and Android.
+          PointPals works right in your browser — no download needed. Add it to your home screen
+          for the app-like experience. Native apps for iOS and Android are coming soon.
         </p>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
