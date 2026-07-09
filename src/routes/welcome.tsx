@@ -273,12 +273,12 @@ function WelcomePage() {
       </section>
 
       {/* SEO keyword strip */}
-      <section className="max-w-4xl mx-auto px-6 pb-8 text-center sr-only sm:not-sr-only">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          PointPals is an <strong>NZ-made family chore system</strong> built on research, not gimmicks. 
-          A <strong>behaviour chart for children</strong> that turns everyday tasks into points toward a shared 
-          jar — then your family celebrates a reward you earned together. 
-          The <strong>best family chore tracker</strong> for <strong>Kiwi families</strong>. 
+      <section className="max-w-4xl mx-auto px-6 pb-8">
+        <p className="text-center text-xs text-muted-foreground leading-relaxed">
+          PointPals is an <strong>NZ-made family chore system</strong> built on research, not gimmicks.
+          A <strong>behaviour chart for children</strong> that turns everyday tasks into points toward a shared
+          jar — then your family celebrates a reward you earned together.
+          The <strong>best family chore tracker</strong> for <strong>Kiwi families</strong>.
           Try it free.
         </p>
       </section>
