@@ -170,8 +170,8 @@ export function AwardModal({
           <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
             {[
               { k: "chores", label: "Chores" },
-              { k: "positive", label: "Positive" },
-              { k: "needs-work", label: "Needs work" },
+              { k: "positive", label: "👍 Positive" },
+              { k: "needs-work", label: "👎 Needs work" },
             ].map((t) => (
               <button
                 key={t.k}
