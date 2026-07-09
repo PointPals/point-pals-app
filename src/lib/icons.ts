@@ -79,6 +79,9 @@ const ICON_FILES: string[] = [
   "refused-to-share.png",
   "made-a-mess.png",
   "not-yet.png",
+  // Custom parent icons
+  "thumbs up.png",
+  "thumbs down.png",
   // Adult
   "adult-ate healthy.png",
   "adult-bed-before-targettime.png",
@@ -96,7 +99,7 @@ const ICON_FILES: string[] = [
 // Cache-buster: bump this whenever the Supabase bucket re-uploads existing
 // filenames (e.g. transparent-background refresh). Browsers/CDNs cache the
 // old bytes under the same URL otherwise.
-const ASSET_VERSION = "4";
+const ASSET_VERSION = "5";
 
 const REGISTRY: Record<string, string> = Object.fromEntries(
   ICON_FILES.map((f) => [
