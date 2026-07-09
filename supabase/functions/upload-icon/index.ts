@@ -10,6 +10,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+// @ts-ignore — pngjs loaded via npm: specifier for Deno compat
+import pngjs from "npm:pngjs@7.4.0";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -87,6 +89,81 @@ async function sendBillingAlert(errorType: string, message: string) {
   }
 }
 
+/**
+ * Post-process a PNG buffer to ensure clean transparency.
+ * Gemini sometimes renders the transparency-checkerboard as actual pixels
+ * or leaves a hazy grey/white halo around the subject. This function:
+ * 1. Zeroes out RGB for fully transparent pixels (alpha = 0).
+ * 2. Forces near-white / light-grey pixels to transparent (common leftover
+ *    from imperfect background removal).
+ * 3. Slightly feathers edges to avoid harsh aliasing.
+ */
+function cleanTransparency(raw: Uint8Array): Uint8Array {
+  try {
+    const png = pngjs.PNG.sync.read(raw);
+    const data = png.data;
+    const threshold = 245; // RGB components >= this → treat as background
+    const alphaFeather = 220; // alpha below this → fully transparent
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+
+      // Already fully transparent — zero out RGB so nothing shows through
+      if (a === 0) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        continue;
+      }
+
+      // Semi-transparent pixels (likely feather/halo): force fully transparent
+      if (a < alphaFeather) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        data[i + 3] = 0;
+        continue;
+      }
+
+      // Near-white or light-grey pixel with high alpha (>240) yet not opaque —
+      // this is the checkerboard pattern Gemini sometimes bakes in.
+      if (r >= threshold && g >= threshold && b >= threshold) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        data[i + 3] = 0;
+        continue;
+      }
+
+      // Checkerboard pattern detection: a pixel that is almost-white but
+      // adjacent to transparent-ish neighbours (checkerboard weave).
+      // Only applies if the pixel itself looks "grey" (R≈G≈B within 10).
+      if (Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && r > 200 && g > 200 && b > 200) {
+        // Check surrounding pixels for transparency
+        const above = i >= 4 ? data[i - 4 + 3] : 255;
+        const below = i + 4 < data.length ? data[i + 4 + 3] : 255;
+        const left = i >= 4 ? data[i - 4 + 3] : 255; // re-read — same offset works for RGBA
+        const right = i + 4 < data.length ? data[i + 4 + 3] : 255;
+        const transNeighbours = [above, below, left, right].filter((a) => a < 100).length;
+        if (transNeighbours >= 2) {
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+          data[i + 3] = 0;
+        }
+      }
+    }
+
+    return pngjs.PNG.sync.write(png);
+  } catch {
+    // If pngjs parsing fails (unlikely but possible), return original bytes
+    return raw;
+  }
+}
+
 /** Call Gemini 2.0 Flash to remove the background from the uploaded image. */
 async function removeBackground(imageBase64: string, mimeType: string): Promise<Uint8Array> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_API_KEY}`;
@@ -97,7 +174,7 @@ async function removeBackground(imageBase64: string, mimeType: string): Promise<
     body: JSON.stringify({
       contents: [{
         parts: [
-          { text: "Remove the entire background from this image completely. Return ONLY the main subject on a fully transparent (alpha channel) background. The result must be a PNG with transparency. Do not add any new elements, text, or decorations — keep the original subject exactly as-is, just with the background stripped away." },
+          { text: "Remove the entire background from this image completely. Return the main subject on a true alpha-channel transparent background. CRITICAL: Do NOT render the checkerboard/chessboard transparency indicator — that pattern must NOT appear in the image. The output must have real RGBA transparency where the background pixels have alpha=0 and the subject has alpha=255. The result must be a PNG. Do not add any new elements, text, or decorations — keep the original subject exactly as-is, just with the background stripped away to genuine transparency." },
           { inlineData: { mimeType, data: imageBase64 } },
         ],
       }],
@@ -143,7 +220,10 @@ async function removeBackground(imageBase64: string, mimeType: string): Promise<
   for (let i = 0; i < binaryStr.length; i++) {
     bytes[i] = binaryStr.charCodeAt(i);
   }
-  return bytes;
+
+  // Post-process to strip any transparency checkerboard / grey haze
+  // that Gemini sometimes bakes into the PNG.
+  return cleanTransparency(bytes);
 }
 
 Deno.serve(async (req) => {
