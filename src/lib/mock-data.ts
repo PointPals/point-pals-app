@@ -61,9 +61,14 @@ export type Skill = {
   assignedKidIds?: string[] | null;
 };
 
-/** Does this chore/skill apply to the given kid? Empty/absent list = everyone. */
+/** Does this chore/skill apply to the given kid?
+ * undefined/null = everyone (existing data compat).
+ * [] = no one — parent must tag kids manually.
+ */
 export function appliesToKid(item: { assignedKidIds?: string[] | null }, kidId: string): boolean {
-  return !item.assignedKidIds?.length || item.assignedKidIds.includes(kidId);
+  if (item.assignedKidIds === undefined || item.assignedKidIds === null) return true;
+  if (item.assignedKidIds.length === 0) return false;
+  return item.assignedKidIds.includes(kidId);
 }
 
 export type Companion = {
@@ -159,7 +164,8 @@ export const INITIAL_CHORES: Chore[] = [
     color: "sage",
     points: 1,
     recurrence: "daily",
-    tags: ["Must Do"],
+    tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c2",
@@ -169,6 +175,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Must Do"],
+    assignedKidIds: [],
   },
   {
     id: "c3",
@@ -178,6 +185,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Must Do"],
+    assignedKidIds: [],
   },
   {
     id: "c4",
@@ -187,6 +195,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c5",
@@ -196,6 +205,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c6",
@@ -205,6 +215,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c7",
@@ -214,6 +225,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c8",
@@ -222,7 +234,8 @@ export const INITIAL_CHORES: Chore[] = [
     color: "sage",
     points: 1,
     recurrence: "daily",
-    tags: ["Must Do"],
+    tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c9",
@@ -231,7 +244,8 @@ export const INITIAL_CHORES: Chore[] = [
     color: "sand",
     points: 1,
     recurrence: "daily",
-    tags: ["Must Do"],
+    tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c10",
@@ -241,6 +255,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c11",
@@ -250,6 +265,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c12",
@@ -259,6 +275,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c13",
@@ -268,6 +285,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c14",
@@ -277,6 +295,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c15",
@@ -286,6 +305,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c16",
@@ -295,6 +315,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c17",
@@ -304,6 +325,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c18",
@@ -313,6 +335,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c19",
@@ -322,6 +345,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c20",
@@ -331,6 +355,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c21",
@@ -340,6 +365,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c22",
@@ -349,6 +375,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: [],
+    assignedKidIds: [],
   },
   {
     id: "c23",
@@ -358,6 +385,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c24",
@@ -367,6 +395,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c25",
@@ -376,6 +405,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c26",
@@ -385,6 +415,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c27",
@@ -394,6 +425,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c28",
@@ -403,6 +435,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c29",
@@ -412,6 +445,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c30",
@@ -421,6 +455,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c31",
@@ -430,6 +465,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "daily",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c32",
@@ -439,6 +475,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
   {
     id: "c33",
@@ -448,6 +485,7 @@ export const INITIAL_CHORES: Chore[] = [
     points: 1,
     recurrence: "weekly",
     tags: ["Adult"],
+    assignedKidIds: [],
   },
 ];
 

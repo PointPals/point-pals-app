@@ -50,6 +50,7 @@ export const HeroJarScene = memo(function HeroJarScene({
             pendingDrops={pendingDrops}
             onFull={onFull}
             suppressDissolveChime
+            suppressClink
           />
         </div>
       </div>

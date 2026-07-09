@@ -195,6 +195,7 @@ export function MarbleJar({
   onFull,
   className,
   suppressDissolveChime = false,
+  suppressClink = false,
 }: {
   value: number;
   target: number;
@@ -211,6 +212,9 @@ export function MarbleJar({
   /** Marketing hero recycles the jar to 0 when full — that mass-dissolve is
    *  a celebration reset, not a negative event, so don't play the dull chime. */
   suppressDissolveChime?: boolean;
+  /** Marketing hero: replace the glassy clink with a positive chime
+   *  when fresh marbles land. */
+  suppressClink?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -615,7 +619,11 @@ export function MarbleJar({
       if (!reducedMotion && now - clinkAt.current > 90) {
         for (const m of marbles.current) {
           if (m.dissolveStart === null && m.y > bottom - m.r * 1.4 && Math.abs(m.vy) > 2.2) {
-            playClink((Math.random() - 0.5) * 260);
+            if (suppressClink) {
+              playChime("positive");
+            } else {
+              playClink((Math.random() - 0.5) * 260);
+            }
             clinkAt.current = now;
             break;
           }

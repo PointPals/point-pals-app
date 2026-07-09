@@ -6,7 +6,6 @@ import { HERO_IMAGE_URL, LOGO_POINTS_URL } from "@/lib/image-urls";
 import { HeroJarScene } from "@/components/HeroJarScene";
 import { WalkingMascots } from "@/components/WalkingMascots";
 import { HeroBackground } from "@/components/HeroBackground";
-import { ThemeTune } from "@/components/ThemeTune";
 import { playChime } from "@/lib/feedback";
 
 export const Route = createFileRoute("/welcome")({
@@ -112,11 +111,11 @@ function WelcomePage() {
       </header>
 
       {/* hero */}
-      <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-12 grid lg:grid-cols-2 gap-8 items-center">
+      <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-12">
         <HeroBackground />
 
-        {/* Marble jar first in DOM so it stacks above text on mobile */}
-        <div className="relative z-10 lg:order-2">
+        {/* Marble jar */}
+        <div className="relative z-10 max-w-md mx-auto">
           <HeroJarScene
             value={value}
             target={TARGET}
@@ -126,8 +125,13 @@ function WelcomePage() {
           />
         </div>
 
-        {/* Text block second in DOM, re-ordered left on desktop */}
-        <div className="relative z-10 lg:order-1">
+        {/* Full-width walking mascots + floating points — walking past the jar */}
+        <div className="relative z-20 -mt-16 mb-4">
+          <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
+        </div>
+
+        {/* Text block — moved below mascots so mascots walk past jar above text */}
+        <div className="relative z-10 max-w-3xl mx-auto">
           <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 border border-butter px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
               <BadgeCheck className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
@@ -157,9 +161,6 @@ function WelcomePage() {
             </p>
           </div>
         </div>
-
-        {/* Full-width walking mascots + floating points */}
-        <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
       </section>
 
       {/* how it works */}
@@ -313,7 +314,6 @@ function WelcomePage() {
           © 2026 PointPals · Proudly made in New Zealand
         </p>
       </footer>
-      <ThemeTune />
     </div>
   );
 }
