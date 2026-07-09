@@ -22,7 +22,7 @@ const GOOGLE_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? Deno.env.get("GOOGLE_AP
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
 const FREE_MONTHLY_CAP = 10;
-const PREMIUM_MONTHLY_CAP = 120;
+const PREMIUM_MONTHLY_CAP = 10;
 
 function monthStartISO(): string {
   const d = new Date();

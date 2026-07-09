@@ -38,7 +38,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
 // Monthly caps by entitlement — tune freely; this is the cost guardrail.
 const FREE_MONTHLY_CAP = 10;
-const PREMIUM_MONTHLY_CAP = 120;
+const PREMIUM_MONTHLY_CAP = 10;
 
 // Style prompt to keep generated icons visually consistent with the existing set.
 // NOTE: the image model can't emit real alpha — asking for "transparent" gets a

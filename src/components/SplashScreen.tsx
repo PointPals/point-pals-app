@@ -82,7 +82,7 @@ export function SplashScreen() {
           PointPals
         </h1>
         <p className="text-sm text-muted-foreground text-center mt-1 max-w-[260px]">
-          Family chores &amp; behaviour, made kind
+          Notice effort. Celebrate together.
         </p>
       </div>
 
