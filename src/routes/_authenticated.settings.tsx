@@ -349,8 +349,91 @@ function SettingsPage() {
               </span>
             </div>
           </label>
+
+          {/* Enable/disable individual rewards */}
+          <ToggleRow
+            icon={<Target className="h-4 w-4" />}
+            label="Individual rewards per child"
+            desc="Turn on to let each child have their own jar and reward goal alongside the shared family jar."
+            checked={household.splitJarsEnabled}
+            onChange={(v) => setSplitJarsEnabled(v)}
+          />
         </div>
       </section>
+
+      {/* Individual jar settings — parent/admin only */}
+      {household.splitJarsEnabled && (
+        <section className="space-y-3">
+          <SectionTitle icon={<Target className="h-4 w-4" />}>How points are split</SectionTitle>
+          <div className="card-soft p-5 space-y-4">
+            <div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSplitMode("percentage")}
+                  className={`tap flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                    household.splitMode === "percentage"
+                      ? "border-foreground bg-foreground/5"
+                      : "border-input hover:border-foreground/50"
+                  }`}
+                >
+                  <div className="font-semibold">Split by %</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">Shared × personal</div>
+                </button>
+                <button
+                  onClick={() => setSplitMode("match")}
+                  className={`tap flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                    household.splitMode === "match"
+                      ? "border-foreground bg-foreground/5"
+                      : "border-input hover:border-foreground/50"
+                  }`}
+                >
+                  <div className="font-semibold">Match (1:1)</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">Full to both jars</div>
+                </button>
+              </div>
+              {household.splitMode === "match" && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Every point earned goes to <strong>both</strong> jars equally. If a child earns
+                  10 points, both the shared jar and their personal jar get +10 — easier for kids
+                  to follow.
+                </p>
+              )}
+            </div>
+
+            {/* Percentage split slider */}
+            {household.splitMode === "percentage" && (
+              <div>
+                <span className="text-sm font-semibold">
+                  Split: {household.splitRatio}% to shared jar ·{" "}
+                  {100 - household.splitRatio}% to personal jar
+                </span>
+                <div className="mt-1 flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={10}
+                    max={90}
+                    step={5}
+                    value={household.splitRatio}
+                    onChange={(e) => setSplitRatio(Number(e.target.value))}
+                    className="flex-1 accent-foreground"
+                  />
+                  <span className="font-display text-lg font-bold w-12 text-right">
+                    {household.splitRatio}%
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <ToggleRow
+              icon={<Target className="h-4 w-4" />}
+              label="Show shared family jar"
+              desc="When off, only each kid's personal jar is shown."
+              checked={household.sharedJarEnabled}
+              onChange={(v) => setSharedJarEnabled(v)}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Reports — parent/admin only */}
       {(role === null || role === "admin" || role === "parent") && (

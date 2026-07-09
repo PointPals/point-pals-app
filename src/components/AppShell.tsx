@@ -1,9 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
-import { Home, Star, Camera, Settings, ChevronLeft } from "lucide-react";
+import { Home, Star, Camera, Settings, ChevronLeft, LogOut } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { useCorrection } from "@/lib/correction-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
+import { supabase } from "@/integrations/supabase/client";
 import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
 import { LOGO_POINTS_URL } from "@/lib/image-urls";
 const logoUrl = LOGO_POINTS_URL;
@@ -183,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         {role !== "viewer" && (
-          <div className="mt-auto">
+          <div className="mt-auto space-y-1">
             <Link
               to="/settings"
               className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
@@ -195,6 +196,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Settings className="w-4 h-4" />
               <span>Settings</span>
             </Link>
+            <button
+              onClick={() => { supabase.auth.signOut(); }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign out</span>
+            </button>
           </div>
         )}
       </aside>
@@ -247,17 +255,26 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
             {role !== "viewer" && (
-              <Link
-                to="/settings"
-                aria-label="Settings"
-                className={`tap md:hidden h-11 w-11 rounded-full border border-border flex items-center justify-center transition ${
-                  pathname.startsWith("/settings")
-                    ? "bg-foreground text-background"
-                    : "bg-card/80 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-              </Link>
+              <>
+                <Link
+                  to="/settings"
+                  aria-label="Settings"
+                  className={`tap md:hidden h-11 w-11 rounded-full border border-border flex items-center justify-center transition ${
+                    pathname.startsWith("/settings")
+                      ? "bg-foreground text-background"
+                      : "bg-card/80 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Settings className="w-5 h-5" />
+                </Link>
+                <button
+                  onClick={() => { supabase.auth.signOut(); }}
+                  aria-label="Sign out"
+                  className="tap md:hidden h-11 w-11 rounded-full border border-border flex items-center justify-center bg-card/80 text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
             )}
           </div>
         </div>
