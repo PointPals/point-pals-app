@@ -1,4 +1,4 @@
-// Stripe webhook (§5) — syncs subscription lifecycle back to Supabase:
+// Stripe webhook (§5) - syncs subscription lifecycle back to Supabase:
 // renewed, failed payment, cancelled. Uses the service-role key so it can write
 // the billing-critical columns that RLS blocks clients from touching.
 //
@@ -33,8 +33,7 @@ async function sendResendTemplate(
     console.error(`[stripe-webhook] Missing RESEND_API_KEY, skipping ${key}`);
     return;
   }
-  // Direct Resend API (the old Lovable gateway needed LOVABLE_API_KEY and
-  // stopped working off Lovable hosting). Variables are stringified — the
+  // Direct Resend API. Variables are stringified - the
   // dashboard editor substitutes them via {{handlebars}} placeholders.
   const variables: Record<string, string> = {};
   for (const [k, v] of Object.entries(data)) {
@@ -141,7 +140,7 @@ Deno.serve(async (req) => {
             })
             .eq("id", householdId);
         }
-        // Template 05 — payment confirmation (first subscription charge / one-off buy).
+        // Template 05 - payment confirmation (first subscription charge / one-off buy).
         const to = s.customer_details?.email ?? s.customer_email ?? null;
         if (to && householdId) {
           const { data: hh } = await admin
@@ -163,7 +162,7 @@ Deno.serve(async (req) => {
         break;
       }
       case "invoice.paid": {
-        // Template 06 — subscription renewal. Only fire on recurring cycles,
+        // Template 06 - subscription renewal. Only fire on recurring cycles,
         // not the very first invoice (that's covered by payment confirmation).
         const inv = event.data.object as Stripe.Invoice;
         if (inv.billing_reason !== "subscription_cycle") break;

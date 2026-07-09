@@ -19,7 +19,7 @@ async function getServerEntry(): Promise<ServerEntry> {
 }
 
 // Optional Sentry server integration — gracefully skipped if the package
-// isn't installed (e.g. Lovable dev environment).
+// isn't installed.
 async function maybeWrapWithSentry(
   fetch: (req: Request) => Promise<Response> | Response,
 ): Promise<(req: Request) => Promise<Response> | Response> {

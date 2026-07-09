@@ -25,9 +25,9 @@ export const Route = createFileRoute("/about")({
           "Attachment theory, chore-capability research, and the honest science of rewards — the evidence PointPals is built on.",
       },
       { property: "og:type", content: "article" },
-      { property: "og:url", content: "https://pointpals.lovable.app/about" },
+      { property: "og:url", content: "https://pointpals.co.nz/about" },
     ],
-    links: [{ rel: "canonical", href: "https://pointpals.lovable.app/about" }],
+    links: [{ rel: "canonical", href: "https://pointpals.co.nz/about" }],
   }),
 });
 

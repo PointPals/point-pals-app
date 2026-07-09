@@ -1,6 +1,5 @@
-// Sentry client initialization — only runs in the browser (SSR-guarded).
-// Uses dynamic import so it's safe even when the package isn't installed
-// (e.g. Lovable dev environment).
+// Sentry client initialization - only runs in the browser (SSR-guarded).
+// Uses dynamic import so it's safe even when the package isn't installed.
 
 const IS_BROWSER = typeof window !== "undefined";
 
@@ -32,7 +31,7 @@ if (IS_BROWSER) {
       enableLogs: true,
     });
   }).catch(() => {
-    // Sentry package not available — skip client-side init silently
+    // Sentry package not available - skip client-side init silently
   });
 }
 

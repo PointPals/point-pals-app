@@ -2,7 +2,7 @@
  * Centralised Supabase Storage URLs for all assets.
  *
  * Single source of truth — import these constants instead of
- * Lovable .asset.json files or local image imports.
+ * .asset.json files or local image imports.
  */
 
 const BUCKET =

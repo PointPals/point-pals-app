@@ -1,6 +1,4 @@
-// Server-only Resend template sender — calls the Resend API directly
-// (the old Lovable connector gateway required LOVABLE_API_KEY and stopped
-// working once the app moved off Lovable hosting).
+// Server-only Resend template sender — calls the Resend API directly.
 //
 // Each PointPals lifecycle email is pre-authored (and PUBLISHED) in the
 // Resend dashboard; we address them by template ID here so copy/design

@@ -32,9 +32,9 @@ export const Route = createFileRoute("/faq")({
           "Answers to the most common questions about PointPals: how the shared marble jar works, ages, rewards, consequences, and pricing.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pointpals.lovable.app/faq" },
+      { property: "og:url", content: "https://pointpals.co.nz/faq" },
     ],
-    links: [{ rel: "canonical", href: "https://pointpals.lovable.app/faq" }],
+    links: [{ rel: "canonical", href: "https://pointpals.co.nz/faq" }],
     scripts: [
       {
         type: "application/ld+json",

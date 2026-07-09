@@ -69,7 +69,7 @@ export const submitContactForm = createServerFn({ method: "POST" })
     });
 
     // Forward the raw message to the support inbox as plain text — direct
-    // Resend API (the old Lovable gateway stopped working off Lovable hosting).
+    // Resend API (direct, no gateway).
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey) {
       await fetch("https://api.resend.com/emails", {

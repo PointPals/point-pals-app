@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { captureError } from "../lib/monitoring";
 import { AppProvider } from "../lib/app-store";
 import { CorrectionProvider } from "../lib/correction-store";
 import { AppShell } from "../components/AppShell";
@@ -40,7 +40,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    captureError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -114,19 +114,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@graph": [
             {
               "@type": "Organization",
-              "@id": "https://pointpals.lovable.app/#org",
+              "@id": "https://pointpals.co.nz/#org",
               name: "PointPals",
-              url: "https://pointpals.lovable.app",
-              logo: "https://pointpals.lovable.app/app-icon.png",
+              url: "https://pointpals.co.nz",
+              logo: "https://pointpals.co.nz/app-icon.png",
               email: "support@pointpals.co.nz",
               areaServed: "NZ",
             },
             {
               "@type": "WebSite",
-              "@id": "https://pointpals.lovable.app/#website",
+              "@id": "https://pointpals.co.nz/#website",
               name: "PointPals",
-              url: "https://pointpals.lovable.app",
-              publisher: { "@id": "https://pointpals.lovable.app/#org" },
+              url: "https://pointpals.co.nz",
+              publisher: { "@id": "https://pointpals.co.nz/#org" },
               inLanguage: "en-NZ",
             },
           ],

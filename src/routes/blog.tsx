@@ -35,9 +35,9 @@ export const Route = createFileRoute("/blog")({
           "Real-world reward systems, chore science, and screen-free parenting ideas from the PointPals team.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pointpals.lovable.app/blog" },
+      { property: "og:url", content: "https://pointpals.co.nz/blog" },
     ],
-    links: [{ rel: "canonical", href: "https://pointpals.lovable.app/blog" }],
+    links: [{ rel: "canonical", href: "https://pointpals.co.nz/blog" }],
     scripts: [
       {
         type: "application/ld+json",
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/blog")({
           name: "PointPals Blog",
           description:
             "Research, tips, and stories about family habits, chores, rewards, and positive parenting.",
-          url: "https://pointpals.lovable.app/blog",
+          url: "https://pointpals.co.nz/blog",
           isPartOf: {
             "@type": "WebSite",
             name: "PointPals",
