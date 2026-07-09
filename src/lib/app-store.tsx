@@ -140,6 +140,34 @@ const uid = () =>
 const dayKey = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
 const STORAGE_KEY = "pointpals.state.v2";
+// Separate key for jar/column settings — persists in BOTH demo and live mode
+// so the user's split/match/shared-jar choices survive even if a DB column
+// migration is pending (e.g. split_mode, shared_jar_enabled).
+const JAR_SETTINGS_KEY = "pointpals.jar-settings.v1";
+
+function loadJarSettings(): Partial<Household> | null {
+  try {
+    const raw = window.localStorage.getItem(JAR_SETTINGS_KEY);
+    return raw ? (JSON.parse(raw) as Partial<Household>) : null;
+  } catch { return null; }
+}
+
+function saveJarSettings(hh: Household) {
+  try {
+    window.localStorage.setItem(
+      JAR_SETTINGS_KEY,
+      JSON.stringify({
+        splitJarsEnabled: hh.splitJarsEnabled,
+        splitRatio: hh.splitRatio,
+        splitMode: hh.splitMode,
+        sharedJarEnabled: hh.sharedJarEnabled,
+        activeRewardName: hh.activeRewardName,
+        activeRewardTarget: hh.activeRewardTarget,
+        rewardTarget: hh.rewardTarget,
+      }),
+    );
+  } catch { /* storage blocked */ }
+}
 
 type Persisted = {
   household: Household;
@@ -340,6 +368,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hh.subscriptionStatus = "free";
       // Fire-and-forget server write — we won't block boot on it.
       supabase.from("households").update({ subscription_status: "free" }).eq("id", hid).then();
+    }
+
+    // ── Apply local jar settings as overrides ────────────────────────
+    // The server may lack some columns (e.g. split_mode, shared_jar_enabled)
+    // if a migration is pending. Restore from localStorage to avoid losing
+    // settings on every reload.
+    const localJar = loadJarSettings();
+    if (localJar) {
+      Object.assign(hh, {
+        splitJarsEnabled: localJar.splitJarsEnabled ?? hh.splitJarsEnabled,
+        splitRatio: localJar.splitRatio ?? hh.splitRatio,
+        splitMode: localJar.splitMode ?? hh.splitMode,
+        sharedJarEnabled: localJar.sharedJarEnabled ?? hh.sharedJarEnabled,
+        activeRewardName: localJar.activeRewardName ?? hh.activeRewardName,
+        activeRewardTarget: localJar.activeRewardTarget ?? hh.activeRewardTarget,
+        rewardTarget: localJar.rewardTarget ?? hh.rewardTarget,
+      });
     }
 
     setState({
@@ -889,7 +934,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     setRewardTarget: (n) => {
-      setState((s) => ({ ...s, household: { ...s.household, rewardTarget: n } }));
+      setState((s) => {
+        const next = { ...s, household: { ...s.household, rewardTarget: n } };
+        saveJarSettings(next.household);
+        return next;
+      });
       if (live) {
         void dbWrite(
           async () =>
@@ -962,10 +1011,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     // ── Individual jar settings ────────────────────────────────────────
     setSplitJarsEnabled: (enabled) => {
-      setState((s) => ({
-        ...s,
-        household: { ...s.household, splitJarsEnabled: enabled },
-      }));
+      setState((s) => {
+        const next = { ...s, household: { ...s.household, splitJarsEnabled: enabled } };
+        saveJarSettings(next.household);
+        return next;
+      });
       if (live) {
         void dbWrite(
           async () =>
@@ -978,16 +1028,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     setSplitRatio: (ratio) => {
       const clamped = Math.max(0, Math.min(100, ratio));
-      setState((s) => ({
-        ...s,
-        household: { ...s.household, splitRatio: clamped },
-      }));
+      setState((s) => {
+        const next = { ...s, household: { ...s.household, splitRatio: clamped } };
+        saveJarSettings(next.household);
+        return next;
+      });
       if (live) {
         void dbWrite(
           async () =>
             await supabase
               .from("households")
               .update({ split_ratio: clamped } as never)
+              .eq("id", hid()),
+        );
+      }
+    },
+    setSplitMode: (mode) => {
+      setState((s) => {
+        const next = { ...s, household: { ...s.household, splitMode: mode } };
+        saveJarSettings(next.household);
+        return next;
+      });
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("households")
+              .update({ split_mode: mode } as never)
+              .eq("id", hid()),
+        );
+      }
+    },
+    setSharedJarEnabled: (enabled) => {
+      setState((s) => {
+        const next = { ...s, household: { ...s.household, sharedJarEnabled: enabled } };
+        saveJarSettings(next.household);
+        return next;
+      });
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("households")
+              .update({ shared_jar_enabled: enabled } as never)
               .eq("id", hid()),
         );
       }

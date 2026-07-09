@@ -61,8 +61,14 @@ function RewardsPage() {
 
   const saveReward = useCallback(() => {
     if (!rewardName.trim()) return;
-    setActiveReward(rewardName.trim(), Math.max(10, rewardTarget));
-    setRewardTarget(Math.max(10, rewardTarget));
+    // `setActiveReward` persists reward_name + target AND reward_target to the DB
+    // in a single UPDATE via persistActiveReward, so we skip the separate
+    // setRewardTarget call to avoid a race with Realtime sync.
+    const target = Math.max(10, rewardTarget);
+    setActiveReward(rewardName.trim(), target);
+    // Still update local app-store household state so any component reading
+    // household.rewardTarget directly sees the new value immediately.
+    setRewardTarget(target);
     setEditing(false);
   }, [rewardName, rewardTarget, setActiveReward, setRewardTarget]);
 

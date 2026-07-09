@@ -101,7 +101,9 @@ const admin = createClient(
 );
 
 const IMAGE_SECONDS = 3;
-const VIDEO_SECONDS = 5;
+// Video clips play for up to 30s so longer uploads aren't cut off mid-scene.
+// TODO: store actual video duration on upload metadata for precise trimming.
+const VIDEO_SECONDS = 30;
 const TITLE_SECONDS = 3;
 const MAX_CLIPS = 60; // keeps renders/downloads a sane size
 const SIGNED_ASSET_TTL = 24 * 60 * 60; // renders can queue — give sources a day
@@ -297,6 +299,8 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
         length: dur,
         transition: { in: "fade", out: "fade" },
       });
+      // When the actual video is shorter than dur, Shotstack naturally stops
+      // at the end-of-file — the cursor still advances by dur for alignment.
     } else {
       videoClips.push({
         asset: { type: "image", src: signed.signedUrl },
