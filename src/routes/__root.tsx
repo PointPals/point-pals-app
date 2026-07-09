@@ -77,21 +77,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "PointPals — Family chores & behaviour, made kind" },
+      { title: "PointPals — Family Chore & Behaviour Chart, NZ-Made" },
       {
         name: "description",
         content:
-          "PointPals is a warm, pastel family chore & behaviour tracker — the NZ-made chore chart app that turns everyday tasks into shared rewards kids work toward together.",
+          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your whole family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
       { name: "theme-color", content: "#FBF7EC" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "PointPals" },
-      { property: "og:title", content: "PointPals — NZ Family Chore & Behaviour Chart App" },
+      { property: "og:title", content: "PointPals — NZ-made Family Chore & Behaviour Chart" },
       {
         property: "og:description",
         content:
-          "The family chore chart that works: award points for chores & good behaviour, fill the shared jar, and celebrate rewards chosen together. Research-backed and NZ-made.",
+          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your whole family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "PointPals" },

@@ -13,11 +13,11 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
   head: () => ({
     meta: [
-      { title: "PointPals — Family Chore & Behaviour Chart App for NZ Parents" },
+      { title: "PointPals — Family Chore & Behaviour Chart, NZ-Made" },
       {
         name: "description",
         content:
-          "The chore chart that works for NZ families: award points for chores & good behaviour, fill the shared marble jar, and celebrate rewards together. Research-backed, NZ-made. Free trial.",
+          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ. Free trial.",
       },
       {
         name: "keywords",
@@ -25,11 +25,11 @@ export const Route = createFileRoute("/welcome")({
           "chore chart, behaviour chart NZ, chore chart app, family chore tracker, reward chart for kids, parenting app NZ, token economy for kids, NZ-made app, behaviour chart for children, award chart, chore reward system",
       },
       { name: "theme-color", content: "#F3E1A0" },
-      { property: "og:title", content: "PointPals — NZ Family Chore & Behaviour Chart App" },
+      { property: "og:title", content: "PointPals — NZ-made Family Chore & Behaviour Chart" },
       {
         property: "og:description",
         content:
-          "The chore chart that works for NZ families: award points for chores & good behaviour, fill the shared marble jar, and celebrate rewards together. Research-backed, NZ-made.",
+          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://pointpals.co.nz/welcome" },
@@ -136,7 +136,7 @@ function WelcomePage() {
               Chores that feel like a <GameWord />, not a fight.
             </h1>
             <p className="mt-5 text-lg text-foreground/80 max-w-xl">
-              PointPals turns everyday chores and good behaviour into points your whole family pools into one shared jar — then you celebrate together by choosing a reward as a team.
+              Chores that don't feel like a fight. Award points for everyday tasks and kindness — each point drops a marble into a shared family jar. When it's full, your family celebrates with a reward you earned together.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
               <Link
@@ -167,18 +167,18 @@ function WelcomePage() {
         <div className="grid sm:grid-cols-3 gap-5">
           <FeatureCard
             icon={<Sparkles className="h-5 w-5" />}
-            title="Catch kindness in the moment"
-            body="A quick tap to award points for chores, good behaviour, and helpfulness — tidying up without being asked, helping a sibling, trying something hard. The chime says 'I see you.'"
+            title="Notice the good stuff"
+            body="A quick tap to award points for chores, kindness, and effort — tidying up without being asked, helping a sibling, trying something hard. The chime lets your child know you noticed."
           />
           <FeatureCard
             icon={<Gift className="h-5 w-5" />}
-            title="Work toward something together"
-            body="Every point drops a marble into a shared family jar — a reward chart for kids that works. The family picks the reward together: a park outing, movie night, something everyone's excited about."
+            title="Earn it as a team"
+            body="Every point drops a marble into the shared jar. Your family chooses the reward together — a park outing, movie night, camp in the lounge. Something everyone's excited about."
           />
           <FeatureCard
             icon={<Heart className="h-5 w-5" />}
-            title="Build a family story"
-            body="Snap a photo of the proud grin after making the bed, the marble jar nearly full. Tag who was there and watch your family's memory wall grow — a chore tracker that feels more like a family journal."
+            title="Remember the wins"
+            body="Snap a photo of the proud grin after making the bed, the jar nearly full. Tag who was there and watch your family's story grow — not just a chore chart, but a family journal."
           />
         </div>
       </section>
@@ -273,11 +273,11 @@ function WelcomePage() {
       {/* SEO keyword strip */}
       <section className="max-w-4xl mx-auto px-6 pb-8 text-center sr-only sm:not-sr-only">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          PointPals is an <strong>NZ-made chore chart app</strong> for families who want a 
-          <strong>behaviour chart for kids</strong> that actually works. A research-backed 
-          <strong>reward chart</strong> that turns everyday chores into points toward a shared 
-          family jar — the <strong>best family chore tracker</strong> for <strong>New Zealand parents</strong>. 
-          Try the <strong>behaviour tracker app</strong> free for 14 days.
+          PointPals is an <strong>NZ-made family chore system</strong> built on research, not gimmicks. 
+          A <strong>behaviour chart for children</strong> that turns everyday tasks into points toward a shared 
+          jar — then your family celebrates a reward you earned together. 
+          The <strong>best family chore tracker</strong> for <strong>Kiwi families</strong>. 
+          Try it free.
         </p>
       </section>
 
