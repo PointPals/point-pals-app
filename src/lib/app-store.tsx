@@ -1075,36 +1075,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    setSplitMode: (mode) => {
-      setState((s) => ({
-        ...s,
-        household: { ...s.household, splitMode: mode },
-      }));
-      if (live) {
-        void dbWrite(
-          async () =>
-            await supabase
-              .from("households")
-              .update({ split_mode: mode } as never)
-              .eq("id", hid()),
-        );
-      }
-    },
-    setSharedJarEnabled: (enabled) => {
-      setState((s) => ({
-        ...s,
-        household: { ...s.household, sharedJarEnabled: enabled },
-      }));
-      if (live) {
-        void dbWrite(
-          async () =>
-            await supabase
-              .from("households")
-              .update({ shared_jar_enabled: enabled } as never)
-              .eq("id", hid()),
-        );
-      }
-    },
+
     setPersonalTarget: (kidId, target, reward) => {
       setState((s) => ({
         ...s,
