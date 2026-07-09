@@ -21,6 +21,7 @@ const ICON_FILES: string[] = [
   "get-dressed.png",
   "get-ready-for-bed.png",
   "stayed-in-bed-all-night.png",
+  "went-to-bed-by-yourself.png",
   "woke-up-on-time.png",
   "getting-out-the-door-on-time.png",
   // Meals
@@ -114,6 +115,20 @@ export function isIconKey(key: string): boolean {
 }
 
 export const ICON_KEYS = ICON_FILES.slice();
+
+/**
+ * Tag category lookup for icons in the registry.
+ * "adult" = filenames prefixed with "adult-"
+ * "must-do" = everything else (kid-focused daily essentials)
+ */
+export function iconTag(key: string): "adult" | "must-do" | null {
+  if (!(key in REGISTRY)) return null;
+  if (key.startsWith("adult-")) return "adult";
+  return "must-do";
+}
+
+export const TAG_GROUPS = ["all", "must-do", "adult"] as const;
+export type TagGroup = (typeof TAG_GROUPS)[number];
 
 // ─── User-uploaded icon helpers ──────────────────────────────────────────
 

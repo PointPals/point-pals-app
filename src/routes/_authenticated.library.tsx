@@ -8,7 +8,7 @@ import { CompanionPicker } from "@/components/CompanionPicker";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
-import { ICON_KEYS, iconUrl, storageUrl } from "@/lib/icons";
+import { ICON_KEYS, iconUrl, storageUrl, iconTag, TAG_GROUPS, type TagGroup } from "@/lib/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Pencil, X, Check, Wand2, Upload, Image, Eye, EyeOff, RefreshCw } from "lucide-react";
 
@@ -94,11 +94,15 @@ function IconPickerGrid({
   // instead of selecting. A dedicated mode beats a tiny per-tile eye overlay,
   // which on touch screens stole taps meant to select the icon.
   const [manageMode, setManageMode] = useState(false);
+  const [tagFilter, setTagFilter] = useState<TagGroup>("all");
 
   const hasUserIcons = userIcons.length > 0;
-  const visibleIcons = manageMode || showAll
+  const visibleIcons = (manageMode || showAll
     ? ICON_KEYS
-    : ICON_KEYS.filter((k) => !hiddenKeys.has(k) || selected === k);
+    : ICON_KEYS.filter((k) => !hiddenKeys.has(k) || selected === k)
+  ).filter(
+    (k) => tagFilter === "all" || iconTag(k) === tagFilter,
+  );
   const hiddenCount = ICON_KEYS.filter((k) => hiddenKeys.has(k)).length;
 
   return (
@@ -151,6 +155,29 @@ function IconPickerGrid({
             {aiOpen ? "Close" : "AI generate"}
           </button>
         </div>
+      </div>
+
+      {/* Tag filter chips */}
+      <div className="flex items-center gap-1.5 mt-2">
+        {TAG_GROUPS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTagFilter(t)}
+            className={`tap px-3 py-1 rounded-full text-xs font-semibold transition ${
+              tagFilter === t
+                ? "bg-foreground text-background"
+                : "bg-muted text-muted-foreground hover:bg-muted/70"
+            }`}
+          >
+            {t === "all" ? "All" : t === "must-do" ? "Must do" : "Adult"}
+          </button>
+        ))}
+        {tagFilter !== "all" && (
+          <span className="text-[11px] text-muted-foreground ml-1">
+            {visibleIcons.length} icon{visibleIcons.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
       {uploadOpen && (
@@ -706,11 +733,6 @@ function ChoreManager({
                 <Pencil className="w-3.5 h-3.5" />
               </span>
               <AssignedStack assignedKidIds={it.assignedKidIds} />
-              {it.tags && it.tags.length > 0 && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-wider text-muted-foreground bg-card/90 px-1.5 py-0.5 rounded-full border border-border whitespace-nowrap">
-                  {it.tags[0]}
-                </span>
-              )}
             </div>
           </div>
         ))}
