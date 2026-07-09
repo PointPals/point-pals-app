@@ -1,6 +1,23 @@
-# PointPals — pre-launch
-# Allow full crawl once launched; for now prevent indexing
+# PointPals — allow crawling of public marketing pages, keep the app private.
 User-agent: *
-Disallow: /
+Allow: /$
+Allow: /welcome
+Allow: /about
+Allow: /faq
+Allow: /blog
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /refunds
+Disallow: /api/
+Disallow: /onboarding
+Disallow: /welcome-back
+Disallow: /library
+Disallow: /rewards
+Disallow: /reports
+Disallow: /memories
+Disallow: /settings
+Disallow: /subscribe
+Disallow: /join
 
-Sitemap: https://www.pointpals.co.nz/sitemap.xml
+Sitemap: https://pointpals.co.nz/sitemap.xml

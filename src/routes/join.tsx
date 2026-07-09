@@ -23,7 +23,10 @@ function GoogleSignInButton({ joinCode }: { joinCode: string }) {
     if (joinCode) sessionStorage.setItem(PENDING_CODE_KEY, joinCode);
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      // Trailing slash so the URL matches the Supabase "https://…/**" redirect
+      // allowlist; a bare origin is rejected and silently falls back to the
+      // Site URL, which is what caused the post-OAuth redirect loop.
+      options: { redirectTo: window.location.origin + "/" },
     });
   };
 

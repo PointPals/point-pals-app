@@ -18,7 +18,10 @@ function GoogleSignInButton() {
     // the button instead of leaving it stuck on "Redirecting…".
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      // Trailing slash so the URL matches the Supabase "https://…/**" redirect
+      // allowlist; a bare origin is rejected and silently falls back to the
+      // Site URL, which is what caused the post-OAuth redirect loop.
+      options: { redirectTo: window.location.origin + "/" },
     });
     if (error) {
       setErr(error.message);
