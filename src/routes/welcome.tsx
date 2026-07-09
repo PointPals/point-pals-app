@@ -111,11 +111,16 @@ function WelcomePage() {
       </header>
 
       {/* hero */}
-      <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-12">
+      <section className="relative px-6 pt-8 pb-12">
         <HeroBackground />
 
-        <div className="lg:grid lg:grid-cols-2 lg:gap-10 lg:items-center">
-          {/* Jar + mascots — right on desktop, first on mobile */}
+        {/* Mascots — full-viewport overlay on desktop */}
+        <div className="hidden lg:block lg:absolute lg:inset-0 pointer-events-none z-20 overflow-hidden">
+          <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
+        </div>
+
+        <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-2 lg:gap-10 lg:items-center lg:relative">
+          {/* Jar — right on desktop, top on mobile */}
           <div className="lg:order-2 relative z-10 max-w-md mx-auto lg:max-w-none lg:mx-0">
             <HeroJarScene
               value={value}
@@ -124,13 +129,15 @@ function WelcomePage() {
               pendingDrops={pendingDrops}
               onFull={handleFull}
             />
-            <div className="relative -mt-10 sm:-mt-16">
-              <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
-            </div>
           </div>
 
-          {/* Text block — left on desktop, below on mobile */}
+          {/* Mascots (mobile) + text — left on desktop, below on mobile */}
           <div className="lg:order-1 relative z-10 max-w-3xl mx-auto lg:max-w-none lg:mx-0">
+            {/* Mobile mascots strip */}
+            <div className="relative -mt-12 sm:-mt-20 mb-4 lg:hidden">
+              <WalkingMascots paused={celebrating} onPointsLand={addPoints} />
+            </div>
+
             <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 border border-butter px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
               <BadgeCheck className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
