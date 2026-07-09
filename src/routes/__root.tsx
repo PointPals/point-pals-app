@@ -105,7 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "icon", href: "/favicon.png?v=2", type: "image/png" },
       { rel: "apple-touch-icon", href: "/app-icon.png" },
       // iOS launch screen fallback. Without per-device PNGs iOS shows the
       // icon centered on the manifest background_color — good enough until
