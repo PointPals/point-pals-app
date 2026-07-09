@@ -103,21 +103,21 @@ export function AwardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-40 flex items-end sm:items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-label={`Give points to ${kid.name}`}
     >
-      {/* backdrop */}
+      {/* backdrop - stops above the bottom nav so nav stays visible on mobile */}
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px] cursor-default"
+        className="absolute inset-0 bottom-[var(--nav-h,68px)] bg-foreground/30 backdrop-blur-[2px] cursor-default md:bottom-0"
         tabIndex={-1}
       />
 
-      {/* card */}
-      <div className="relative w-full sm:max-w-2xl max-h-[88vh] flex flex-col bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl animate-pop-in overflow-hidden">
+      {/* card - stops above the bottom nav on mobile */}
+      <div className="relative w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[88vh] mb-[var(--nav-h,68px)] sm:mb-0 flex flex-col bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl animate-pop-in overflow-hidden">
         {/* header — kid identity + live points + X */}
         <div
           className="flex items-center gap-3 px-5 py-4"

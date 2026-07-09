@@ -101,13 +101,13 @@ function Onboarding() {
 
       {step === 1 && (
         <div>
-          <h1 className="font-display text-2xl font-bold text-center">Add your kids</h1>
+          <h1 className="font-display text-2xl font-bold text-center">Add your children</h1>
           <p className="mt-1 text-center text-sm text-muted-foreground">
             Each one gets a companion avatar. You can add more later.
           </p>
           <p className="mt-2 text-center text-[13px] text-muted-foreground italic flex items-center justify-center gap-1">
             <Users className="h-3.5 w-3.5" />
-            Adult chores also available — parents can add themselves as a "kid" so the whole family fills the jar together.
+            Adult chores also available — parents can add themselves as a child so the whole family fills the jar together.
           </p>
 
           {kids.length > 0 && (

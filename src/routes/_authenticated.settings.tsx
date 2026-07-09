@@ -32,7 +32,6 @@ import {
   UserCog,
   Trash,
   BarChart3,
-  ChevronRight,
   LogOut,
   Send,
   MailQuestion,
@@ -346,18 +345,7 @@ function SettingsPage() {
             </div>
           </label>
 
-          <Link
-            to="/rewards"
-            className="flex items-center justify-between card-soft px-4 py-3 hover:bg-muted/40 transition"
-          >
-            <div>
-              <div className="text-sm font-semibold">Individual rewards &amp; point splitting</div>
-              <div className="text-xs text-muted-foreground">
-                Configure per-child jars, targets, and split rules on the Rewards page
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </Link>
+
         </div>
       </section>
 

@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthLayout() {
   const { household, hydrated, loading, needsHousehold } = useApp();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   // Route guards (§5): redirect based on account state.
   // We wait for hydration so the guards don't fire before bootLive loads
@@ -35,7 +36,22 @@ function AuthLayout() {
     }
   }, [needsHousehold, household.subscriptionStatus, hydrated, navigate]);
 
-  if (loading || !hydrated || needsHousehold || household.subscriptionStatus === "free") {
+  // Allow household-requiring routes (/welcome-back, /join, /settings) to
+  // render even when needsHousehold is true. Only block if we're on a route
+  // that actually needs a household (like the dashboard).
+  const safeWithoutHousehold = pathname === "/welcome-back" || pathname === "/join" || pathname === "/settings";
+
+  if (loading || !hydrated) {
+    return <SplashScreen />;
+  }
+
+  // If we need a household and aren't on a safe route, show splash while the
+  // useEffect redirect takes effect
+  if (needsHousehold && !safeWithoutHousehold) {
+    return <SplashScreen />;
+  }
+
+  if (household.subscriptionStatus === "free" && pathname !== "/settings") {
     return <SplashScreen />;
   }
 

@@ -292,7 +292,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="max-w-4xl mx-auto px-5">{children}</main>
 
-      <nav className="pp-bottom-nav md:hidden fixed inset-x-0 bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]">
+      <nav
+        className="pp-bottom-nav md:hidden fixed inset-x-0 bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]"
+        style={{ '--nav-h': '68px' } as React.CSSProperties}
+      >
         <div className="flex items-stretch justify-around px-2 pt-1.5 pb-1">
           {visibleNav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
