@@ -81,20 +81,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "PointPals is a warm, pastel family chore & behaviour tracker. Kids earn points toward a shared family jar and celebrate rewards chosen together.",
+          "PointPals is a warm, pastel family chore & behaviour tracker — the NZ-made chore chart app that turns everyday tasks into shared rewards kids work toward together.",
       },
       { name: "theme-color", content: "#FBF7EC" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "PointPals" },
-      { property: "og:title", content: "PointPals — Family chores & behaviour, made kind" },
+      { property: "og:title", content: "PointPals — NZ Family Chore & Behaviour Chart App" },
       {
         property: "og:description",
         content:
-          "A calm, collectible-driven alternative to chore charts. Tap to award points; unlock plush companions together.",
+          "The family chore chart that works: award points for chores & good behaviour, fill the shared jar, and celebrate rewards chosen together. Research-backed and NZ-made.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "PointPals" },
+      { property: "og:url", content: "https://pointpals.co.nz/welcome" },
+      { property: "og:image", content: "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/pp-hero.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:locale", content: "en_NZ" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/pp-hero.jpg" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -104,6 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // icon centered on the manifest background_color — good enough until
       // dedicated splash art is generated.
       { rel: "apple-touch-startup-image", href: "/app-icon.png" },
+      { rel: "canonical", href: "https://pointpals.co.nz/welcome" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
     scripts: [

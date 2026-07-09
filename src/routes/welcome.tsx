@@ -13,21 +13,31 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
   head: () => ({
     meta: [
-      { title: "PointPals — Family Chore & Behaviour Chart, NZ-Made" },
+      { title: "PointPals — Family Chore & Behaviour Chart App for NZ Parents" },
       {
         name: "description",
         content:
-          "Turn chores and good behaviour into shared family points, then celebrate the reward you chose together. Research-backed, NZ-made.",
+          "The chore chart that works for NZ families: award points for chores & good behaviour, fill the shared marble jar, and celebrate rewards together. Research-backed, NZ-made. Free trial.",
+      },
+      {
+        name: "keywords",
+        content:
+          "chore chart, behaviour chart NZ, chore chart app, family chore tracker, reward chart for kids, parenting app NZ, token economy for kids, NZ-made app, behaviour chart for children, award chart, chore reward system",
       },
       { name: "theme-color", content: "#F3E1A0" },
-      { property: "og:title", content: "PointPals — Family Chore & Behaviour Chart, NZ-Made" },
+      { property: "og:title", content: "PointPals — NZ Family Chore & Behaviour Chart App" },
       {
         property: "og:description",
         content:
-          "Turn chores and good behaviour into shared family points, then celebrate the reward you chose together. Research-backed, NZ-made.",
+          "The chore chart that works for NZ families: award points for chores & good behaviour, fill the shared marble jar, and celebrate rewards together. Research-backed, NZ-made.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://pointpals.co.nz/welcome" },
       { property: "og:image", content: HERO_IMAGE_URL },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:site_name", content: "PointPals" },
+      { property: "og:locale", content: "en_NZ" },
       { name: "twitter:image", content: HERO_IMAGE_URL },
     ],
   }),
@@ -158,17 +168,17 @@ function WelcomePage() {
           <FeatureCard
             icon={<Sparkles className="h-5 w-5" />}
             title="Catch kindness in the moment"
-            body="A quick tap to notice the good stuff — tidying up without being asked, helping a sibling, trying something hard. The chime says 'I see you.'"
+            body="A quick tap to award points for chores, good behaviour, and helpfulness — tidying up without being asked, helping a sibling, trying something hard. The chime says 'I see you.'"
           />
           <FeatureCard
             icon={<Gift className="h-5 w-5" />}
             title="Work toward something together"
-            body="Every point drops a marble into a shared jar. The family picks the reward together — a park outing, movie night, something everyone's excited about."
+            body="Every point drops a marble into a shared family jar — a reward chart for kids that works. The family picks the reward together: a park outing, movie night, something everyone's excited about."
           />
           <FeatureCard
             icon={<Heart className="h-5 w-5" />}
             title="Build a family story"
-            body="Snap a photo of the moment — the proud grin after making the bed, the marble jar nearly full. Tag who was there and watch your family's wall grow."
+            body="Snap a photo of the proud grin after making the bed, the marble jar nearly full. Tag who was there and watch your family's memory wall grow — a chore tracker that feels more like a family journal."
           />
         </div>
       </section>
@@ -222,6 +232,53 @@ function WelcomePage() {
             Start free trial <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
+      </section>
+
+      {/* Download from app stores */}
+      <section className="max-w-lg mx-auto px-6 pb-16 text-center">
+        <h2 className="font-display text-2xl font-bold">Get PointPals on your phone</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Download the NZ family chore chart app — available now on iOS and Android.
+        </p>
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a
+            href="#"
+            className="tap inline-flex items-center gap-2 rounded-2xl bg-black px-6 py-3 text-white hover:opacity-90 transition shadow-lg"
+            aria-label="Download on the App Store"
+          >
+            <svg viewBox="0 0 24 24" className="h-7 w-7 fill-current" aria-hidden="true">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.64 5.98.53 7.13-.64 1.63-1.51 3.24-2.58 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+            </svg>
+            <div className="text-left">
+              <div className="text-[10px] leading-tight">Download on the</div>
+              <div className="text-lg font-semibold leading-tight">App Store</div>
+            </div>
+          </a>
+          <a
+            href="#"
+            className="tap inline-flex items-center gap-2 rounded-2xl bg-black px-6 py-3 text-white hover:opacity-90 transition shadow-lg"
+            aria-label="Get it on Google Play"
+          >
+            <svg viewBox="0 0 24 24" className="h-7 w-7 fill-current" aria-hidden="true">
+              <path d="M3.61 2.76c-.14.18-.22.41-.22.7v17.08c0 .29.08.52.22.7l.08.07 9.93-9.25v-.62l-9.93-9.25-.08.07zm13.65 7.38l-3.38-3.14-4.5 4.19 4.5 4.19 3.38-3.14c.72-.66.72-1.44 0-2.1zM3.61 2.76L17.26 10.14l2.13-1.97c.98-.9.71-1.72-.12-2.17L3.69 2.69l-.08.07zm13.65 7.38L17.26 13.86l2.13 1.97c.98.9.71 1.72-.12 2.17L3.69 21.31l-.08-.07A1.16 1.16 0 0 1 3.61 2.76z"/>
+            </svg>
+            <div className="text-left">
+              <div className="text-[10px] leading-tight">Get it on</div>
+              <div className="text-lg font-semibold leading-tight">Google Play</div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      {/* SEO keyword strip */}
+      <section className="max-w-4xl mx-auto px-6 pb-8 text-center sr-only sm:not-sr-only">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          PointPals is an <strong>NZ-made chore chart app</strong> for families who want a 
+          <strong>behaviour chart for kids</strong> that actually works. A research-backed 
+          <strong>reward chart</strong> that turns everyday chores into points toward a shared 
+          family jar — the <strong>best family chore tracker</strong> for <strong>New Zealand parents</strong>. 
+          Try the <strong>behaviour tracker app</strong> free for 14 days.
+        </p>
       </section>
 
       <footer className="max-w-4xl mx-auto px-6 pb-10 text-center space-y-3">
