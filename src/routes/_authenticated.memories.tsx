@@ -178,7 +178,13 @@ function SeasonBanner({ householdId }: { householdId: string }) {
       </div>
 
       <div className="pl-11">
-        {montageState.phase === "ready" ? (
+        {season.montageCount >= season.montageCap && montageState.phase !== "ready" ? (
+          <div className="text-xs text-muted-foreground">
+            You've already made this season's montage{season.daysLeft > 0
+              ? ". Your video will be emailed to you when the season ends."
+              : ". Your video has been emailed to you."}
+          </div>
+        ) : montageState.phase === "ready" ? (
           <a
             href={montageState.url}
             download

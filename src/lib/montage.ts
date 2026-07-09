@@ -16,24 +16,43 @@ export type SeasonInfo = {
   startedAt: number;
   endsAt: number;
   daysLeft: number;
+  /** How many montages have already been generated this season. */
+  montageCount: number;
+  /** How many this household is allowed (1 free, 5 paid). */
+  montageCap: number;
 };
+
+const FREE_MONTAGES_PER_SEASON = 1;
+const PAID_MONTAGES_PER_SEASON = 5;
 
 export async function fetchSeasonInfo(householdId: string): Promise<SeasonInfo | null> {
   const { data, error } = await db
     .from("households")
     .select(
-      "memory_retention_enabled, memory_retention_days, memory_cycle_started_at, memory_cycle_ends_at",
+      "memory_retention_enabled, memory_retention_days, memory_cycle_started_at, memory_cycle_ends_at, subscription_status",
     )
     .eq("id", householdId)
     .maybeSingle();
   if (error || !data || !data.memory_cycle_ends_at) return null;
   const endsAt = new Date(data.memory_cycle_ends_at).getTime();
+
+  // Count how many montages have already been generated this cycle
+  const paid = data.subscription_status === "active" || data.subscription_status === "trialing";
+  const montageCap = paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON;
+  const { count: montageCount } = await db
+    .from("montage_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("household_id", householdId)
+    .eq("cycle_ends_at", data.memory_cycle_ends_at);
+
   return {
     enabled: data.memory_retention_enabled ?? true,
     retentionDays: data.memory_retention_days ?? 90,
     startedAt: new Date(data.memory_cycle_started_at).getTime(),
     endsAt,
     daysLeft: Math.max(0, Math.ceil((endsAt - Date.now()) / (24 * 60 * 60 * 1000))),
+    montageCount: montageCount ?? 0,
+    montageCap,
   };
 }
 
