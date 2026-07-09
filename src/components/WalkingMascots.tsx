@@ -58,7 +58,7 @@ export const WalkingMascots = memo(function WalkingMascots({
   }, [paused]);
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden z-40">
+    <div aria-hidden className="pointer-events-none overflow-hidden z-40 lg:absolute lg:inset-0 relative min-h-[140px] lg:min-h-0">
       {/* Walking mascots along the ground */}
       {MASCOTS.map((m, i) => (
         <div
