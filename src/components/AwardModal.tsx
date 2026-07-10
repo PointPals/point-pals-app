@@ -40,10 +40,10 @@ export function AwardModal({
     () => chores.filter((c) => appliesToKid(c, kid.id)),
     [chores, kid.id],
   );
-  const eligibleSkills = useMemo(
-    () => skills.filter((s) => appliesToKid(s, kid.id)),
-    [skills, kid.id],
-  );
+  // Positive and needs-work behaviours are NOT assigned per child — every
+  // positive/negative point is always awardable for whichever kid is selected,
+  // no tagging required. (Chores above still respect per-kid assignment.)
+  const eligibleSkills = skills;
   const positive = useMemo(() => eligibleSkills.filter((s) => s.isPositive), [eligibleSkills]);
   const needsWork = useMemo(() => eligibleSkills.filter((s) => !s.isPositive), [eligibleSkills]);
 
@@ -250,11 +250,28 @@ export function AwardModal({
               </Link>
             </div>
           ) : list.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-10">
-              {search || tagFilter
-                ? "Nothing matches your search or filter."
-                : "Nothing in this category yet."}
-            </p>
+            search || tagFilter ? (
+              <p className="text-center text-sm text-muted-foreground py-10">
+                Nothing matches your search or filter.
+              </p>
+            ) : tab === "chores" ? (
+              <div className="text-center py-10">
+                <p className="text-sm text-muted-foreground">
+                  Chores appear here once you tag them for {kid.name} on the Points page.
+                </p>
+                <Link
+                  to="/library"
+                  onClick={onClose}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition"
+                >
+                  Go to Points
+                </Link>
+              </div>
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-10">
+                Nothing in this category yet.
+              </p>
+            )
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-2 gap-y-5 justify-items-center">
               {list.map((item) => (
