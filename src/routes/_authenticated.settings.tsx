@@ -35,6 +35,7 @@ import {
   LogOut,
   Send,
   MailQuestion,
+  ChevronRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -453,12 +454,10 @@ function SettingsPage() {
 
         <div className="card-soft p-5 space-y-4">
           <p className="text-sm text-muted-foreground">
-            {isLive && !isAdmin
-              ? "Only admins can invite new family members. Ask a family admin to generate an invite code."
-              : "Generate an invite code so grandparents or other family members can join your household. Contributors can award points and add memories; viewers see everything but can't award."}
+            Generate an invite code so grandparents or other family members can join your household. Contributors can award points and add memories; viewers see everything but can't award.
           </p>
 
-          {(!isLive || isAdmin) && (
+          {(
             <div className="flex flex-wrap gap-3 items-end">
               <div className="flex gap-2">
                 {[

@@ -23,7 +23,7 @@ const PUBLIC_PATHS = new Set([
 // Paths that a signed-in user without a household is allowed to see. Anything
 // else in the authed area bounces to /welcome-back so they can create or join
 // one before the app-store tries to hydrate empty state.
-const NO_HOUSEHOLD_ALLOWED = new Set(["/welcome-back", "/join", "/sign-in", "/sign-up", "/reset-password"]);
+const NO_HOUSEHOLD_ALLOWED = new Set(["/welcome-back", "/join", "/sign-in", "/sign-up", "/reset-password", "/settings"]);
 
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.has(pathname)) return true;

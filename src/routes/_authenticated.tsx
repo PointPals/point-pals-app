@@ -24,20 +24,22 @@ function AuthLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  // Allow household-requiring routes (/welcome-back, /join, /settings) to
+  // render even when needsHousehold is true. Only block if we're on a route
+  // that actually needs a household (like the dashboard). Settings is here so
+  // free/trial users can always reach account controls and invites.
+  const safeWithoutHousehold = pathname === "/welcome-back" || pathname === "/join" || pathname === "/settings";
+
   // Route guards (§5): redirect based on account state.
   // Free users are no longer redirected — they can browse read-only while
   // award-points, marble-jar and rewards are gated behind the subscription.
+  // Don't redirect away from the safe-without-household routes above.
   useEffect(() => {
     if (!hydrated) return;
-    if (needsHousehold) {
+    if (needsHousehold && !safeWithoutHousehold) {
       navigate({ to: "/welcome-back" });
     }
-  }, [needsHousehold, hydrated, navigate]);
-
-  // Allow household-requiring routes (/welcome-back, /join, /settings) to
-  // render even when needsHousehold is true. Only block if we're on a route
-  // that actually needs a household (like the dashboard).
-  const safeWithoutHousehold = pathname === "/welcome-back" || pathname === "/join" || pathname === "/settings";
+  }, [needsHousehold, hydrated, navigate, safeWithoutHousehold]);
 
   if (loading || !hydrated) {
     return <SplashScreen />;

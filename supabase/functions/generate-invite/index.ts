@@ -13,7 +13,24 @@
 // Secrets: none required (uses Supabase-managed auth)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, json } from "../_shared/cors.ts";
+
+// CORS helpers are inlined (rather than imported from ../_shared/cors.ts) so
+// this function stays a single self-contained file — it can be redeployed by
+// pasting into the Supabase dashboard without the shared module failing to
+// resolve.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, stripe-signature",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, opts: { status?: number } = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status: opts.status ?? 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -42,7 +59,9 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify the caller is an admin of this household
+    // Verify the caller is a member of this household. Any member — including
+    // free/trial users, contributors and viewers — can generate invites; no
+    // admin role or active subscription is required.
     const { data: member } = await admin
       .from("household_members")
       .select("role")
@@ -50,8 +69,8 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!member || member.role !== "admin") {
-      return json({ ok: false, error: "Only household admins can generate invites" }, { status: 403 });
+    if (!member) {
+      return json({ ok: false, error: "You must be a member of this household to generate invites" }, { status: 403 });
     }
 
     // Generate a unique 8-character code
