@@ -58,7 +58,7 @@ export const WalkingMascots = memo(function WalkingMascots({
   }, [paused]);
 
   return (
-    <div aria-hidden className="pointer-events-none overflow-hidden z-40 lg:absolute lg:inset-0 relative min-h-[140px] lg:min-h-0">
+    <div aria-hidden className="pointer-events-none overflow-visible lg:overflow-hidden z-40 lg:absolute lg:inset-0 relative min-h-[140px] lg:min-h-0">
       {/* Walking mascots along the ground */}
       {MASCOTS.map((m, i) => (
         <div
@@ -91,7 +91,7 @@ export const WalkingMascots = memo(function WalkingMascots({
       {bubbles.map((b) => (
         <div
           key={b.id}
-          className="absolute bottom-32 sm:bottom-40"
+          className="absolute bottom-10 lg:bottom-40"
           style={{
             left: `${b.leftPct}%`,
             animation: `pp-float-to-jar ${FLY_MS}ms cubic-bezier(0.25, 0.55, 0.35, 1) forwards`,
