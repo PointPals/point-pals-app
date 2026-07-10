@@ -791,6 +791,7 @@ export const INITIAL_HOUSEHOLD = {
   sharedJarEnabled: true,
   activeRewardName: null,
   activeRewardTarget: null,
+  foundingTester: false,
 };
 
 const DAY = 1000 * 60 * 60 * 24;

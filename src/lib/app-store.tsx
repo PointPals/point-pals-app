@@ -38,7 +38,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 //
 // Backend note: this is intentionally a swappable seam. Every mutation below is
 // a pure state transition that maps 1:1 to a Supabase table write (households,
-// kids, chores, skills, point_events, reward_history — see
+// kids, chores, skills, point_events, reward_history - see
 // supabase/migrations). When the project is reachable, replace the useState
 // backing with react-query mutations against those tables; the component API
 // (useApp) stays identical. State is persisted to localStorage so the app feels
@@ -49,16 +49,17 @@ export type Household = {
   name: string;
   sharedPool: number;
   rewardTarget: number;
-  // Entitlement layer (§5) — checked to gate parent-facing premium features.
-  subscriptionStatus: "trialing" | "active" | "past_due" | "canceled" | "free";
+  // Entitlement layer (§5) - checked to gate parent-facing premium features.
+  subscriptionStatus: "trialing" | "active" | "past_due" | "canceled" | "free" | "founding_tester";
   trialEndsAt: number | null;
+  foundingTester: boolean;
   onboarded: boolean;
   // Individual jar settings (optional, default OFF)
   splitJarsEnabled: boolean;
   splitRatio: number; // percentage (0-100) that goes to the shared jar; rest is personal
   /**
-   * "percentage" — split each award between shared + personal per splitRatio.
-   * "match" (1:1) — full award points go to BOTH the shared jar AND personal jar.
+   * "percentage" - split each award between shared + personal per splitRatio.
+   * "match" (1:1) - full award points go to BOTH the shared jar AND personal jar.
    */
   splitMode: "percentage" | "match";
   /** When false, the shared family jar is hidden entirely. All points flow to
@@ -103,9 +104,9 @@ type Ctx = {
   removeChore: (id: string) => void;
   removeSkill: (id: string) => void;
   /** Reward claimed: zero every kid's currentPoints and the shared pool.
-   *  allTimePoints is deliberately untouched — that's the permanent record. */
+   *  allTimePoints is deliberately untouched - that's the permanent record. */
   resetRewardCycle: () => void;
-  /** Manual fix for an accidental tap — adjusts BOTH totals and logs a
+  /** Manual fix for an accidental tap - adjusts BOTH totals and logs a
    *  neutral "correction" history entry (never styled as behaviour). */
   correctPoints: (kidId: string, delta: number, reason?: string) => void;
   setRewardTarget: (n: number) => void;
@@ -116,18 +117,18 @@ type Ctx = {
   addKid: (name: string, color: PastelKey, companionId?: string) => void;
   removeKid: (id: string) => void;
   exportData: () => string;
-  /** Called by /welcome-back after a household is created — reboots into live. */
+  /** Called by /welcome-back after a household is created - reboots into live. */
   refreshFromServer: () => Promise<void>;
   // ── Individual jar settings ────────────────────────────────────────
   setSplitJarsEnabled: (enabled: boolean) => void;
   setSplitRatio: (ratio: number) => void;
-  /** "percentage" — split per splitRatio; "match" (1:1) — full to both. */
+  /** "percentage" - split per splitRatio; "match" (1:1) - full to both. */
   setSplitMode: (mode: "percentage" | "match") => void;
   /** Show the shared family jar alongside personal jars. */
   setSharedJarEnabled: (enabled: boolean) => void;
   /** Set or clear a kid's personal jar target and reward. Set target to 0 to disable. */
   setPersonalTarget: (kidId: string, target: number, reward?: string) => void;
-  /** Claim a kid's personal reward — resets only that kid's personalPool. */
+  /** Claim a kid's personal reward - resets only that kid's personalPool. */
   claimPersonalReward: (kidId: string) => void;
 };
 
@@ -140,7 +141,7 @@ const uid = () =>
 const dayKey = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
 const STORAGE_KEY = "pointpals.state.v2";
-// Separate key for jar/column settings — persists in BOTH demo and live mode
+// Separate key for jar/column settings - persists in BOTH demo and live mode
 // so the user's split/match/shared-jar choices survive even if a DB column
 // migration is pending (e.g. split_mode, shared_jar_enabled).
 const JAR_SETTINGS_KEY = "pointpals.jar-settings.v1";
@@ -188,7 +189,7 @@ function initialState(): Persisted {
 }
 
 // Consecutive days (ending today or yesterday) on which a kid completed at least
-// one must-do (daily) chore. A broken streak just quietly resets — no penalty
+// one must-do (daily) chore. A broken streak just quietly resets - no penalty
 // state is ever surfaced (§4).
 function computeStreaks(
   kids: Kid[],
@@ -228,11 +229,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // The signed-in user id, stamped onto point_events.awarded_by (Reports
   // attribution). Null in signed-out demo mode.
   const userIdRef = useRef<string | null>(null);
-  // Row ids we just wrote — used to suppress realtime echoes of our own writes.
+  // Row ids we just wrote - used to suppress realtime echoes of our own writes.
   const echoIds = useRef<Set<string>>(new Set());
   const markEcho = (id: string) => {
     echoIds.current.add(id);
-    // Free memory after a while — realtime round-trip is < 2s in practice.
+    // Free memory after a while - realtime round-trip is < 2s in practice.
     setTimeout(() => echoIds.current.delete(id), 15000);
   };
   const didHydrate = useRef(false);
@@ -261,7 +262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       }
     } catch {
-      /* corrupt/old state — fall back to seed */
+      /* corrupt/old state - fall back to seed */
     }
     setHydrated(true);
   }, []);
@@ -273,12 +274,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      /* storage blocked — session-only */
+      /* storage blocked - session-only */
     }
   }, [state, hydrated, mode]);
 
   // Cross-tab demo sync via the `storage` event. In live mode, realtime does
-  // the job across every device — this is just for the signed-out marketing
+  // the job across every device - this is just for the signed-out marketing
   // preview so the walking-mascot demo stays lively across tabs.
   useEffect(() => {
     if (!hydrated || mode !== "demo") return;
@@ -372,9 +373,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // guard (see _authenticated.tsx) redirects to the paywall.
     const hh = bundle.household;
     if (hh.subscriptionStatus === "trialing" && hh.trialEndsAt && Date.now() > hh.trialEndsAt) {
-      hh.subscriptionStatus = "free";
-      // Fire-and-forget server write — we won't block boot on it.
-      supabase.from("households").update({ subscription_status: "free" }).eq("id", hid).then();
+      // Founding testers keep full access automatically (no Stripe coupon needed).
+      hh.subscriptionStatus = hh.foundingTester ? "active" : "free";
+      // Fire-and-forget server write - we won't block boot on it.
+      void supabase
+        .from("households")
+        .update({ subscription_status: hh.subscriptionStatus })
+        .eq("id", hid)
+        .then();
     }
 
     // ── Apply local jar settings as overrides ────────────────────────
@@ -437,7 +443,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Realtime subscriptions — one channel per household, torn down on switch.
+  // Realtime subscriptions - one channel per household, torn down on switch.
   useEffect(() => {
     if (mode !== "live" || !householdIdRef.current) return;
     const hid = householdIdRef.current;
@@ -451,7 +457,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const oldRow = payload.old as { id?: string } | null;
           if (payload.eventType === "INSERT" && newRow) {
             if (echoIds.current.has(newRow.id)) return;
-            // Remote award — play sound + haptics so the jar feels alive
+            // Remote award - play sound + haptics so the jar feels alive
             triggerAwardFeedback(
               (newRow as { points?: number }).points != null && newRow.points >= 0
                 ? "positive"
@@ -541,7 +547,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [mode]);
 
-  // Separate channel for memory-posts / likes / comments — same lifecycle.
+  // Separate channel for memory-posts / likes / comments - same lifecycle.
   useEffect(() => {
     if (mode !== "live" || !householdIdRef.current) return;
     return subscribeMemoriesRealtime(householdIdRef.current);
@@ -554,7 +560,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   // Write-through helpers. In demo mode these are no-ops; in live mode we push
   // to Supabase and mark the row id so realtime doesn't re-apply our own write.
-  // Errors are surfaced to console — the optimistic local update is left in
+  // Errors are surfaced to console - the optimistic local update is left in
   // place so the UI doesn't jitter; realtime will eventually reconcile.
   // ---------------------------------------------------------------------------
   const live = mode === "live" && householdIdRef.current;
@@ -591,7 +597,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // ── Compute shared vs personal jar portions ───────────────────
       //   splitJars OFF       → legacy single-jar mode (all to shared)
       //   sharedJarEnabled OFF → individual j.ars only (all to personal)
-      //   splitMode "match"    → 1:1 — full points to BOTH jars
+      //   splitMode "match"    → 1:1 - full points to BOTH jars
       //   splitMode "%"        → split per splitRatio
       let sharedPoints: number;
       let personalPoints: number;
@@ -664,7 +670,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           async () =>
             await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
         );
-        // Sync per-kid totals — update current_points, all_time_points, and personal_pool.
+        // Sync per-kid totals - update current_points, all_time_points, and personal_pool.
         kidIds.forEach((kidId) => {
           const kid = kids.find((k) => k.id === kidId);
           if (!kid) return;
@@ -962,7 +968,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     setSubscriptionStatus: (status) =>
-      // Server-managed by Stripe webhook — local only, for the Paywall's "simulate
+      // Server-managed by Stripe webhook - local only, for the Paywall's "simulate
       // activation" fallback when Stripe isn't wired up.
       setState((s) => ({ ...s, household: { ...s.household, subscriptionStatus: status } })),
     completeOnboarding: () => {
@@ -975,7 +981,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     resetHousehold: () => {
       setState(initialState());
-      // In live mode this only clears the local view — server data survives, and
+      // In live mode this only clears the local view - server data survives, and
       // will re-populate on the next fetch. That's intentional: "delete all"
       // wiping a shared household from a single member would be surprising.
     },
@@ -1123,7 +1129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     removeKid: (id) => {
       // Scrub the kid from any assignment allow-lists. If they were the only
-      // assigned kid the list becomes empty, which reads as universal again —
+      // assigned kid the list becomes empty, which reads as universal again -
       // better than a chore that silently applies to nobody.
       const scrub = <T extends { assignedKidIds?: string[] | null }>(item: T): T =>
         item.assignedKidIds?.includes(id)

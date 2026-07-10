@@ -82,6 +82,7 @@ function SignUpPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [foundingTester, setFoundingTester] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -109,10 +110,15 @@ function SignUpPage() {
         ? new URLSearchParams(window.location.search).get("source") || undefined
         : undefined;
 
+    // Build the household insert, optionally tagging as a founding tester.
+    const hhPayload: Record<string, unknown> = { name: name || "My Family" };
+    if (sourceParam) hhPayload.attribution_source = sourceParam;
+    if (foundingTester) hhPayload.founding_tester = true;
+
     // Create the household — trigger adds the current user as admin member.
     const { error: hhErr } = await supabase
       .from("households")
-      .insert({ name: name || "My Family", ...(sourceParam ? { attribution_source: sourceParam } : {}) });
+      .insert(hhPayload);
     setBusy(false);
     if (hhErr) {
       setErr(hhErr.message);
@@ -164,6 +170,18 @@ function SignUpPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5"
             />
+          </label>
+          <label className="flex items-start gap-3 mt-3">
+            <input
+              type="checkbox"
+              checked={foundingTester}
+              onChange={(e) => setFoundingTester(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-input accent-foreground"
+            />
+            <span className="text-sm text-muted-foreground leading-relaxed">
+              I'd like to be a <strong>founding member</strong> — I'm happy to test new
+              features and fill in feedback forms to help shape PointPals.
+            </span>
           </label>
           {err && <p className="text-sm text-destructive">{err}</p>}
           {info && <p className="text-sm text-muted-foreground">{info}</p>}
