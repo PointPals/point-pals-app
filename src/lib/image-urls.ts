@@ -12,7 +12,7 @@ const BUCKET =
 export const LOGO_URL = `${BUCKET}/pointpals.logo.png`;
 export const LOGO_POINTS_URL = `${BUCKET}/pointpals-logo-points.png`;
 export const APP_ICON_URL = `${BUCKET}/pointpals-app-icon.png`;
-export const HERO_IMAGE_URL = `${BUCKET}/pp-hero.jpg`;
+export const HERO_IMAGE_URL = `${BUCKET}/site%20image.png`;
 
 // ── Marketing ───────────────────────────────────────────────────────────────
 export const ABOUT_HERO = `${BUCKET}/about-hero.jpg`;
