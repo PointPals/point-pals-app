@@ -72,8 +72,6 @@ function SettingsPage() {
     setHouseholdName,
     setRewardTarget,
     exportData,
-    resetHousehold,
-
   } = useApp();
   const settings = useSettings();
   const navigate = useNavigate();
@@ -285,16 +283,6 @@ function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const deleteAll = () => {
-    if (!window.confirm("Delete all family data on this device? This can't be undone.")) return;
-    trackParent("data_delete");
-    resetHousehold();
-    try {
-      window.localStorage.removeItem("pointpals.state.v1");
-    } catch {
-      /* ignore */
-    }
-  };
 
   // Leaderboard is parent-controlled and OFF by default (§4). Framed as a recap,
   // never a live competitive ranking.
@@ -679,7 +667,12 @@ function SettingsPage() {
           <SectionTitle icon={<Download className="h-4 w-4" />}>Your data</SectionTitle>
           <div className="card-soft p-5 space-y-3">
             <p className="text-sm text-muted-foreground">
-              You can export or permanently delete your family's data at any time.
+              You can export a copy of your family's data at any time. To delete your
+              account and data, email us at{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
+                {SUPPORT_EMAIL}
+              </a>
+              .
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -687,12 +680,6 @@ function SettingsPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold hover:bg-muted transition"
               >
                 <Download className="h-4 w-4" /> Export data (JSON)
-              </button>
-              <button
-                onClick={deleteAll}
-                className="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-card px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-              >
-                <Trash2 className="h-4 w-4" /> Delete all data
               </button>
             </div>
             {isLive && seasonRefresh !== null && (
