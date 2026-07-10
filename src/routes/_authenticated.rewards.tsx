@@ -171,7 +171,7 @@ function RewardsPage() {
                 <input
                   type="range"
                   min={30}
-                  max={400}
+                  max={100}
                   step={10}
                   value={rewardTarget}
                   onChange={(e) => setRewardTargetLocal(Number(e.target.value))}

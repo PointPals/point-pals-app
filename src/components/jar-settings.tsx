@@ -71,7 +71,7 @@ export function PersonalTargetRow({
         <input
           type="range"
           min={0}
-          max={200}
+          max={100}
           step={5}
           value={target}
           onChange={(e) => {

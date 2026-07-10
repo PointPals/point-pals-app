@@ -334,7 +334,7 @@ function SettingsPage() {
               <input
                 type="range"
                 min={30}
-                max={400}
+                max={100}
                 step={10}
                 value={household.rewardTarget}
                 onChange={(e) => setRewardTarget(Number(e.target.value))}
