@@ -1276,8 +1276,8 @@ function EditPanel({
 }) {
   const { kids } = useApp();
   const allKidIds = kids.map((k) => k.id);
-  // No allow-list = universal = every chip ticked.
-  const initialAssigned = item.assignedKidIds?.length ? item.assignedKidIds : allKidIds;
+  // null/undefined = universal (every chip ticked); [] (empty) = no one assigned
+  const initialAssigned = item.assignedKidIds ?? allKidIds;
   const [name, setName] = useState(item.name);
   const [points, setPoints] = useState(item.points);
   const [color, setColor] = useState<PastelKey>(item.color);
@@ -1289,7 +1289,7 @@ function EditPanel({
     setPoints(item.points);
     setColor(item.color);
     setTagsStr((item.tags ?? []).join(", "));
-    setAssigned(item.assignedKidIds?.length ? item.assignedKidIds : kids.map((k) => k.id));
+    setAssigned(item.assignedKidIds ?? kids.map((k) => k.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id, item.name, item.points, item.color, item.tags, item.assignedKidIds]);
 
