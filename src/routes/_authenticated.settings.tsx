@@ -818,22 +818,45 @@ function SettingsPage() {
 }
 
 /** In-app dialog for the Email Support button — posts through submitContactForm
- *  which forwards to the support inbox and sends the Contact-Confirmation autoreply. */
+ *  which forwards to the support inbox and sends the Contact-Confirmation autoreply.
+ *  Pre-fills the user's email, and supports screenshot attachment via Supabase Storage. */
 function SupportDialog({ supportEmail }: { supportEmail: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Pre-fill email from the authenticated session
+  useEffect(() => {
+    void supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setEmail(data.user.email);
+    });
+  }, []);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setErr(null);
     try {
-      await submitContactForm({ data: { name, email, message } });
+      let screenshotUrl: string | undefined;
+      if (screenshot) {
+        const ext = screenshot.name.split(".").pop() || "png";
+        const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { data: upload, error: uploadErr } = await supabase.storage
+          .from("support_attachments")
+          .upload(path, screenshot, { contentType: screenshot.type });
+        if (uploadErr) throw uploadErr;
+        const { data: { signedUrl } } = await supabase.storage
+          .from("support_attachments")
+          .createSignedUrl(upload.path, 60 * 60 * 24 * 7); // 7-day expiry
+        screenshotUrl = signedUrl;
+      }
+      await submitContactForm({ data: { name, email, message, screenshotUrl } });
       setSent(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong. Please try again.");
@@ -847,7 +870,11 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (!o) setSent(false);
+        if (!o) {
+          setSent(false);
+          setScreenshot(null);
+          setScreenshotPreview(null);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -910,6 +937,42 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
                 onChange={(e) => setMessage(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm resize-y"
               />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Screenshot (optional)
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/heic"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setScreenshot(file);
+                  setScreenshotPreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="mt-1 block w-full text-xs text-muted-foreground file:mr-3 file:rounded-full file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-xs file:font-semibold hover:file:bg-muted/70"
+              />
+              {screenshotPreview && (
+                <div className="mt-2 relative inline-block">
+                  <img
+                    src={screenshotPreview}
+                    alt="Screenshot preview"
+                    className="h-28 w-auto rounded-lg border border-input object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScreenshot(null);
+                      setScreenshotPreview(null);
+                    }}
+                    className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs shadow-sm hover:scale-110 transition"
+                    aria-label="Remove screenshot"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </label>
             {err && <p className="text-sm text-destructive">{err}</p>}
             <button

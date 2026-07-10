@@ -56,6 +56,7 @@ const contactSchema = z.object({
   name: z.string().trim().min(1).max(100),
   email: z.string().trim().email().max(255),
   message: z.string().trim().min(1).max(3000),
+  screenshotUrl: z.string().url().optional(),
 });
 
 export const submitContactForm = createServerFn({ method: "POST" })
@@ -89,10 +90,13 @@ export const submitContactForm = createServerFn({ method: "POST" })
           to: [SUPPORT_INBOX],
           reply_to: data.email,
           subject: `Contact form — ${data.name}`,
-          text: `From: ${data.name} <${data.email}>\n\n${data.message}`,
+          text:
+            `From: ${data.name} <${data.email}>\n\n` +
+            data.message +
+            (data.screenshotUrl ? `\n\nScreenshot: ${data.screenshotUrl}` : ""),
         }),
       }).catch((e) => console.error("[contact] forward failed:", e));
     }
 
-    return { ok: true };
+    return { ok: true, screenshotUrl: data.screenshotUrl };
   });
