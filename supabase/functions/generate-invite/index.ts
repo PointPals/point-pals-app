@@ -13,7 +13,24 @@
 // Secrets: none required (uses Supabase-managed auth)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, json } from "../_shared/cors.ts";
+
+// CORS helpers are inlined (rather than imported from ../_shared/cors.ts) so
+// this function stays a single self-contained file — it can be redeployed by
+// pasting into the Supabase dashboard without the shared module failing to
+// resolve.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, stripe-signature",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, opts: { status?: number } = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status: opts.status ?? 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
