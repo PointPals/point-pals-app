@@ -27,8 +27,8 @@ export const BLOG_SCREEN_TIME = `${BUCKET}/blog-screen-time.jpg`;
 
 // ── Companion mascots ───────────────────────────────────────────────────────
 export const COMPANION_URLS: Record<string, string> = {
-  sunny:   `${BUCKET}/sunny.png`,
-  bramble: `${BUCKET}/Bramble.png`,
+  sunny:   `${BUCKET}/sunnny.png`,
+  bramble: `${BUCKET}/bramble.png`,
   pip:     `${BUCKET}/pip.png`,
   marlow:  `${BUCKET}/marlow.png`,
   coda:    `${BUCKET}/coda.png`,
