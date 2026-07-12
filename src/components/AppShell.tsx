@@ -6,6 +6,8 @@ import { useCorrection } from "@/lib/correction-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { supabase } from "@/integrations/supabase/client";
 import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
+import { useSettings } from "@/lib/settings";
+import { KidView } from "@/components/KidView";
 import { LOGO_POINTS_URL } from "@/lib/image-urls";
 const logoUrl = LOGO_POINTS_URL;
 
@@ -48,6 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { activeReward } = useCorrection();
   const { role } = useHouseholdRole(household.id);
   const { goBack } = useBackNav();
+  const settings = useSettings();
 
   // Viewers can't see the Rewards tab — they see jars on the home page.
   const visibleNav = useMemo(
@@ -125,6 +128,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   ];
   if (CHROME_FREE.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return <>{children}</>;
+  }
+
+  // Kids' view locks the whole app to a read-only progress screen (parent exits
+  // with a PIN). It wins over every in-app route and all chrome.
+  if (settings.kidsViewActive) {
+    return <KidView />;
   }
 
   // Sub-pages (settings, about, legal, onboarding…) get a back chevron in the

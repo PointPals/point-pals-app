@@ -84,6 +84,7 @@ function SettingsPage() {
   const [myDisplayName, setMyDisplayName] = useState("");
   const [displayNameSaved, setDisplayNameSaved] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [kidPin, setKidPin] = useState("");
 
   const { role, userId, isAdmin } = useHouseholdRole(household.id);
   const isLive = !!userId; // signed in against Supabase household
@@ -617,6 +618,44 @@ function SettingsPage() {
           />
         </div>
       </section>
+
+      {/* Kids' view — read-only progress screen */}
+      {(role === null || role !== "viewer") && (
+        <section className="space-y-3">
+          <SectionTitle icon={<Eye className="h-4 w-4" />}>Kids&apos; view</SectionTitle>
+          <div className="card-soft p-5 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A full-screen, read-only screen your kids can use to check their own
+              progress — the family jar and each child&apos;s jar and points. They
+              <strong> can&apos;t award points, change anything, or leave the page</strong>,
+              so hand them the phone without worry (great for the “how many points do
+              I have?” question every five minutes). Set an optional PIN below; you&apos;ll
+              enter it to exit back to the parent app.
+            </p>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Exit PIN (optional, 4 digits)
+              </span>
+              <input
+                inputMode="numeric"
+                value={kidPin}
+                onChange={(e) => setKidPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="e.g. 1234"
+                className="mt-1 w-40 rounded-xl border border-input bg-card px-3 py-2.5 text-center tracking-[0.3em] font-display"
+              />
+            </label>
+            <button
+              onClick={() => {
+                setSetting("kidsViewPin", kidPin);
+                setSetting("kidsViewActive", true);
+              }}
+              className="tap inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+            >
+              <Eye className="h-4 w-4" /> Start kids&apos; view
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Sibling leaderboard — off by default */}
       {(role === null || role !== "viewer") && (
