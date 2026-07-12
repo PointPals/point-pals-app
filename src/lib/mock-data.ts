@@ -787,7 +787,10 @@ export const INITIAL_HOUSEHOLD = {
   onboarded: true,
   splitJarsEnabled: false,
   splitRatio: 50,
-  splitMode: "percentage" as const,
+  // Default to "match" (every point fills BOTH the child's jar and the family
+  // jar). The old "percentage" default at 50/50 rounded small awards down —
+  // a 1-point award gave the family jar floor(0.5)=0, so it never filled.
+  splitMode: "match" as const,
   sharedJarEnabled: true,
   activeRewardName: null,
   activeRewardTarget: null,
