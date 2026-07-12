@@ -20,6 +20,12 @@ export type Settings = {
   // Reduce/skip the physics-y jar & confetti motion (also auto-honoured from
   // prefers-reduced-motion at the component level).
   reducedMotion: boolean;
+  // Kids' view: a full-screen, read-only "how am I doing?" screen a child can
+  // use to check the jars without being able to award points or leave the
+  // page. `kidsViewActive` locks the app into it; `kidsViewPin` (4 digits, ""
+  // = unset) is what a parent enters to exit. Device-local.
+  kidsViewActive: boolean;
+  kidsViewPin: string;
 };
 
 const DEFAULTS: Settings = {
@@ -27,6 +33,8 @@ const DEFAULTS: Settings = {
   haptics: true,
   leaderboard: false,
   reducedMotion: false,
+  kidsViewActive: false,
+  kidsViewPin: "",
 };
 
 const KEY = "pointpals.settings.v1";

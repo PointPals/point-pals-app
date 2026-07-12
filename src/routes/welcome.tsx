@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Sparkles, Heart, Gift, ArrowRight } from "lucide-react";
-import { formatPrice, BILLING_CONFIG } from "@/lib/entitlements";
 import { HERO_IMAGE_URL, LOGO_POINTS_URL } from "@/lib/image-urls";
 import { HeroJarScene } from "@/components/HeroJarScene";
 import { WalkingMascots } from "@/components/WalkingMascots";
@@ -16,7 +15,7 @@ export const Route = createFileRoute("/welcome")({
       {
         name: "description",
         content:
-          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ. Free trial.",
+          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
       {
         name: "keywords",
@@ -147,7 +146,7 @@ function WelcomePage() {
                 to="/sign-up"
                 className="tap inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-7 py-4 text-base font-semibold text-background hover:opacity-90 transition shadow-[0_10px_30px_-8px_rgba(236,72,153,0.5)]"
               >
-                Start free trial <ArrowRight className="h-4 w-4" />
+                Get started with your family <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/sign-in"
@@ -157,7 +156,7 @@ function WelcomePage() {
               </Link>
             </div>
             <p className="mt-3 text-xs text-foreground/60">
-              Free for {BILLING_CONFIG.trialDays} days, then {formatPrice()}. Cancel anytime.
+              Set up your family in a couple of minutes.
             </p>
           </div>
         </div>
@@ -218,21 +217,20 @@ function WelcomePage() {
         </p>
       </section>
 
-      {/* pricing card */}
+      {/* get-started card */}
       <section className="max-w-md mx-auto px-6 pb-16">
         <div className="card-soft p-7 text-center">
           <div className="font-display text-2xl font-bold">
-            Free for {BILLING_CONFIG.trialDays} days
+            Ready to start?
           </div>
-          <div className="mt-1 text-muted-foreground">
-            Then <span className="font-semibold text-foreground">{formatPrice()}</span>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">Cancel any time. No hidden fees.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Create your family, add your kids, and start filling the jar together.
+          </p>
           <Link
             to="/sign-up"
             className="tap mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-base font-semibold text-background hover:opacity-90 transition"
           >
-            Start free trial <ArrowRight className="h-4 w-4" />
+            Get started with your family <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

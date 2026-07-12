@@ -96,6 +96,8 @@ type Ctx = {
     item: { name: string; icon: string; points: number },
   ) => AwardBatch;
   undoBatch: (batch: AwardBatch) => void;
+  /** Reverse a single logged award (used by the Recent Activity undo). */
+  undoEvent: (eventId: string) => void;
   addChore: (c: Omit<Chore, "id">) => void;
   addSkill: (s: Omit<Skill, "id">) => void;
   updateChore: (id: string, patch: Partial<Omit<Chore, "id">>) => void;
@@ -741,6 +743,72 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 .eq("id", kidId),
           );
         });
+      }
+    },
+    undoEvent: (eventId) => {
+      const ev = history.find((e) => e.id === eventId);
+      if (!ev) return;
+      const points = ev.points;
+      // Recompute the shared/personal split with current settings — accurate
+      // for a recent mis-tap (the jar hasn't been reset/reconfigured between).
+      let shared: number;
+      let personal: number;
+      if (!household.splitJarsEnabled) {
+        shared = points;
+        personal = 0;
+      } else if (!household.sharedJarEnabled) {
+        shared = 0;
+        personal = points;
+      } else if (household.splitMode === "match") {
+        shared = points;
+        personal = points;
+      } else {
+        shared = Math.floor((points * household.splitRatio) / 100);
+        personal = points - shared;
+      }
+
+      setState((s) => ({
+        ...s,
+        kids: s.kids.map((k) =>
+          k.id === ev.kidId
+            ? {
+                ...k,
+                currentPoints: Math.max(0, k.currentPoints - points),
+                allTimePoints: Math.max(0, k.allTimePoints - points),
+                personalPool: household.splitJarsEnabled
+                  ? Math.max(0, k.personalPool - personal)
+                  : k.personalPool,
+              }
+            : k,
+        ),
+        household: { ...s.household, sharedPool: Math.max(0, s.household.sharedPool - shared) },
+        history: s.history.filter((e) => e.id !== eventId),
+      }));
+
+      if (live) {
+        void dbWrite(async () => await supabase.from("point_events").delete().eq("id", eventId));
+        const nextPool = Math.max(0, household.sharedPool - shared);
+        void dbWrite(
+          async () =>
+            await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
+        );
+        const kid = kids.find((k) => k.id === ev.kidId);
+        if (kid) {
+          const dbPatch: Record<string, unknown> = {
+            current_points: Math.max(0, kid.currentPoints - points),
+            all_time_points: Math.max(0, kid.allTimePoints - points),
+          };
+          if (household.splitJarsEnabled) {
+            dbPatch.personal_pool = Math.max(0, kid.personalPool - personal);
+          }
+          void dbWrite(
+            async () =>
+              await supabase
+                .from("kids")
+                .update(dbPatch as never)
+                .eq("id", ev.kidId),
+          );
+        }
       }
     },
     addChore: (c) => {

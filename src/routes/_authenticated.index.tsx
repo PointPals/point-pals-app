@@ -38,7 +38,7 @@ function HomePage() {
   const { entered } = Route.useSearch();
   const navigate = useNavigate();
   const [activeKidId, setActiveKidId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ batch: AwardBatch; text: string } | null>(null);
+  const [toast, setToast] = useState<{ batches: AwardBatch[]; text: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jarsRef = useRef<HTMLElement>(null);
@@ -70,15 +70,15 @@ function HomePage() {
   // user-gesture grant still applies. Verified on iOS Safari (the strictest
   // autoplay case): primeAudio() resumes the AudioContext inside the earlier
   // avatar-tap gesture, and playChime() here plays on the award tap. §3c.
-  const award = (item: { name: string; icon: string; points: number }) => {
-    if (!activeKidId) return;
-    const positiveAward = item.points >= 0;
+  const award = (items: { name: string; icon: string; points: number }[]) => {
+    if (!activeKidId || items.length === 0) return;
     const kidId = activeKidId;
-    // Close the modal immediately so the marble drop into the jar is visible.
+    const totalPoints = items.reduce((sum, it) => sum + it.points, 0);
+    // Close the modal immediately so the marble drops into the jar are visible.
     // primeAudio() already unlocked the AudioContext on the earlier avatar tap,
     // so deferring the chime/award out of the gesture is safe on iOS.
     setActiveKidId(null);
-    triggerAwardFeedback(positiveAward ? "positive" : "needs-work");
+    triggerAwardFeedback(totalPoints >= 0 ? "positive" : "needs-work");
     // On mobile the jar sits below the fold, so once the modal closes, smooth-
     // scroll it into view and hold the marble drop until the scroll lands — the
     // child actually watches the marble fall in. Desktop keeps the snappy
@@ -90,11 +90,16 @@ function HomePage() {
       );
     }
     // Fire-and-forget points write — feedback has already been called
-    // synchronously inside the gesture so the AudioContext is live.
+    // synchronously inside the gesture so the AudioContext is live. Awarding
+    // each tapped item in the same tick means React batches the state updates
+    // and the jar spawns every new marble at once, so N marbles drop together.
     window.setTimeout(() => {
-      const batch = awardPoints([kidId], item);
-      const text = `${item.points > 0 ? "+" : ""}${item.points} ${item.name}`;
-      setToast({ batch, text });
+      const batches = items.map((item) => awardPoints([kidId], item));
+      const text =
+        items.length === 1
+          ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
+          : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
+      setToast({ batches, text });
       if (toastTimer.current) clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 5000);
     }, onMobile ? 620 : 180);
@@ -102,7 +107,8 @@ function HomePage() {
 
   const undo = () => {
     if (!toast) return;
-    undoBatch(toast.batch);
+    // Reverse each award in the batch (newest first).
+    [...toast.batches].reverse().forEach(undoBatch);
     haptic("light");
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(null);
@@ -180,7 +186,7 @@ function HomePage() {
 
       {/* Award modal (§2) */}
       {activeKid && (
-        <AwardModal kid={activeKid} onAward={award} onClose={() => setActiveKidId(null)} />
+        <AwardModal kid={activeKid} onAwardBatch={award} onClose={() => setActiveKidId(null)} />
       )}
 
       {/* Undo toast — above the modal so it's visible while awarding */}

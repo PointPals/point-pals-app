@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Undo2 } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { iconUrl, isIconKey } from "@/lib/icons";
 
@@ -7,7 +7,7 @@ import { iconUrl, isIconKey } from "@/lib/icons";
 // parent can see what was last tapped without the home screen turning back into
 // a feed. Not the photo wall — just quick context.
 export function RecentActivity() {
-  const { history, kids } = useApp();
+  const { history, kids, undoEvent } = useApp();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -69,6 +69,16 @@ export function RecentActivity() {
                   {e.points > 0 ? "+" : ""}
                   {e.points}
                 </span>
+                {!isCorrection && (
+                  <button
+                    onClick={() => undoEvent(e.id)}
+                    aria-label={`Undo ${e.itemName}`}
+                    title="Undo this"
+                    className="tap ml-1 shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+                )}
               </li>
             );
           })}

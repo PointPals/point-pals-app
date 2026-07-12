@@ -122,7 +122,7 @@ function SignUpPage() {
         canBeTester = false;
         setFoundingTester(false);
         setTesterFull(true);
-        setInfo("Founding member spots are full — you'll still get the full 14-day free trial!");
+        setInfo("Founding member spots are full — but you're all set to get started!");
       }
     }
 
@@ -152,8 +152,8 @@ function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <PublicLogo fixed />
       <div className="card-soft p-6 w-full max-w-sm">
-        <h1 className="font-display text-2xl font-bold">Start free trial</h1>
-        <p className="text-sm text-muted-foreground mt-1">14 days free — no card required.</p>
+        <h1 className="font-display text-2xl font-bold">Get started with your family</h1>
+        <p className="text-sm text-muted-foreground mt-1">Add your kids and start filling the jar together.</p>
         <form onSubmit={onSubmit} className="mt-5 space-y-3">
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family name</span>

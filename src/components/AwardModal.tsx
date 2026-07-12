@@ -9,13 +9,15 @@ import { startCheckout } from "@/lib/billing";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
 
+type AwardItem = { name: string; icon: string; points: number };
+
 export function AwardModal({
   kid,
-  onAward,
+  onAwardBatch,
   onClose,
 }: {
   kid: Kid;
-  onAward: (item: { name: string; icon: string; points: number }) => void;
+  onAwardBatch: (items: AwardItem[]) => void;
   onClose: () => void;
 }) {
   const { household, chores, skills } = useApp();
@@ -26,6 +28,10 @@ export function AwardModal({
   const [paywallItem, setPaywallItem] = useState<{ name: string; icon: string; points: number } | null>(null);
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallErr, setPaywallErr] = useState<string | null>(null);
+  // Batch tray: tapping tiles adds them here; "Add to jar" awards them all at
+  // once so N marbles drop together instead of one award closing the sheet.
+  const [tray, setTray] = useState<AwardItem[]>([]);
+  const trayPoints = tray.reduce((sum, it) => sum + it.points, 0);
   const prevPoints = useRef(kid.currentPoints);
   const closeRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -284,7 +290,7 @@ export function AwardModal({
                   muted={tab === "needs-work"}
                   onClick={() => {
                     if (canAward) {
-                      onAward({ name: item.name, icon: item.icon, points: item.points });
+                      setTray((t) => [...t, { name: item.name, icon: item.icon, points: item.points }]);
                     } else {
                       setPaywallItem({ name: item.name, icon: item.icon, points: item.points });
                     }
@@ -294,6 +300,33 @@ export function AwardModal({
             </div>
           )}
         </div>
+
+        {/* Batch tray — appears once at least one tile is tapped. Review the
+            running total, then drop them all into the jar together. */}
+        {tray.length > 0 && (
+          <div className="border-t border-border bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-3">
+            <button
+              onClick={() => setTray([])}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground shrink-0"
+            >
+              Clear
+            </button>
+            <div className="flex-1 min-w-0 text-center">
+              <div className="font-display text-lg font-bold leading-none">
+                {trayPoints > 0 ? "+" : ""}{trayPoints}
+                <span className="text-sm font-sans font-normal text-muted-foreground">
+                  {" "}· {tray.length} {tray.length === 1 ? "tap" : "taps"}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => onAwardBatch(tray)}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+            >
+              <Sparkles className="h-4 w-4" /> Add to jar
+            </button>
+          </div>
+        )}
 
         {/* Paywall overlay — shown when a free user taps a tile */}
         {paywallItem && (
