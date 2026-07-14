@@ -78,31 +78,38 @@ function HomePage() {
     // primeAudio() already unlocked the AudioContext on the earlier avatar tap,
     // so deferring the chime/award out of the gesture is safe on iOS.
     setActiveKidId(null);
-    triggerAwardFeedback(totalPoints >= 0 ? "positive" : "needs-work");
     // On mobile the jar sits below the fold, so once the modal closes, smooth-
-    // scroll it into view and hold the marble drop until the scroll lands — the
-    // child actually watches the marble fall in. Desktop keeps the snappy
-    // timing since the jar is already beside the kid row.
+    // scroll it into view and hold the drops until the scroll lands — the child
+    // watches the marbles fall in. Desktop keeps the snappy timing since the
+    // jar is already beside the kid row.
     const onMobile = typeof window !== "undefined" && window.innerWidth < 768;
     if (onMobile) {
       requestAnimationFrame(() =>
         jarsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
       );
     }
-    // Fire-and-forget points write — feedback has already been called
-    // synchronously inside the gesture so the AudioContext is live. Awarding
-    // each tapped item in the same tick means React batches the state updates
-    // and the jar spawns every new marble at once, so N marbles drop together.
-    window.setTimeout(() => {
-      const batches = items.map((item) => awardPoints([kidId], item));
-      const text =
-        items.length === 1
-          ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
-          : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
-      setToast({ batches, text });
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      toastTimer.current = setTimeout(() => setToast(null), 5000);
-    }, onMobile ? 620 : 180);
+    // Drop the marbles one at a time (~260ms apart) with a chime per award, so
+    // a batch of taps reads as several distinct drops — kids hear "+3" as three
+    // separate chimes. AudioContext was already unlocked on the avatar tap, so
+    // the deferred chimes still play on iOS.
+    const startDelay = onMobile ? 620 : 160;
+    const STAGGER_MS = 260;
+    const batches: AwardBatch[] = [];
+    items.forEach((item, i) => {
+      window.setTimeout(() => {
+        triggerAwardFeedback(item.points >= 0 ? "positive" : "needs-work");
+        batches.push(awardPoints([kidId], item));
+        if (i === items.length - 1) {
+          const text =
+            items.length === 1
+              ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
+              : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
+          setToast({ batches, text });
+          if (toastTimer.current) clearTimeout(toastTimer.current);
+          toastTimer.current = setTimeout(() => setToast(null), 5000);
+        }
+      }, startDelay + i * STAGGER_MS);
+    });
   };
 
   const undo = () => {
