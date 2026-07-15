@@ -7,6 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:cap": "vite build --config vite.capacitor.ts",
+    "cap:build": "npm run build:cap && npx cap copy",
     "preview": "vite preview",
     "start": "node --import ./dist/server/instrument.server.mjs .output/server/index.mjs",
     "lint": "eslint .",

@@ -84,6 +84,7 @@ function SignUpPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [foundingTester, setFoundingTester] = useState(false);
   const [testerFull, setTesterFull] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -206,6 +207,18 @@ function SignUpPage() {
               )}
             </span>
           </label>
+          <label className="flex items-start gap-3 mt-3">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-input accent-foreground"
+            />
+            <span className="text-sm text-muted-foreground leading-relaxed">
+              I confirm that I am the parent or legal guardian of the children whose
+              information will be stored in this account.
+            </span>
+          </label>
           {err && <p className="text-sm text-destructive">{err}</p>}
           {info && <p className="text-sm text-muted-foreground">{info}</p>}
           <div className="flex items-center gap-3 my-4">
@@ -216,7 +229,7 @@ function SignUpPage() {
           <GoogleSignInButton />
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !consent}
             className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
           >
             {busy ? "Creating…" : "Create account"}

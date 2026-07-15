@@ -149,9 +149,21 @@ function WelcomeBackPage() {
               )}
             </span>
           </label>
+          <label className="flex items-start gap-3 mt-2">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-input accent-foreground"
+            />
+            <span className="text-sm text-muted-foreground leading-relaxed">
+              I confirm that I am the parent or legal guardian of the children whose
+              information will be stored in this account.
+            </span>
+          </label>
           <button
             onClick={createFamily}
-            disabled={busy}
+            disabled={busy || !consent}
             className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

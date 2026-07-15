@@ -3,6 +3,8 @@ import { Sparkles, Loader2, ExternalLink } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { BILLING_CONFIG, formatPrice, isSubscribed, trialDaysLeft } from "@/lib/entitlements";
 import { startCheckout, openPortal } from "@/lib/billing";
+import { isNative } from "@/lib/platform";
+import { ParentalGate } from "@/components/ParentalGate";
 
 // The upgrade prompt (§5). IMPORTANT: only ever rendered on parent-facing
 // screens (Settings/Library/Admin) — never on a kid-facing award screen. A kid
@@ -133,16 +135,19 @@ export function Paywall({ reason }: { reason?: string }) {
           after a {BILLING_CONFIG.trialDays}-day free trial
         </span>
       </div>
-      <button
-        onClick={go}
-        disabled={busy}
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        Start free trial
-      </button>
+      <ParentalGate onPassed={go}>
+        <button
+          disabled={busy}
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          Start free trial
+        </button>
+      </ParentalGate>
       <p className="mt-3 text-xs text-foreground/50">
-        Secure checkout by Stripe · cancel anytime · prices in {BILLING_CONFIG.primaryCurrency}.
+        {isNative()
+          ? `Cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`
+          : `Secure checkout by Stripe · cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`}
       </p>
       {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
     </div>
