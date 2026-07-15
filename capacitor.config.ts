@@ -1,18 +1,23 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+// Where the native WebView loads the app from.
+//   • Local dev: set CAP_SERVER_URL to the Vite dev server (use your LAN IP,
+//     e.g. http://192.168.1.20:8081, when running on a physical device).
+//   • Production store builds: fall back to the live site — a "remote wrapper".
+//     No offline support this way; to ship a fully-bundled/offline app instead,
+//     build a static client into `capacitor-web` and delete the whole `server`
+//     block so Capacitor serves the bundled files.
+const devServerUrl = process.env.CAP_SERVER_URL;
+
 const config: CapacitorConfig = {
   appId: 'nz.co.pointpals.app',
   appName: 'PointPals',
   webDir: 'capacitor-web',
 
-  // ── Dev ───────────────────────────────────────────────────────────────────
-  // During local development the WebView loads from the Vite dev server instead
-  // of reading bundled files.  Run `npm run dev` first, then `npx cap run`.
-  // ────────────────────────────────────────────────────────────────────────────
   server: {
-    // vite dev server URL (change IP if testing on another device on the LAN)
-    url: 'http://localhost:8081',
-    cleartext: true,
+    url: devServerUrl ?? 'https://pointpals.co.nz',
+    // Only allow plaintext http for the local dev server; production is https.
+    cleartext: Boolean(devServerUrl),
   },
 
   // ── Deep links (Supabase PKCE auth callback) ───────────────────────────────

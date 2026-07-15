@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sendTrialWelcome } from "@/lib/emails.functions";
 import { useApp } from "@/lib/app-store";
 import { PublicLogo } from "@/components/PublicLogo";
+import { AppleSignInButton } from "@/components/AppleSignInButton";
 
 function GoogleSignInButton() {
   const [busy, setBusy] = useState(false);
@@ -214,6 +215,7 @@ function SignUpPage() {
             <span className="flex-1 h-px bg-border" />
           </div>
           <GoogleSignInButton />
+          <AppleSignInButton label="Sign up with Apple" />
           <button
             type="submit"
             disabled={busy}
