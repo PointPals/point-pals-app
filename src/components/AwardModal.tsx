@@ -6,6 +6,7 @@ import { PASTEL_HEX, appliesToKid } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-store";
 import { hasEntitlement, formatPrice, isSubscribed, BILLING_CONFIG } from "@/lib/entitlements";
 import { startCheckout } from "@/lib/billing";
+import { isNativePlatform } from "@/lib/platform";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
 
@@ -20,12 +21,22 @@ export function AwardModal({
   onAwardBatch: (items: AwardItem[]) => void;
   onClose: () => void;
 }) {
-  const { household, chores, skills } = useApp();
+  const { household, chores, skills, refreshFromServer } = useApp();
+  // Native uses store billing (RevenueCat) — hide Stripe branding and our own
+  // web price there; the store paywall provides the real price.
+  const [native, setNative] = useState(false);
+  useEffect(() => {
+    void isNativePlatform().then(setNative);
+  }, []);
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work">("chores");
   const [pointsFlash, setPointsFlash] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [paywallItem, setPaywallItem] = useState<{ name: string; icon: string; points: number } | null>(null);
+  const [paywallItem, setPaywallItem] = useState<{
+    name: string;
+    icon: string;
+    points: number;
+  } | null>(null);
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallErr, setPaywallErr] = useState<string | null>(null);
   // Batch tray: tapping tiles adds them here; "Add to jar" awards them all at
@@ -152,7 +163,9 @@ export function AwardModal({
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-display text-2xl font-bold leading-none truncate">{kid.name}</div>
-            <div className="text-xs text-muted-foreground mt-1">Tap your character to award points</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Tap your character to award points
+            </div>
           </div>
           <div
             className={`font-display text-2xl font-bold rounded-full px-3 py-1 transition-colors ${
@@ -290,7 +303,10 @@ export function AwardModal({
                   muted={tab === "needs-work"}
                   onClick={() => {
                     if (canAward) {
-                      setTray((t) => [...t, { name: item.name, icon: item.icon, points: item.points }]);
+                      setTray((t) => [
+                        ...t,
+                        { name: item.name, icon: item.icon, points: item.points },
+                      ]);
                     } else {
                       setPaywallItem({ name: item.name, icon: item.icon, points: item.points });
                     }
@@ -313,9 +329,11 @@ export function AwardModal({
             </button>
             <div className="flex-1 min-w-0 text-center">
               <div className="font-display text-lg font-bold leading-none">
-                {trayPoints > 0 ? "+" : ""}{trayPoints}
+                {trayPoints > 0 ? "+" : ""}
+                {trayPoints}
                 <span className="text-sm font-sans font-normal text-muted-foreground">
-                  {" "}· {tray.length} {tray.length === 1 ? "tap" : "taps"}
+                  {" "}
+                  · {tray.length} {tray.length === 1 ? "tap" : "taps"}
                 </span>
               </div>
             </div>
@@ -347,12 +365,16 @@ export function AwardModal({
               <p className="mt-1 text-sm text-foreground/70">
                 {subscribed
                   ? "Your trial includes premium features. When it ends, subscribe to keep awarding points, filling the marble jar, and unlocking rewards."
-                  : `Subscribe for ${formatPrice()} to award points, fill the marble jar, and unlock rewards for your family.`}
+                  : native
+                    ? "Subscribe to award points, fill the marble jar, and unlock rewards for your family."
+                    : `Subscribe for ${formatPrice()} to award points, fill the marble jar, and unlock rewards for your family.`}
               </p>
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="font-display text-3xl font-bold">{formatPrice()}</span>
+                {!native && (
+                  <span className="font-display text-3xl font-bold">{formatPrice()}</span>
+                )}
                 <span className="text-sm text-foreground/60">
-                  {subscribed ? "after trial" : "/month"}
+                  {subscribed ? "after trial" : native ? "" : "/month"}
                 </span>
               </div>
               <button
@@ -362,6 +384,16 @@ export function AwardModal({
                   const res = await startCheckout(household.id);
                   if (res.url) {
                     window.location.href = res.url;
+                    return;
+                  }
+                  if (res.native) {
+                    if (res.activated) {
+                      await refreshFromServer();
+                      setPaywallItem(null);
+                    } else if (res.error) {
+                      setPaywallErr(res.error);
+                    }
+                    setPaywallBusy(false);
                     return;
                   }
                   setPaywallErr(res.error ?? "Billing backend not connected.");
@@ -378,8 +410,14 @@ export function AwardModal({
                 {subscribed ? "Confirm now" : "Subscribe"}
               </button>
               <p className="mt-3 text-xs text-foreground/50">
-                Secure checkout by Stripe &middot; cancel anytime &middot; prices in{" "}
-                {BILLING_CONFIG.primaryCurrency}.
+                {native ? (
+                  "Cancel anytime from your store account."
+                ) : (
+                  <>
+                    Secure checkout by Stripe &middot; cancel anytime &middot; prices in{" "}
+                    {BILLING_CONFIG.primaryCurrency}.
+                  </>
+                )}
               </p>
               {paywallErr && <p className="mt-2 text-xs text-destructive">{paywallErr}</p>}
               <button

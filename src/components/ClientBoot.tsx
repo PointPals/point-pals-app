@@ -4,6 +4,7 @@ import { initMonitoring } from "@/lib/monitoring";
 import { getSettings, setSetting } from "@/lib/settings";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
+import { configureRevenueCat } from "@/lib/revenuecat";
 
 const PUBLIC_PATHS = new Set([
   "/welcome",
@@ -23,7 +24,14 @@ const PUBLIC_PATHS = new Set([
 // Paths that a signed-in user without a household is allowed to see. Anything
 // else in the authed area bounces to /welcome-back so they can create or join
 // one before the app-store tries to hydrate empty state.
-const NO_HOUSEHOLD_ALLOWED = new Set(["/welcome-back", "/join", "/sign-in", "/sign-up", "/reset-password", "/settings"]);
+const NO_HOUSEHOLD_ALLOWED = new Set([
+  "/welcome-back",
+  "/join",
+  "/sign-in",
+  "/sign-up",
+  "/reset-password",
+  "/settings",
+]);
 
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -39,7 +47,7 @@ function isPublic(pathname: string) {
 export function ClientBoot() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { needsHousehold, mode } = useApp();
+  const { needsHousehold, mode, household } = useApp();
 
   useEffect(() => {
     void initMonitoring();
@@ -76,6 +84,12 @@ export function ClientBoot() {
     });
     return () => sub.subscription.unsubscribe();
   }, [pathname, navigate]);
+
+  // Configure RevenueCat (native only) once we know the household, so the store
+  // paywall, entitlement checks and restore are ready. No-op on web.
+  useEffect(() => {
+    if (household?.id) void configureRevenueCat(household.id);
+  }, [household?.id]);
 
   // Bounce authed-but-no-household users to the "create or join" chooser.
   useEffect(() => {
