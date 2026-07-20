@@ -45,7 +45,9 @@ export function CompanionPicker({
                 <img
                   src={url}
                   alt=""
-                  className="w-full h-full object-cover pointer-events-none"
+                  // object-contain so the whole mascot fits in the circle
+                  // (pastel background fills the rest) rather than being cropped.
+                  className="w-full h-full object-contain pointer-events-none"
                   draggable={false}
                 />
               ) : (

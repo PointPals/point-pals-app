@@ -51,7 +51,10 @@ export function CompanionAvatar({
         aria-hidden
         width={size}
         height={size}
-        className="w-full h-full object-cover select-none pointer-events-none"
+        // object-contain (not cover): fit the whole character inside the circle
+        // so it isn't cropped/stretched. The circle already has the kid's pastel
+        // background, so the letterboxed space reads as intentional.
+        className="w-full h-full object-contain select-none pointer-events-none"
         draggable={false}
       />
     );
