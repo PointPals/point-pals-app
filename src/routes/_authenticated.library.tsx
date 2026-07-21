@@ -9,8 +9,22 @@ import { CompanionAvatar } from "@/components/CompanionAvatar";
 import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
 import { ICON_KEYS, iconUrl, storageUrl, iconTag, TAG_GROUPS, type TagGroup } from "@/lib/icons";
+import { useChoreOrder, orderChores, moveChore } from "@/lib/chore-order";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Pencil, X, Check, Wand2, Upload, Image, Eye, EyeOff, RefreshCw } from "lucide-react";
+import {
+  Trash2,
+  Pencil,
+  X,
+  Check,
+  Wand2,
+  Upload,
+  Image,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 
 function IconPickerGrid({
   selected,
@@ -22,9 +36,9 @@ function IconPickerGrid({
   const { household } = useApp();
   const [aiOpen, setAiOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [userIcons, setUserIcons] = useState<
-    { id: string; storagePath: string; label: string }[]
-  >([]);
+  const [userIcons, setUserIcons] = useState<{ id: string; storagePath: string; label: string }[]>(
+    [],
+  );
   const [loadingIcons, setLoadingIcons] = useState(true);
   const [brokenIcons, setBrokenIcons] = useState<Set<string>>(new Set());
 
@@ -97,12 +111,11 @@ function IconPickerGrid({
   const [tagFilter, setTagFilter] = useState<TagGroup>("all");
 
   const hasUserIcons = userIcons.length > 0;
-  const visibleIcons = (manageMode || showAll
-    ? ICON_KEYS
-    : ICON_KEYS.filter((k) => !hiddenKeys.has(k) || selected === k)
-  ).filter(
-    (k) => tagFilter === "all" || iconTag(k) === tagFilter,
-  );
+  const visibleIcons = (
+    manageMode || showAll
+      ? ICON_KEYS
+      : ICON_KEYS.filter((k) => !hiddenKeys.has(k) || selected === k)
+  ).filter((k) => tagFilter === "all" || iconTag(k) === tagFilter);
   const hiddenCount = ICON_KEYS.filter((k) => hiddenKeys.has(k)).length;
 
   return (
@@ -116,9 +129,7 @@ function IconPickerGrid({
             type="button"
             onClick={() => setManageMode((v) => !v)}
             className={`tap text-[11px] font-semibold flex items-center gap-1 ${
-              manageMode
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              manageMode ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Eye className="w-3 h-3" />
@@ -131,9 +142,7 @@ function IconPickerGrid({
               if (!uploadOpen) setAiOpen(false);
             }}
             className={`tap text-[11px] font-semibold flex items-center gap-1 ${
-              uploadOpen
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              uploadOpen ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Upload className="w-3 h-3" />
@@ -146,9 +155,7 @@ function IconPickerGrid({
               if (!aiOpen) setUploadOpen(false);
             }}
             className={`tap text-[11px] font-semibold flex items-center gap-1 ${
-              aiOpen
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              aiOpen ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Wand2 className="w-3 h-3" />
@@ -222,7 +229,9 @@ function IconPickerGrid({
                 onClick={() => setShowAll((v) => !v)}
                 className="tap text-[11px] font-semibold text-muted-foreground hover:text-foreground transition"
               >
-                {showAll ? `Show fewer (${ICON_KEYS.length - hiddenCount} visible)` : `Show all (${ICON_KEYS.length} icons)`}
+                {showAll
+                  ? `Show fewer (${ICON_KEYS.length - hiddenCount} visible)`
+                  : `Show all (${ICON_KEYS.length} icons)`}
               </button>
             </div>
           )
@@ -236,56 +245,59 @@ function IconPickerGrid({
         )}
         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
           {/* User-uploaded / AI-generated icons */}
-          {hasUserIcons && userIcons.map((u) => {
-            const url = storageUrl(u.storagePath);
-            const on = selected === url;
-            const removeIcon = async () => {
-              if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
-              try {
-                const { supabase } = await import("@/integrations/supabase/client");
-                // @ts-expect-error user_icons not in types
-                await (supabase.from("user_icons") as any).update({ deleted_at: new Date().toISOString() }).eq("id", u.id);
-                setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
-              } catch {}
-            };
-            return (
-              <button
-                type="button"
-                key={u.id}
-                onClick={() => {
-                  if (manageMode || brokenIcons.has(u.id)) void removeIcon();
-                  else onSelect(url);
-                }}
-                aria-pressed={on}
-                title={manageMode ? "Delete icon" : u.label || "Custom icon"}
-                className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative ${
-                  on && !manageMode
-                    ? "ring-2 ring-foreground scale-95"
-                    : "hover:scale-105 border border-border/60"
-                } ${brokenIcons.has(u.id) ? "bg-destructive/10" : ""}`}
-              >
-                {brokenIcons.has(u.id) ? (
-                  <Trash2 className="w-6 h-6 text-destructive" />
-                ) : (
-                  <img
-                    src={url}
-                    alt={u.label || "Custom icon"}
-                    className="w-[86%] h-[86%] object-contain pointer-events-none"
-                    draggable={false}
-                    onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
-                  />
-                )}
-                {manageMode && (
-                  <span
-                    aria-hidden
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center"
-                  >
-                    <Trash2 className="w-3 h-3 text-destructive" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          {hasUserIcons &&
+            userIcons.map((u) => {
+              const url = storageUrl(u.storagePath);
+              const on = selected === url;
+              const removeIcon = async () => {
+                if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
+                try {
+                  const { supabase } = await import("@/integrations/supabase/client");
+                  // @ts-expect-error user_icons not in types
+                  await (supabase.from("user_icons") as any)
+                    .update({ deleted_at: new Date().toISOString() })
+                    .eq("id", u.id);
+                  setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
+                } catch {}
+              };
+              return (
+                <button
+                  type="button"
+                  key={u.id}
+                  onClick={() => {
+                    if (manageMode || brokenIcons.has(u.id)) void removeIcon();
+                    else onSelect(url);
+                  }}
+                  aria-pressed={on}
+                  title={manageMode ? "Delete icon" : u.label || "Custom icon"}
+                  className={`tap aspect-square rounded-xl bg-white flex items-center justify-center transition relative ${
+                    on && !manageMode
+                      ? "ring-2 ring-foreground scale-95"
+                      : "hover:scale-105 border border-border/60"
+                  } ${brokenIcons.has(u.id) ? "bg-destructive/10" : ""}`}
+                >
+                  {brokenIcons.has(u.id) ? (
+                    <Trash2 className="w-6 h-6 text-destructive" />
+                  ) : (
+                    <img
+                      src={url}
+                      alt={u.label || "Custom icon"}
+                      className="w-[86%] h-[86%] object-contain pointer-events-none"
+                      draggable={false}
+                      onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
+                    />
+                  )}
+                  {manageMode && (
+                    <span
+                      aria-hidden
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background shadow-sm border border-border/60 flex items-center justify-center"
+                    >
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
 
           {/* Registry icons (pre-made set) */}
           {visibleIcons.map((k) => {
@@ -396,8 +408,8 @@ function LibraryPage() {
           Add, edit, and remove anything your family tracks.
         </p>
         <p className="text-xs text-muted-foreground/70 mt-1">
-          When awarding points on the home screen, tapping a child&apos;s badge shows
-          only that child&apos;s assigned items.
+          When awarding points on the home screen, tapping a child&apos;s badge shows only that
+          child&apos;s assigned items.
         </p>
       </div>
 
@@ -443,7 +455,13 @@ function LibraryPage() {
           <SkillManager
             skills={skills.filter((s) => s.isPositive)}
             addSkill={(name, points, color, icon) =>
-              addSkill({ name, icon: icon ?? pickIconForName(name), color, points, isPositive: true })
+              addSkill({
+                name,
+                icon: icon ?? pickIconForName(name),
+                color,
+                points,
+                isPositive: true,
+              })
             }
             updateSkill={updateSkill}
             removeSkill={removeSkill}
@@ -457,7 +475,13 @@ function LibraryPage() {
           <SkillManager
             skills={skills.filter((s) => !s.isPositive)}
             addSkill={(name, points, color, icon) =>
-              addSkill({ name, icon: icon ?? pickIconForName(name), color, points, isPositive: false })
+              addSkill({
+                name,
+                icon: icon ?? pickIconForName(name),
+                color,
+                points,
+                isPositive: false,
+              })
             }
             updateSkill={updateSkill}
             removeSkill={removeSkill}
@@ -609,6 +633,12 @@ function ChoreManager({
   const editPanelRef = useRef<HTMLDivElement>(null);
   const [icon, setIcon] = useState<string | null>(null);
 
+  // Device-local print order (drives the PDF chart). Subscribe so the grid
+  // reflows immediately when a chore is moved earlier/later.
+  useChoreOrder();
+  const ordered = orderChores(chores);
+  const orderedIds = ordered.map((c) => c.id);
+
   const clampPoints = (n: number) => Math.max(1, Math.min(20, n));
 
   const submit = async (e: React.FormEvent) => {
@@ -718,8 +748,15 @@ function ChoreManager({
         </div>
       )}
 
+      {chores.length > 0 && (
+        <p className="text-xs text-muted-foreground/80 -mb-2">
+          Tap a chore to rename it, change its points, or set its print order (the order chores
+          appear in on the printed chart — e.g. morning chores first).
+        </p>
+      )}
+
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-6 justify-items-center">
-        {chores.map((it) => (
+        {ordered.map((it) => (
           <div key={it.id} className="w-full flex flex-col items-center">
             <div className="tap relative">
               <IconTile
@@ -752,6 +789,10 @@ function ChoreManager({
                 item={item}
                 pointsMin={1}
                 pointsMax={20}
+                canMoveEarlier={orderedIds.indexOf(editingId) > 0}
+                canMoveLater={orderedIds.indexOf(editingId) < orderedIds.length - 1}
+                onMoveEarlier={() => moveChore(orderedIds, editingId, -1)}
+                onMoveLater={() => moveChore(orderedIds, editingId, 1)}
                 onSave={(patch) => {
                   updateChore(editingId, patch);
                   setEditingId(null);
@@ -1039,11 +1080,7 @@ function AiIconPanel({
       {result && (
         <div className="flex flex-col items-center gap-2">
           <div className="w-24 h-24 rounded-xl overflow-hidden bg-white border border-border">
-            <img
-              src={result}
-              alt="Generated icon"
-              className="w-full h-full object-contain"
-            />
+            <img src={result} alt="Generated icon" className="w-full h-full object-contain" />
           </div>
           <button
             onClick={() => {
@@ -1061,7 +1098,6 @@ function AiIconPanel({
 }
 
 // ─── Edit Panel (shared between chores & skills) ──────────────────────────────
-
 
 // ─── Upload Icon Panel ────────────────────────────────
 
@@ -1213,7 +1249,11 @@ function UploadIconPanel({
                   onClick={upload}
                   className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
                 >
-                  {uploading ? <span className="animate-spin">⟳</span> : <Upload className="w-3.5 h-3.5" />}
+                  {uploading ? (
+                    <span className="animate-spin">⟳</span>
+                  ) : (
+                    <Upload className="w-3.5 h-3.5" />
+                  )}
                   {uploading ? "Processing…" : "Upload & clean"}
                 </button>
               </div>
@@ -1257,6 +1297,10 @@ function EditPanel({
   onDelete,
   onCancel,
   tags: showTags = true,
+  onMoveEarlier,
+  onMoveLater,
+  canMoveEarlier = false,
+  canMoveLater = false,
 }: {
   item: {
     id: string;
@@ -1273,6 +1317,12 @@ function EditPanel({
   onDelete: () => void;
   onCancel: () => void;
   tags?: boolean;
+  // Print-order controls (chores only). When provided, a "Print order" row is
+  // shown that moves this chore earlier/later on the printed chart.
+  onMoveEarlier?: () => void;
+  onMoveLater?: () => void;
+  canMoveEarlier?: boolean;
+  canMoveLater?: boolean;
 }) {
   const { kids } = useApp();
   const allKidIds = kids.map((k) => k.id);
@@ -1384,6 +1434,36 @@ function EditPanel({
         </div>
       </div>
 
+      {onMoveEarlier && onMoveLater && (
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Print order
+          </label>
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              type="button"
+              onClick={onMoveEarlier}
+              disabled={!canMoveEarlier}
+              className="tap inline-flex items-center gap-1.5 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-40"
+            >
+              <ArrowUp className="w-4 h-4" /> Move earlier
+            </button>
+            <button
+              type="button"
+              onClick={onMoveLater}
+              disabled={!canMoveLater}
+              className="tap inline-flex items-center gap-1.5 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-40"
+            >
+              <ArrowDown className="w-4 h-4" /> Move later
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground/80 mt-1.5">
+            Sets where this chore appears on the printed chart (earlier = higher up). Put morning
+            chores earlier, afternoon ones later.
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-1">
         <button
           onClick={onDelete}
@@ -1400,7 +1480,10 @@ function EditPanel({
           </button>
           <button
             onClick={() => {
-              if (!name.trim() || assigned.length === 0) return;
+              // Name is the only hard requirement. A chore/skill may be saved
+              // with no kids assigned (matching the Add form) — assignment can
+              // happen later; it must never block a simple rename.
+              if (!name.trim()) return;
               const patch: ItemPatch = { name: name.trim(), points: clamp(points), color };
               if (showTags) {
                 patch.tags = tagsStr
@@ -1411,7 +1494,7 @@ function EditPanel({
               patch.assignedKidIds = assigned;
               onSave(patch);
             }}
-            disabled={!name.trim() || assigned.length === 0}
+            disabled={!name.trim()}
             className="tap inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
           >
             <Check className="w-4 h-4" /> Save changes
@@ -1432,7 +1515,11 @@ function FamilyTab() {
   // Listen for the custom reset-points event dispatched by the KidForm reset button.
   useEffect(() => {
     const handler = () => {
-      if (window.confirm("Reset all family points to 0? This clears every kid's bubble points, personal jar, and the family jar.")) {
+      if (
+        window.confirm(
+          "Reset all family points to 0? This clears every kid's bubble points, personal jar, and the family jar.",
+        )
+      ) {
         resetRewardCycle();
       }
     };
@@ -1599,7 +1686,11 @@ function KidForm({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("Reset all family points to 0? This will clear every kid's bubble points, personal jar, and the family jar.")) {
+              if (
+                window.confirm(
+                  "Reset all family points to 0? This will clear every kid's bubble points, personal jar, and the family jar.",
+                )
+              ) {
                 window.dispatchEvent(new CustomEvent("reset-points"));
               }
             }}

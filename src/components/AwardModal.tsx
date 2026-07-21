@@ -137,12 +137,12 @@ export function AwardModal({
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bottom-[var(--nav-h,68px)] bg-foreground/30 backdrop-blur-[2px] cursor-default md:bottom-0"
+        className="absolute inset-0 bottom-[calc(5.75rem_+_env(safe-area-inset-bottom))] bg-foreground/30 backdrop-blur-[2px] cursor-default md:bottom-0"
         tabIndex={-1}
       />
 
       {/* card - stops above the bottom nav on mobile */}
-      <div className="relative w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[88vh] mb-[var(--nav-h,68px)] sm:mb-0 flex flex-col bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl animate-pop-in overflow-hidden">
+      <div className="relative w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[88vh] mb-[calc(5.75rem_+_env(safe-area-inset-bottom))] sm:mb-0 flex flex-col bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl animate-pop-in overflow-hidden">
         {/* header — kid identity + live points + X */}
         <div
           className="flex items-center gap-3 px-5 py-4"
