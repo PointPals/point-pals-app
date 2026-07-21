@@ -9,6 +9,7 @@ import { primeAudio } from "@/lib/feedback";
 import { PASTEL_HEX, type Kid } from "@/lib/mock-data";
 import { useHouseholdRole, type HouseholdRole } from "@/lib/use-household-role";
 import { ToggleRow } from "@/components/jar-settings";
+import { fetchKidsViewToken, regenerateKidsViewToken, kidsViewLinkUrl } from "@/lib/kids-view-link";
 import {
   Volume2,
   Vibrate,
@@ -66,13 +67,7 @@ import { exportMemoriesZip } from "@/lib/montage";
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
 function SettingsPage() {
-  const {
-    household,
-    kids,
-    setHouseholdName,
-    setRewardTarget,
-    exportData,
-  } = useApp();
+  const { household, kids, setHouseholdName, setRewardTarget, exportData } = useApp();
   const settings = useSettings();
   const navigate = useNavigate();
   const [name, setName] = useState(household.name);
@@ -108,7 +103,9 @@ function SettingsPage() {
       .from("memory_posts")
       .select("id", { count: "exact", head: true })
       .eq("household_id", household.id)
-      .then(({ count }) => { if (count !== null) setMemoryCount(count); });
+      .then(({ count }) => {
+        if (count !== null) setMemoryCount(count);
+      });
   }, [isLive, household.id]);
   async function saveSeasonRefresh(enabled: boolean) {
     setSeasonRefresh(enabled); // optimistic
@@ -144,7 +141,7 @@ function SettingsPage() {
         if (result.urls.length > 1) {
           setExportError(
             `${result.urls.length} files available — downloading first one. ` +
-            `Open Settings again to download the rest.`
+              `Open Settings again to download the rest.`,
           );
         }
       }
@@ -284,7 +281,6 @@ function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
-
   // Leaderboard is parent-controlled and OFF by default (§4). Framed as a recap,
   // never a live competitive ranking.
   const ranked = [...kids].sort((a, b) => b.currentPoints - a.currentPoints);
@@ -334,8 +330,6 @@ function SettingsPage() {
               </span>
             </div>
           </label>
-
-
         </div>
       </section>
 
@@ -423,7 +417,7 @@ function SettingsPage() {
             <ToggleRow
               icon={<BarChart3 className="h-4 w-4" />}
               label="Allow extended family to log needs-work"
-              desc="When on, viewers can award &apos;Needs work&apos; taps (‑1 point). Off by default."
+              desc="When on, viewers can award 'Needs work' taps (‑1 point). Off by default."
               checked={extFamilyNeedsWork}
               onChange={async (v) => {
                 setExtFamilyNeedsWork(v);
@@ -443,10 +437,11 @@ function SettingsPage() {
 
         <div className="card-soft p-5 space-y-4">
           <p className="text-sm text-muted-foreground">
-            Generate an invite code so grandparents or other family members can join your household. Contributors can award points and add memories; viewers see everything but can't award.
+            Generate an invite code so grandparents or other family members can join your household.
+            Contributors can award points and add memories; viewers see everything but can't award.
           </p>
 
-          {(
+          {
             <div className="flex flex-wrap gap-3 items-end">
               <div className="flex gap-2">
                 {[
@@ -502,7 +497,7 @@ function SettingsPage() {
                 )}
               </button>
             </div>
-          )}
+          }
 
           {inviteCode && (
             <div className="flex items-center gap-3 card-soft p-3">
@@ -623,14 +618,16 @@ function SettingsPage() {
       {(role === null || role !== "viewer") && (
         <section className="space-y-3">
           <SectionTitle icon={<Eye className="h-4 w-4" />}>Kids&apos; view</SectionTitle>
+          {/* Option 1: a private link kids open on their OWN device. */}
+          <KidsViewShareLink householdId={household.id} />
+
+          {/* Option 2: lock THIS device into the read-only view. */}
           <div className="card-soft p-5 space-y-4">
             <p className="text-sm text-muted-foreground">
-              A full-screen, read-only screen your kids can use to check their own
-              progress — the family jar and each child&apos;s jar and points. They
-              <strong> can&apos;t award points, change anything, or leave the page</strong>,
-              so hand them the phone without worry (great for the “how many points do
-              I have?” question every five minutes). Set an optional PIN below; you&apos;ll
-              enter it to exit back to the parent app.
+              Prefer to hand over <strong>your</strong> phone instead? Lock this device into the
+              read-only view — the family jar and each child&apos;s jar and points. They{" "}
+              <strong>can&apos;t award points, change anything, or leave the page</strong>. Set an
+              optional PIN; you&apos;ll enter it to exit back to the parent app.
             </p>
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -651,7 +648,7 @@ function SettingsPage() {
               }}
               className="tap inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
             >
-              <Eye className="h-4 w-4" /> Start kids&apos; view
+              <Eye className="h-4 w-4" /> Lock this device
             </button>
           </div>
         </section>
@@ -706,8 +703,8 @@ function SettingsPage() {
           <SectionTitle icon={<Download className="h-4 w-4" />}>Your data</SectionTitle>
           <div className="card-soft p-5 space-y-3">
             <p className="text-sm text-muted-foreground">
-              You can export a copy of your family's data at any time. To delete your
-              account and data, email us at{" "}
+              You can export a copy of your family's data at any time. To delete your account and
+              data, email us at{" "}
               <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
                 {SUPPORT_EMAIL}
               </a>
@@ -738,9 +735,13 @@ function SettingsPage() {
                         className="tap inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:opacity-50"
                       >
                         {exporting ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Preparing…</>
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" /> Preparing…
+                          </>
                         ) : (
-                          <><Download className="h-4 w-4" /> Download all memories</>
+                          <>
+                            <Download className="h-4 w-4" /> Download all memories
+                          </>
                         )}
                       </button>
                       <Link
@@ -751,9 +752,7 @@ function SettingsPage() {
                       </Link>
                     </div>
                   )}
-                  {exportError && (
-                    <p className="mt-2 text-xs text-destructive">{exportError}</p>
-                  )}
+                  {exportError && <p className="mt-2 text-xs text-destructive">{exportError}</p>}
                 </div>
                 <ToggleRow
                   icon={<RefreshCw className="h-4 w-4" />}
@@ -890,7 +889,9 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
           .from("support_attachments")
           .upload(path, screenshot, { contentType: screenshot.type });
         if (uploadErr) throw uploadErr;
-        const { data: { signedUrl } } = await supabase.storage
+        const {
+          data: { signedUrl },
+        } = await supabase.storage
           .from("support_attachments")
           .createSignedUrl(upload.path, 60 * 60 * 24 * 7); // 7-day expiry
         screenshotUrl = signedUrl;
@@ -1041,6 +1042,108 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
       {icon}
       {children}
     </h2>
+  );
+}
+
+// A private, read-only share link kids open on their own device (no login, no
+// PIN). The unguessable token is the gate; Regenerate invalidates an old link.
+function KidsViewShareLink({ householdId }: { householdId: string }) {
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchKidsViewToken(householdId).then((t) => {
+      if (!cancelled) {
+        setToken(t);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [householdId]);
+
+  const url = token ? kidsViewLinkUrl(token) : "";
+
+  const copy = async () => {
+    if (!url) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "PointPals — your points", url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* share/copy dismissed or unavailable — ignore */
+    }
+  };
+
+  const regenerate = async () => {
+    if (
+      !window.confirm(
+        "Create a new link? The old link will stop working and kids will need the new one.",
+      )
+    )
+      return;
+    setBusy(true);
+    const next = await regenerateKidsViewToken(householdId);
+    if (next) setToken(next);
+    setBusy(false);
+  };
+
+  return (
+    <div className="card-soft p-5 space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Send each child a <strong>private link</strong> to save on their own phone or iPad. It opens
+        a read-only screen of the jars and points — no login, no PIN needed. They can check anytime
+        without asking you.
+      </p>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading link…
+        </div>
+      ) : !token ? (
+        <p className="text-xs text-muted-foreground">
+          The share link needs the backend connected — it&apos;ll appear here once your household is
+          live.
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={url}
+              onFocus={(e) => e.currentTarget.select()}
+              className="flex-1 min-w-0 rounded-xl border border-input bg-card px-3 py-2 text-xs text-muted-foreground"
+            />
+            <button
+              onClick={copy}
+              className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied" : "Share"}
+            </button>
+          </div>
+          <button
+            onClick={regenerate}
+            disabled={busy}
+            className="tap inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Regenerate link
+          </button>
+          <p className="text-[11px] text-muted-foreground/70">
+            Anyone with the link can view the points (read-only). Regenerate to disable a link
+            you&apos;ve shared before.
+          </p>
+        </>
+      )}
+    </div>
   );
 }
 
