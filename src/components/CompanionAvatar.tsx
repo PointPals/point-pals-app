@@ -51,10 +51,11 @@ export function CompanionAvatar({
         aria-hidden
         width={size}
         height={size}
-        // object-contain (not cover): fit the whole character inside the circle
-        // so it isn't cropped/stretched. The circle already has the kid's pastel
-        // background, so the letterboxed space reads as intentional.
-        className="w-full h-full object-contain select-none pointer-events-none"
+        // object-contain (not cover) keeps the aspect ratio; the p-[14%] inset
+        // shrinks the mascot so its widest parts (arms, ears, feet) sit fully
+        // inside the round mask instead of touching/clipping at the circle edge.
+        // The circle already has the kid's pastel background behind it.
+        className="w-full h-full object-contain p-[14%] select-none pointer-events-none"
         draggable={false}
       />
     );
