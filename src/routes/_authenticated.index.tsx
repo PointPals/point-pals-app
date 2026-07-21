@@ -172,7 +172,7 @@ function HomePage() {
                 .filter((k) => (k.personalTarget ?? 0) > 0)
                 .map((k) => (
                   <div key={k.id} className="w-[130px]">
-                    <PersonalJarCard kid={k} size={100} />
+                    <PersonalJarCard kid={k} size={100} showControls={false} />
                   </div>
                 ))}
             </div>

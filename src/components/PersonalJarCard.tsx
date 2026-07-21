@@ -9,16 +9,19 @@ import type { Kid } from "@/lib/mock-data";
 
 /**
  * A small marble jar showing one kid's personal progress, with a "Claim
- * reward" button when full and the same change / restart controls the family
- * jar has (change the reward name + target, restart the jar back to zero).
- * Shown on the Rewards page when split jars are enabled.
+ * reward" button when full and (optionally) the change / restart controls the
+ * family jar has (change the reward name + target, restart the jar back to
+ * zero). Those controls live on the Rewards page; the home screen passes
+ * `showControls={false}` so the jar there is view + claim only.
  */
 export const PersonalJarCard = memo(function PersonalJarCard({
   kid,
   size = 130,
+  showControls = true,
 }: {
   kid: Kid;
   size?: number;
+  showControls?: boolean;
 }) {
   const { history, claimPersonalReward, setPersonalTarget } = useApp();
   const settings = useSettings();
@@ -168,21 +171,24 @@ export const PersonalJarCard = memo(function PersonalJarCard({
               <div className="mt-1 text-xs text-muted-foreground">No target set</div>
             )}
 
-            {/* Change / Restart — same mechanics as the family jar. */}
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={openEditor}
-                className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-input bg-card px-3 py-1.5 text-[11px] font-semibold hover:bg-muted transition"
-              >
-                <Pencil className="w-3 h-3" /> Change
-              </button>
-              <button
-                onClick={handleRestart}
-                className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-destructive/40 text-destructive px-3 py-1.5 text-[11px] font-semibold hover:bg-destructive/10 transition"
-              >
-                <RefreshCw className="w-3 h-3" /> Restart
-              </button>
-            </div>
+            {/* Change / Restart — same mechanics as the family jar. Hidden on
+                the home screen (showControls=false); managed on the Rewards page. */}
+            {showControls && (
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={openEditor}
+                  className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-input bg-card px-3 py-1.5 text-[11px] font-semibold hover:bg-muted transition"
+                >
+                  <Pencil className="w-3 h-3" /> Change
+                </button>
+                <button
+                  onClick={handleRestart}
+                  className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-destructive/40 text-destructive px-3 py-1.5 text-[11px] font-semibold hover:bg-destructive/10 transition"
+                >
+                  <RefreshCw className="w-3 h-3" /> Restart
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
