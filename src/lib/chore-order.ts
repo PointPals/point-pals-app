@@ -71,6 +71,11 @@ export function orderChores<T extends { id: string }>(items: T[]): T[] {
   });
 }
 
+/** Replace the saved order with an explicit full list (e.g. after a drag). */
+export function setChoreOrderIds(ids: string[]): void {
+  persist([...ids]);
+}
+
 /** Move `id` one step earlier (-1) or later (+1) within `ids` (the ordered id
  *  list currently shown) and persist the full order. */
 export function moveChore(ids: string[], id: string, dir: -1 | 1): void {
