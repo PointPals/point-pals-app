@@ -31,6 +31,58 @@ function KidsViewPublic() {
       ? (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false)
       : false;
 
+  // "Add to Home Screen" normally saves the app's manifest start_url ("/"),
+  // which redirects to sign-in. Swap in a per-page manifest whose start_url +
+  // scope are THIS token link, so the saved icon opens straight into the kids'
+  // view. Restored on unmount so the rest of the app keeps its own manifest.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const href = window.location.href;
+    const origin = window.location.origin;
+    const manifest = {
+      name: "PointPals — My Points",
+      short_name: "My Points",
+      start_url: href,
+      scope: href,
+      display: "standalone",
+      background_color: "#FBF7EC",
+      theme_color: "#FBF7EC",
+      icons: [
+        { src: `${origin}/app-icon.png`, sizes: "512x512", type: "image/png" },
+        {
+          src: `${origin}/app-icon-maskable.png`,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        },
+      ],
+    };
+    const blobUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }),
+    );
+    const existing = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    const prevHref = existing?.getAttribute("href") ?? null;
+    const link = existing ?? document.createElement("link");
+    link.rel = "manifest";
+    link.setAttribute("href", blobUrl);
+    if (!existing) document.head.appendChild(link);
+    // Give iOS a matching home-screen title.
+    const appleTitle = document.querySelector<HTMLMetaElement>(
+      'meta[name="apple-mobile-web-app-title"]',
+    );
+    const prevTitle = appleTitle?.getAttribute("content") ?? null;
+    appleTitle?.setAttribute("content", "My Points");
+    return () => {
+      URL.revokeObjectURL(blobUrl);
+      if (existing) {
+        if (prevHref) existing.setAttribute("href", prevHref);
+      } else {
+        link.remove();
+      }
+      if (appleTitle && prevTitle !== null) appleTitle.setAttribute("content", prevTitle);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const load = async (initial: boolean) => {
