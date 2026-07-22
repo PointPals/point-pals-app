@@ -59,8 +59,11 @@ function buildSynthetic(
   delta: number,
   newDropTint?: string,
 ) {
+  // Guard against a NaN/Infinity pool (e.g. from a bad split calc) — otherwise
+  // the count is NaN and the jar renders empty ("marbles disappeared").
+  const safeValue = Number.isFinite(value) ? value : 0;
   const count = Math.min(
-    Math.round(Math.max(0, value) / perMarble),
+    Math.round(Math.max(0, safeValue) / perMarble),
     Math.round(target / perMarble),
     cap,
   );
@@ -157,8 +160,11 @@ function buildDesired(
   // empties truthfully. Trim from the START (oldest events) so newly-earned
   // marbles (from the current reward cycle) survive — this keeps the visible
   // marble colours aligned with personalPool / sharedPool.
+  // Prefer the caller's pool, but ignore a NaN/Infinity fallback so a bad split
+  // calc can't blank the jar — fall back to the event-derived pool instead.
+  const safeFallback = Number.isFinite(fallbackValue) ? (fallbackValue as number) : pool;
   const desiredCount = Math.min(
-    Math.round(Math.max(0, fallbackValue ?? pool) / perMarble),
+    Math.round(Math.max(0, safeFallback) / perMarble),
     Math.round(target / perMarble),
     cap,
   );
@@ -166,15 +172,19 @@ function buildDesired(
     list.splice(0, list.length - desiredCount);
   }
 
-  // Fill any remaining gap with synthetic neutral marbles so the jar always
-  // has the right number of marbles even when history is sparse.
-  const neutral = MARBLE_TINT.sand ?? DEFAULT_TINT;
+  // Fill any remaining gap so the jar always has the right marble count even
+  // when history is sparse (e.g. after a storage clear / reload). For a
+  // single-kid (personal) jar every marble is that child's, so gap marbles take
+  // the kid's colour — otherwise the fallback tint (e.g. orange) reads as a
+  // different child's colour. The shared/family jar keeps a neutral tint.
+  const soleKid = kids.length === 1 ? kids[0] : null;
+  const gap = soleKid ? (MARBLE_TINT[soleKid.color] ?? DEFAULT_TINT) : (MARBLE_TINT.sand ?? DEFAULT_TINT);
   while (list.length < desiredCount) {
     list.push({
       id: `gap-${list.length}`,
-      kidId: "gap",
-      color: neutral[0],
-      hue: neutral[1],
+      kidId: soleKid ? soleKid.id : "gap",
+      color: gap[0],
+      hue: gap[1],
     });
   }
 
