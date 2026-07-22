@@ -39,6 +39,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  GripVertical,
 } from "lucide-react";
 
 function IconPickerGrid({
@@ -620,8 +621,9 @@ function AppliesToChips({
   );
 }
 
-// One draggable chore tile. Press-and-hold starts a drag (reorder for the
-// printed chart); a quick tap fires onClick to open the editor.
+// One chore tile. The tile body taps to open the editor; the grip handle
+// (top-left) is the ONLY drag activator, so dragging never fights tapping or
+// page scroll — the reliable pattern for reordering on touch.
 function SortableChoreTile({
   it,
   selected,
@@ -649,11 +651,8 @@ function SortableChoreTile({
         transition,
         opacity: isDragging ? 0.4 : 1,
         zIndex: isDragging ? 10 : undefined,
-        touchAction: "manipulation",
       }}
       className="w-full flex flex-col items-center"
-      {...attributes}
-      {...listeners}
     >
       <div className="tap relative">
         <IconTile
@@ -664,6 +663,17 @@ function SortableChoreTile({
           onClick={onClick}
           selected={selected}
         />
+        {/* Drag handle — grab this to reorder. touch-action:none so the drag
+            gesture isn't stolen by page scroll. */}
+        <button
+          type="button"
+          aria-label={`Drag to reorder ${it.name}`}
+          className="absolute -top-1 -left-1 w-7 h-7 rounded-full bg-card border border-border shadow flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
         <span
           className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-card border border-border shadow flex items-center justify-center pointer-events-none"
           aria-hidden
@@ -710,10 +720,11 @@ function ChoreManager({
   const ordered = orderChores(chores);
   const orderedIds = ordered.map((c) => c.id);
 
-  // Press-and-hold to drag (so a quick tap still opens the editor); keyboard
-  // sensor keeps reordering accessible.
+  // Drag starts from the grip handle after a tiny movement (no delay); the
+  // handle is the only activator, so this never conflicts with tapping a tile
+  // or scrolling the page. Keyboard sensor keeps reordering accessible.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const handleDragEnd = (event: DragEndEvent) => {
@@ -836,8 +847,8 @@ function ChoreManager({
 
       {chores.length > 0 && (
         <p className="text-xs text-muted-foreground/80 -mb-2">
-          Tap a chore to rename it or change its points. Press and hold, then drag, to set the order
-          chores print on the chart — e.g. morning chores first.
+          Tap a chore to rename it or change its points. Drag the grip handle (top-left of each
+          tile) to set the order chores print on the chart — e.g. morning first.
         </p>
       )}
 
