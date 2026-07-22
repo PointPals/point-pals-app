@@ -381,8 +381,16 @@ async function renderSheet(input: SheetInput): Promise<{
     ctx.beginPath();
     ctx.arc(haloCx, haloCy, haloR - 4, 0, Math.PI * 2);
     ctx.clip();
-    const s = (haloR - 4) * 2;
-    ctx.drawImage(companionImg, haloCx - s / 2, haloCy - s / 2, s, s);
+    // Contain (preserve aspect) + ~14% inset — matches the in-app avatar
+    // (object-contain + padding) so the whole character fits inside the circle
+    // instead of its arms/ears/feet being clipped at the edge.
+    const box = (haloR - 4) * 2 * 0.72;
+    const iw = companionImg.naturalWidth || 1;
+    const ih = companionImg.naturalHeight || 1;
+    const scale = Math.min(box / iw, box / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    ctx.drawImage(companionImg, haloCx - dw / 2, haloCy - dh / 2, dw, dh);
     ctx.restore();
   } else {
     drawCompanion(ctx, input.companion, contentX, headerY - 10, mascotSize);

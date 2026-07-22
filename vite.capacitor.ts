@@ -2,7 +2,10 @@
  * Vite config for the Capacitor SPA build.
  *
  * This builds a pure client-side bundle (no TanStack Start, no Nitro SSR).
- * - Entry: index.html → src/main-capacitor.tsx
+ * - Entry: capacitor.html → src/main-capacitor.tsx (named capacitor.html, NOT
+ *   index.html, so the web/TanStack-Start build never picks it up as the site
+ *   entry — a root index.html would be served as a blank shell on the web).
+ *   The build output is renamed back to index.html by the `build:cap` script.
  * - Output: capacitor-web/ (manually synced via `npx cap copy`)
  * - Aliases @/lib/emails.functions → capacitor compat shim
  * - Base is './' so assets load from file:// in Capacitor WebView
@@ -34,6 +37,9 @@ export default defineConfig(({ mode }) => {
       cssMinify: 'lightningcss',
       target: 'es2022',
       rollupOptions: {
+        // Explicit entry: the file is named capacitor.html (not index.html) so
+        // the web build ignores it. build:cap renames the output to index.html.
+        input: 'capacitor.html',
         output: {
           entryFileNames: 'assets/[name]-[hash].js',
           chunkFileNames: 'assets/[name]-[hash].js',
