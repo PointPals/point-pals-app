@@ -1,0 +1,70 @@
+Chores that don't feel like a fight. A research-backed family system built by Kiwi parents, for Kiwi families.
+
+PointPals is different from the sticker charts you've tried and abandoned by week two. It's grounded in how children actually build habits — through connection, not control. Every point says "I noticed." That's the whole idea.
+
+Made in New Zealand.
+
+---
+
+HOW IT WORKS
+
+1. Set up your family — choose a companion character for each child from our cast of eight hand-illustrated mascots.
+
+2. Together you pick chores and skills — make the bed, show kindness, feed the cat. You decide what matters and how many points each is worth. Narrow any chore to a specific child (great for "Leo feeds the cat, but anyone can empty the dishwasher").
+
+3. Award points when you see effort — a quick tap gets it done. Sound and haptic feedback make the jar feel alive. Research shows that noticing effort (rather than praising outcomes) is what builds lasting habits.
+
+4. Points fill a shared family marble jar — everyone works toward a reward the whole household chooses. No leaderboard, no competition.
+
+5. A separate Kids' View lets your children safely see their own points, companions, and the growing jar — read-only, no login, no typing, no uploads. Designed to be handed to a child without worry.
+
+6. When the jar is full, you claim your family reward and start a new season. The research-backed habit-fade system means the jar expands over time — celebrating the moment your child makes their bed without being asked.
+
+---
+
+WHAT MAKES POINTPALS DIFFERENT
+
+— We're not a game. No hatching eggs, no dopamine loops. The goal is that you use PointPals less as habits take hold.
+
+— We're research-backed. Every mechanic draws from Gordon Neufeld, Gabor Maté, Michaeleen Doucleff, and Kevin Leman. (See our About page for the reading list.)
+
+— We're a family project. The jar is shared. The reward is something you choose together — screen time, a beach trip, family pizza night.
+
+— Your children are not the product. No behavioural profiles, no ads, no data selling. Analytics from the Kids' View carry only an anonymous ID.
+
+---
+
+FEATURES
+
+✓ Shared family marble jar — everyone earns toward a reward you all choose
+✓ Individual jars (Pro) — each child can have their own personal reward target alongside the family jar
+✓ Companion mascots — eight characters your children earn one by one as milestones unlock
+✓ Kids' View — child-safe read-only screen they can check themselves
+✓ Per-kid chore narrowing — assign specific tasks to individual children
+✓ Habit-fade system — jar target grows naturally as habits stick (Pro)
+✓ Printable chore chart — for the fridge, because offline matters too
+✓ Reorder chores by drag-and-drop — "stack the rack" however you like
+✓ 14-day free trial of PointPals Pro — no payment needed to start
+✓ Cross-device sync — works on mum's phone, dad's phone, and the family tablet
+✓ Memory feed — snap photos and short videos of proud moments; 90-day seasonal refresh keeps data lean by design
+✓ Data export — download your family's data as JSON anytime
+
+---
+
+PRIVACY & SAFETY
+
+PointPals is designed for parents — your children don't create accounts, don't log in, and can't type, upload, or share anything. The Kids' View is intentionally read-only. No ads, no behavioural profiles, no selling of personal data.
+
+Our Memory Feed runs in 90-day seasons by default — old photos are automatically deleted unless you choose to keep them. This follows the NZ Privacy Act 2020 data-minimisation principle.
+
+Full privacy policy: pointpals.co.nz/privacy
+
+---
+
+SUBSCRIPTION
+
+PointPals is free to use with a two-child household. PointPals Pro unlocks unlimited children, individual jar targets per child, and the full habit-fade system. Start with a 14-day free trial — no payment required. Cancel anytime.
+
+---
+
+Questions? We're at support@pointpals.co.nz. We're parents too. We answer every email.

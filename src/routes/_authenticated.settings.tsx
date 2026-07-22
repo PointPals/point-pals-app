@@ -67,7 +67,8 @@ import { exportMemoriesZip } from "@/lib/montage";
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
 function SettingsPage() {
-  const { household, kids, setHouseholdName, setRewardTarget, exportData } = useApp();
+  const { household, kids, setHouseholdName, setRewardTarget, exportData, deleteAccount } =
+    useApp();
   const settings = useSettings();
   const navigate = useNavigate();
   const [name, setName] = useState(household.name);
@@ -90,6 +91,7 @@ function SettingsPage() {
   const [memoryCount, setMemoryCount] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
@@ -708,7 +710,7 @@ function SettingsPage() {
               <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
                 {SUPPORT_EMAIL}
               </a>
-              .
+              , or use the button below to permanently remove everything.
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -717,6 +719,32 @@ function SettingsPage() {
               >
                 <Download className="h-4 w-4" /> Export data (JSON)
               </button>
+              {isLive && (
+                <button
+                  onClick={() => {
+                    if (
+                      !window.confirm(
+                        "Permanently delete your family data? This cannot be undone. Your household, children, points history, and memory feed will be removed.",
+                      )
+                    )
+                      return;
+                    setDeleting(true);
+                    deleteAccount().finally(() => setDeleting(false));
+                  }}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/5 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50 transition"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Deleting…
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" /> Delete family data
+                    </>
+                  )}
+                </button>
+              )}
             </div>
             {isLive && seasonRefresh !== null && (
               <div className="border-t border-border/60 -mx-4 mt-1">

@@ -132,6 +132,8 @@ type Ctx = {
   setPersonalTarget: (kidId: string, target: number, reward?: string) => void;
   /** Claim a kid's personal reward - resets only that kid's personalPool. */
   claimPersonalReward: (kidId: string) => void;
+  /** Permanently delete the household and all data, then sign out. */
+  deleteAccount: () => Promise<void>;
 };
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -1133,6 +1135,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // In live mode this only clears the local view - server data survives, and
       // will re-populate on the next fetch. That's intentional: "delete all"
       // wiping a shared household from a single member would be surprising.
+    },
+    deleteAccount: async () => {
+      if (!live) return;
+      const hid = householdIdRef.current;
+      if (!hid) return;
+      // Order matters: delete the household first (cascades to all child rows),
+      // then sign out. If the delete fails we don't strand the user.
+      const { error } = await supabase.from("households").delete().eq("id", hid);
+      if (error) {
+        console.error("[pointpals] delete account failed:", error.message);
+        return;
+      }
+      householdIdRef.current = null;
+      userIdRef.current = null;
+      setState(initialState());
+      setMode("demo");
+      setNeedsHousehold(false);
+      await supabase.auth.signOut();
     },
     addKid: (name, color, companionId) => {
       const id = uid();
