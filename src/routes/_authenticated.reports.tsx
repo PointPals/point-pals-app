@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
+import { supabase } from "@/integrations/supabase/client";
 import { PASTEL_HEX, PASTEL_MUTED } from "@/lib/mock-data";
 import { iconUrl, isIconKey } from "@/lib/icons";
 import {
@@ -38,6 +39,34 @@ function ReportsPage() {
   const [scopeKidId, setScopeKidId] = useState<string | null>(null);
   const [events, setEvents] = useState<ReportEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  // Map of awarder user-id → display name, so the activity list shows who
+  // awarded each point by name instead of a raw account id.
+  const [awarderNames, setAwarderNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (mode !== "live" || !household.id) return;
+    let cancelled = false;
+    void supabase
+      .from("household_members")
+      .select("user_id, display_name")
+      .eq("household_id", household.id)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const map: Record<string, string> = {};
+        for (const m of data as { user_id: string; display_name: string | null }[]) {
+          if (m.display_name?.trim()) map[m.user_id] = m.display_name.trim();
+        }
+        setAwarderNames(map);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, household.id]);
+
+  // Resolve an awarder id to a name: their display name if set, otherwise a
+  // neutral fallback — never the raw account id.
+  const awarderName = (id?: string | null): string | null =>
+    id ? (awarderNames[id] ?? "a parent") : null;
 
   const range = useMemo(
     () => resolveRange(rangeKey, { start: customStart, end: customEnd }),
@@ -69,7 +98,7 @@ function ReportsPage() {
   const kidName = (id: string) => kids.find((k) => k.id === id)?.name ?? "—";
 
   const exportCsv = () => {
-    const csv = eventsToCsv(events, kidName);
+    const csv = eventsToCsv(events, kidName, awarderName);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -211,6 +240,7 @@ function ReportsPage() {
                 key={e.id}
                 event={e}
                 kidName={kidName(e.kidId)}
+                byName={awarderName(e.awardedBy)}
                 onCorrect={(delta, reason) => correctPoints(e.kidId, delta, reason)}
               />
             ))}
@@ -271,10 +301,12 @@ function RadialGauge({ pct, loading }: { pct: number | null; loading: boolean })
 function EventRow({
   event,
   kidName,
+  byName,
   onCorrect,
 }: {
   event: ReportEvent;
   kidName: string;
+  byName?: string | null;
   onCorrect: (delta: number, reason?: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -326,8 +358,7 @@ function EventRow({
             hour: "numeric",
             minute: "2-digit",
           })}
-          {" · by "}
-          {event.awardedBy ?? "—"}
+          {byName ? ` · by ${byName}` : ""}
         </div>
       </div>
       <div className="relative pp-print-hide">

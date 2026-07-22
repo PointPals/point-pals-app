@@ -19,6 +19,7 @@ const PUBLIC_PATHS = new Set([
   "/terms",
   "/refunds",
   "/contact",
+  "/k", // public read-only Kids' view share link (/k/<token>)
 ]);
 
 // Paths that a signed-in user without a household is allowed to see. Anything

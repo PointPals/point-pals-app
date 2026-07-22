@@ -151,7 +151,11 @@ export function computeGauge(events: ReportEvent[]): {
   return { positive, needsWork, pctPositive: total > 0 ? (positive / total) * 100 : null };
 }
 
-export function eventsToCsv(events: ReportEvent[], kidName: (id: string) => string): string {
+export function eventsToCsv(
+  events: ReportEvent[],
+  kidName: (id: string) => string,
+  awarderName?: (id?: string | null) => string | null,
+): string {
   const header = ["date", "kid", "item name", "points", "type", "awarded_by"];
   const rows = events.map((e) => [
     new Date(e.at).toISOString(),
@@ -159,7 +163,7 @@ export function eventsToCsv(events: ReportEvent[], kidName: (id: string) => stri
     e.itemName,
     String(e.points),
     e.type === "correction" ? "correction" : e.points >= 0 ? "positive" : "needs-work",
-    e.awardedBy ?? "",
+    (awarderName ? awarderName(e.awardedBy) : e.awardedBy) ?? "",
   ]);
   const escape = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   return [header, ...rows].map((row) => row.map(escape).join(",")).join("\n");

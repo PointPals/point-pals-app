@@ -9,8 +9,25 @@ import { CompanionAvatar } from "@/components/CompanionAvatar";
 import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
 import { ICON_KEYS, iconUrl, storageUrl, iconTag, TAG_GROUPS, type TagGroup } from "@/lib/icons";
-import { useChoreOrder, orderChores, moveChore } from "@/lib/chore-order";
+import { useChoreOrder, orderChores, setChoreOrderIds } from "@/lib/chore-order";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Trash2,
   Pencil,
@@ -22,8 +39,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  ArrowUp,
-  ArrowDown,
+  GripVertical,
 } from "lucide-react";
 
 function IconPickerGrid({
@@ -605,6 +621,71 @@ function AppliesToChips({
   );
 }
 
+// One chore tile. The tile body taps to open the editor; the grip handle
+// (top-left) is the ONLY drag activator, so dragging never fights tapping or
+// page scroll — the reliable pattern for reordering on touch.
+function SortableChoreTile({
+  it,
+  selected,
+  onClick,
+}: {
+  it: {
+    id: string;
+    icon: string;
+    name: string;
+    color: PastelKey;
+    points: number;
+    assignedKidIds?: string[] | null;
+  };
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: it.id,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        zIndex: isDragging ? 10 : undefined,
+      }}
+      className="w-full flex flex-col items-center"
+    >
+      <div className="tap relative">
+        <IconTile
+          icon={it.icon}
+          label={it.name}
+          color={it.color}
+          points={it.points}
+          onClick={onClick}
+          selected={selected}
+        />
+        {/* Drag handle — grab this to reorder. touch-action:none so the drag
+            gesture isn't stolen by page scroll. */}
+        <button
+          type="button"
+          aria-label={`Drag to reorder ${it.name}`}
+          className="absolute -top-1 -left-1 w-7 h-7 rounded-full bg-card border border-border shadow flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
+        <span
+          className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-card border border-border shadow flex items-center justify-center pointer-events-none"
+          aria-hidden
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </span>
+        <AssignedStack assignedKidIds={it.assignedKidIds} />
+      </div>
+    </div>
+  );
+}
+
 function ChoreManager({
   chores,
   addChore,
@@ -634,10 +715,26 @@ function ChoreManager({
   const [icon, setIcon] = useState<string | null>(null);
 
   // Device-local print order (drives the PDF chart). Subscribe so the grid
-  // reflows immediately when a chore is moved earlier/later.
+  // reflows immediately when a chore is dragged to a new spot.
   useChoreOrder();
   const ordered = orderChores(chores);
   const orderedIds = ordered.map((c) => c.id);
+
+  // Drag starts from the grip handle after a tiny movement (no delay); the
+  // handle is the only activator, so this never conflicts with tapping a tile
+  // or scrolling the page. Keyboard sensor keeps reordering accessible.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = orderedIds.indexOf(String(active.id));
+    const to = orderedIds.indexOf(String(over.id));
+    if (from === -1 || to === -1) return;
+    setChoreOrderIds(arrayMove(orderedIds, from, to));
+  };
 
   const clampPoints = (n: number) => Math.max(1, Math.min(20, n));
 
@@ -750,34 +847,25 @@ function ChoreManager({
 
       {chores.length > 0 && (
         <p className="text-xs text-muted-foreground/80 -mb-2">
-          Tap a chore to rename it, change its points, or set its print order (the order chores
-          appear in on the printed chart — e.g. morning chores first).
+          Tap a chore to rename it or change its points. Drag the grip handle (top-left of each
+          tile) to set the order chores print on the chart — e.g. morning first.
         </p>
       )}
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-6 justify-items-center">
-        {ordered.map((it) => (
-          <div key={it.id} className="w-full flex flex-col items-center">
-            <div className="tap relative">
-              <IconTile
-                icon={it.icon}
-                label={it.name}
-                color={it.color}
-                points={it.points}
-                onClick={() => setEditingId(editingId === it.id ? null : it.id)}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={orderedIds} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-6 justify-items-center">
+            {ordered.map((it) => (
+              <SortableChoreTile
+                key={it.id}
+                it={it}
                 selected={editingId === it.id}
+                onClick={() => setEditingId(editingId === it.id ? null : it.id)}
               />
-              <span
-                className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-card border border-border shadow flex items-center justify-center pointer-events-none"
-                aria-hidden
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </span>
-              <AssignedStack assignedKidIds={it.assignedKidIds} />
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {editingId &&
         (() => {
@@ -789,10 +877,6 @@ function ChoreManager({
                 item={item}
                 pointsMin={1}
                 pointsMax={20}
-                canMoveEarlier={orderedIds.indexOf(editingId) > 0}
-                canMoveLater={orderedIds.indexOf(editingId) < orderedIds.length - 1}
-                onMoveEarlier={() => moveChore(orderedIds, editingId, -1)}
-                onMoveLater={() => moveChore(orderedIds, editingId, 1)}
                 onSave={(patch) => {
                   updateChore(editingId, patch);
                   setEditingId(null);
@@ -1297,10 +1381,6 @@ function EditPanel({
   onDelete,
   onCancel,
   tags: showTags = true,
-  onMoveEarlier,
-  onMoveLater,
-  canMoveEarlier = false,
-  canMoveLater = false,
 }: {
   item: {
     id: string;
@@ -1317,12 +1397,6 @@ function EditPanel({
   onDelete: () => void;
   onCancel: () => void;
   tags?: boolean;
-  // Print-order controls (chores only). When provided, a "Print order" row is
-  // shown that moves this chore earlier/later on the printed chart.
-  onMoveEarlier?: () => void;
-  onMoveLater?: () => void;
-  canMoveEarlier?: boolean;
-  canMoveLater?: boolean;
 }) {
   const { kids } = useApp();
   const allKidIds = kids.map((k) => k.id);
@@ -1433,36 +1507,6 @@ function EditPanel({
           ))}
         </div>
       </div>
-
-      {onMoveEarlier && onMoveLater && (
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Print order
-          </label>
-          <div className="flex items-center gap-2 mt-2">
-            <button
-              type="button"
-              onClick={onMoveEarlier}
-              disabled={!canMoveEarlier}
-              className="tap inline-flex items-center gap-1.5 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-40"
-            >
-              <ArrowUp className="w-4 h-4" /> Move earlier
-            </button>
-            <button
-              type="button"
-              onClick={onMoveLater}
-              disabled={!canMoveLater}
-              className="tap inline-flex items-center gap-1.5 rounded-full border border-input bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-40"
-            >
-              <ArrowDown className="w-4 h-4" /> Move later
-            </button>
-          </div>
-          <p className="text-[11px] text-muted-foreground/80 mt-1.5">
-            Sets where this chore appears on the printed chart (earlier = higher up). Put morning
-            chores earlier, afternoon ones later.
-          </p>
-        </div>
-      )}
 
       <div className="flex items-center justify-between pt-1">
         <button
