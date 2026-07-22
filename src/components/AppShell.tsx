@@ -125,6 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/privacy",
     "/terms",
     "/refunds",
+    "/k", // public read-only Kids' view share link — no app nav/sidebar
   ];
   if (CHROME_FREE.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return <>{children}</>;

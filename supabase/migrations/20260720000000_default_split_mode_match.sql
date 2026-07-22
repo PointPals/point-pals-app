@@ -10,5 +10,16 @@
 -- Only the column DEFAULT changes — existing households keep whatever they've
 -- already set, so no active family's behaviour changes mid-cycle.
 
-alter table public.households
-  alter column split_mode set default 'match';
+-- Guarded so it's a safe no-op on schemas where split_mode hasn't been added
+-- yet (the column-adding jar migrations haven't been applied).
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'households'
+      and column_name = 'split_mode'
+  ) then
+    alter table public.households alter column split_mode set default 'match';
+  end if;
+end $$;
