@@ -9,6 +9,7 @@ import { primeAudio } from "@/lib/feedback";
 import { PASTEL_HEX, type Kid } from "@/lib/mock-data";
 import { useHouseholdRole, type HouseholdRole } from "@/lib/use-household-role";
 import { ToggleRow } from "@/components/jar-settings";
+import { fetchKidsViewToken, regenerateKidsViewToken, kidsViewLinkUrl } from "@/lib/kids-view-link";
 import {
   Volume2,
   Vibrate,
@@ -35,6 +36,7 @@ import {
   LogOut,
   Send,
   MailQuestion,
+  ChevronRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -65,15 +67,7 @@ import { exportMemoriesZip } from "@/lib/montage";
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
 
 function SettingsPage() {
-  const {
-    household,
-    kids,
-    setHouseholdName,
-    setRewardTarget,
-    exportData,
-    resetHousehold,
-
-  } = useApp();
+  const { household, kids, setHouseholdName, setRewardTarget, exportData } = useApp();
   const settings = useSettings();
   const navigate = useNavigate();
   const [name, setName] = useState(household.name);
@@ -85,6 +79,7 @@ function SettingsPage() {
   const [myDisplayName, setMyDisplayName] = useState("");
   const [displayNameSaved, setDisplayNameSaved] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [kidPin, setKidPin] = useState("");
 
   const { role, userId, isAdmin } = useHouseholdRole(household.id);
   const isLive = !!userId; // signed in against Supabase household
@@ -108,7 +103,9 @@ function SettingsPage() {
       .from("memory_posts")
       .select("id", { count: "exact", head: true })
       .eq("household_id", household.id)
-      .then(({ count }) => { if (count !== null) setMemoryCount(count); });
+      .then(({ count }) => {
+        if (count !== null) setMemoryCount(count);
+      });
   }, [isLive, household.id]);
   async function saveSeasonRefresh(enabled: boolean) {
     setSeasonRefresh(enabled); // optimistic
@@ -144,7 +141,7 @@ function SettingsPage() {
         if (result.urls.length > 1) {
           setExportError(
             `${result.urls.length} files available — downloading first one. ` +
-            `Open Settings again to download the rest.`
+              `Open Settings again to download the rest.`,
           );
         }
       }
@@ -284,17 +281,6 @@ function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const deleteAll = () => {
-    if (!window.confirm("Delete all family data on this device? This can't be undone.")) return;
-    trackParent("data_delete");
-    resetHousehold();
-    try {
-      window.localStorage.removeItem("pointpals.state.v1");
-    } catch {
-      /* ignore */
-    }
-  };
-
   // Leaderboard is parent-controlled and OFF by default (§4). Framed as a recap,
   // never a live competitive ranking.
   const ranked = [...kids].sort((a, b) => b.currentPoints - a.currentPoints);
@@ -333,7 +319,7 @@ function SettingsPage() {
               <input
                 type="range"
                 min={30}
-                max={400}
+                max={100}
                 step={10}
                 value={household.rewardTarget}
                 onChange={(e) => setRewardTarget(Number(e.target.value))}
@@ -344,8 +330,6 @@ function SettingsPage() {
               </span>
             </div>
           </label>
-
-
         </div>
       </section>
 
@@ -433,7 +417,7 @@ function SettingsPage() {
             <ToggleRow
               icon={<BarChart3 className="h-4 w-4" />}
               label="Allow extended family to log needs-work"
-              desc="When on, viewers can award &apos;Needs work&apos; taps (‑1 point). Off by default."
+              desc="When on, viewers can award 'Needs work' taps (‑1 point). Off by default."
               checked={extFamilyNeedsWork}
               onChange={async (v) => {
                 setExtFamilyNeedsWork(v);
@@ -453,12 +437,11 @@ function SettingsPage() {
 
         <div className="card-soft p-5 space-y-4">
           <p className="text-sm text-muted-foreground">
-            {isLive && !isAdmin
-              ? "Only admins can invite new family members. Ask a family admin to generate an invite code."
-              : "Generate an invite code so grandparents or other family members can join your household. Contributors can award points and add memories; viewers see everything but can't award."}
+            Generate an invite code so grandparents or other family members can join your household.
+            Contributors can award points and add memories; viewers see everything but can't award.
           </p>
 
-          {(!isLive || isAdmin) && (
+          {
             <div className="flex flex-wrap gap-3 items-end">
               <div className="flex gap-2">
                 {[
@@ -514,7 +497,7 @@ function SettingsPage() {
                 )}
               </button>
             </div>
-          )}
+          }
 
           {inviteCode && (
             <div className="flex items-center gap-3 card-soft p-3">
@@ -631,6 +614,46 @@ function SettingsPage() {
         </div>
       </section>
 
+      {/* Kids' view — read-only progress screen */}
+      {(role === null || role !== "viewer") && (
+        <section className="space-y-3">
+          <SectionTitle icon={<Eye className="h-4 w-4" />}>Kids&apos; view</SectionTitle>
+          {/* Option 1: a private link kids open on their OWN device. */}
+          <KidsViewShareLink householdId={household.id} />
+
+          {/* Option 2: lock THIS device into the read-only view. */}
+          <div className="card-soft p-5 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Prefer to hand over <strong>your</strong> phone instead? Lock this device into the
+              read-only view — the family jar and each child&apos;s jar and points. They{" "}
+              <strong>can&apos;t award points, change anything, or leave the page</strong>. Set an
+              optional PIN; you&apos;ll enter it to exit back to the parent app.
+            </p>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Exit PIN (optional, 4 digits)
+              </span>
+              <input
+                inputMode="numeric"
+                value={kidPin}
+                onChange={(e) => setKidPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="e.g. 1234"
+                className="mt-1 w-40 rounded-xl border border-input bg-card px-3 py-2.5 text-center tracking-[0.3em] font-display"
+              />
+            </label>
+            <button
+              onClick={() => {
+                setSetting("kidsViewPin", kidPin);
+                setSetting("kidsViewActive", true);
+              }}
+              className="tap inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+            >
+              <Eye className="h-4 w-4" /> Lock this device
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Sibling leaderboard — off by default */}
       {(role === null || role !== "viewer") && (
         <section className="space-y-3">
@@ -680,7 +703,12 @@ function SettingsPage() {
           <SectionTitle icon={<Download className="h-4 w-4" />}>Your data</SectionTitle>
           <div className="card-soft p-5 space-y-3">
             <p className="text-sm text-muted-foreground">
-              You can export or permanently delete your family's data at any time.
+              You can export a copy of your family's data at any time. To delete your account and
+              data, email us at{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
+                {SUPPORT_EMAIL}
+              </a>
+              .
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -688,12 +716,6 @@ function SettingsPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold hover:bg-muted transition"
               >
                 <Download className="h-4 w-4" /> Export data (JSON)
-              </button>
-              <button
-                onClick={deleteAll}
-                className="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-card px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-              >
-                <Trash2 className="h-4 w-4" /> Delete all data
               </button>
             </div>
             {isLive && seasonRefresh !== null && (
@@ -713,9 +735,13 @@ function SettingsPage() {
                         className="tap inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:opacity-50"
                       >
                         {exporting ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Preparing…</>
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" /> Preparing…
+                          </>
                         ) : (
-                          <><Download className="h-4 w-4" /> Download all memories</>
+                          <>
+                            <Download className="h-4 w-4" /> Download all memories
+                          </>
                         )}
                       </button>
                       <Link
@@ -726,9 +752,7 @@ function SettingsPage() {
                       </Link>
                     </div>
                   )}
-                  {exportError && (
-                    <p className="mt-2 text-xs text-destructive">{exportError}</p>
-                  )}
+                  {exportError && <p className="mt-2 text-xs text-destructive">{exportError}</p>}
                 </div>
                 <ToggleRow
                   icon={<RefreshCw className="h-4 w-4" />}
@@ -832,22 +856,47 @@ function SettingsPage() {
 }
 
 /** In-app dialog for the Email Support button — posts through submitContactForm
- *  which forwards to the support inbox and sends the Contact-Confirmation autoreply. */
+ *  which forwards to the support inbox and sends the Contact-Confirmation autoreply.
+ *  Pre-fills the user's email, and supports screenshot attachment via Supabase Storage. */
 function SupportDialog({ supportEmail }: { supportEmail: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Pre-fill email from the authenticated session
+  useEffect(() => {
+    void supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setEmail(data.user.email);
+    });
+  }, []);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setErr(null);
     try {
-      await submitContactForm({ data: { name, email, message } });
+      let screenshotUrl: string | undefined;
+      if (screenshot) {
+        const ext = screenshot.name.split(".").pop() || "png";
+        const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { data: upload, error: uploadErr } = await supabase.storage
+          .from("support_attachments")
+          .upload(path, screenshot, { contentType: screenshot.type });
+        if (uploadErr) throw uploadErr;
+        const {
+          data: { signedUrl },
+        } = await supabase.storage
+          .from("support_attachments")
+          .createSignedUrl(upload.path, 60 * 60 * 24 * 7); // 7-day expiry
+        screenshotUrl = signedUrl;
+      }
+      await submitContactForm({ data: { name, email, message, screenshotUrl } });
       setSent(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong. Please try again.");
@@ -861,7 +910,11 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (!o) setSent(false);
+        if (!o) {
+          setSent(false);
+          setScreenshot(null);
+          setScreenshotPreview(null);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -925,6 +978,42 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
                 className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm resize-y"
               />
             </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Screenshot (optional)
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/heic"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setScreenshot(file);
+                  setScreenshotPreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="mt-1 block w-full text-xs text-muted-foreground file:mr-3 file:rounded-full file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-xs file:font-semibold hover:file:bg-muted/70"
+              />
+              {screenshotPreview && (
+                <div className="mt-2 relative inline-block">
+                  <img
+                    src={screenshotPreview}
+                    alt="Screenshot preview"
+                    className="h-28 w-auto rounded-lg border border-input object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScreenshot(null);
+                      setScreenshotPreview(null);
+                    }}
+                    className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs shadow-sm hover:scale-110 transition"
+                    aria-label="Remove screenshot"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </label>
             {err && <p className="text-sm text-destructive">{err}</p>}
             <button
               type="submit"
@@ -953,6 +1042,108 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
       {icon}
       {children}
     </h2>
+  );
+}
+
+// A private, read-only share link kids open on their own device (no login, no
+// PIN). The unguessable token is the gate; Regenerate invalidates an old link.
+function KidsViewShareLink({ householdId }: { householdId: string }) {
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchKidsViewToken(householdId).then((t) => {
+      if (!cancelled) {
+        setToken(t);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [householdId]);
+
+  const url = token ? kidsViewLinkUrl(token) : "";
+
+  const copy = async () => {
+    if (!url) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "PointPals — your points", url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* share/copy dismissed or unavailable — ignore */
+    }
+  };
+
+  const regenerate = async () => {
+    if (
+      !window.confirm(
+        "Create a new link? The old link will stop working and kids will need the new one.",
+      )
+    )
+      return;
+    setBusy(true);
+    const next = await regenerateKidsViewToken(householdId);
+    if (next) setToken(next);
+    setBusy(false);
+  };
+
+  return (
+    <div className="card-soft p-5 space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Send each child a <strong>private link</strong> to save on their own phone or iPad. It opens
+        a read-only screen of the jars and points — no login, no PIN needed. They can check anytime
+        without asking you.
+      </p>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading link…
+        </div>
+      ) : !token ? (
+        <p className="text-xs text-muted-foreground">
+          The share link needs the backend connected — it&apos;ll appear here once your household is
+          live.
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={url}
+              onFocus={(e) => e.currentTarget.select()}
+              className="flex-1 min-w-0 rounded-xl border border-input bg-card px-3 py-2 text-xs text-muted-foreground"
+            />
+            <button
+              onClick={copy}
+              className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied" : "Share"}
+            </button>
+          </div>
+          <button
+            onClick={regenerate}
+            disabled={busy}
+            className="tap inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Regenerate link
+          </button>
+          <p className="text-[11px] text-muted-foreground/70">
+            Anyone with the link can view the points (read-only). Regenerate to disable a link
+            you&apos;ve shared before.
+          </p>
+        </>
+      )}
+    </div>
   );
 }
 

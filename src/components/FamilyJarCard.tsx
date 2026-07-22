@@ -128,14 +128,13 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
       {kids.length > 0 && household.sharedPool > 0 && (
         <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
           {kids.map((k) => {
-            const contributed = household.splitJarsEnabled && k.personalPool > 0
-              ? Math.min(k.personalPool, household.sharedPool)
-              : Math.min(
-                  history
-                    .filter((e) => e.kidId === k.id && e.points > 0)
-                    .reduce((sum, e) => sum + e.points, 0),
-                  household.sharedPool
-                );
+            // Mirror the home-screen avatar badge exactly so the legend, the
+            // badges and the jar total always agree: net current points (or
+            // personal pool when split jars are on). Summing gross positive
+            // history double-counted "needs-work" deductions, so a kid could
+            // read higher here than on their badge and the legend could sum to
+            // more than the jar total.
+            const contributed = household.splitJarsEnabled ? k.personalPool : k.currentPoints;
             return (
               <div key={k.id} className="flex items-center gap-1.5 text-muted-foreground">
                 <span

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sendTrialWelcome } from "@/lib/emails.functions";
 import { useApp } from "@/lib/app-store";
 import { PublicLogo } from "@/components/PublicLogo";
+import { AppleSignInButton } from "@/components/AppleSignInButton";
 
 function GoogleSignInButton() {
   const [busy, setBusy] = useState(false);
@@ -82,6 +83,8 @@ function SignUpPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [foundingTester, setFoundingTester] = useState(false);
+  const [testerFull, setTesterFull] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -109,10 +112,30 @@ function SignUpPage() {
         ? new URLSearchParams(window.location.search).get("source") || undefined
         : undefined;
 
+    // Cap founding testers at 50 so not everyone becomes a free user.
+    let canBeTester = foundingTester;
+    if (foundingTester) {
+      const { count } = await supabase
+        .from("households")
+        .select("*", { count: "exact", head: true })
+        .eq("founding_tester", true);
+      if (count != null && count >= 50) {
+        canBeTester = false;
+        setFoundingTester(false);
+        setTesterFull(true);
+        setInfo("Founding member spots are full — but you're all set to get started!");
+      }
+    }
+
+    // Build the household insert, optionally tagging as a founding tester.
+    const hhPayload: Record<string, unknown> = { name: name || "My Family" };
+    if (sourceParam) hhPayload.attribution_source = sourceParam;
+    if (canBeTester) hhPayload.founding_tester = true;
+
     // Create the household — trigger adds the current user as admin member.
     const { error: hhErr } = await supabase
       .from("households")
-      .insert({ name: name || "My Family", ...(sourceParam ? { attribution_source: sourceParam } : {}) });
+      .insert(hhPayload);
     setBusy(false);
     if (hhErr) {
       setErr(hhErr.message);
@@ -130,8 +153,8 @@ function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <PublicLogo fixed />
       <div className="card-soft p-6 w-full max-w-sm">
-        <h1 className="font-display text-2xl font-bold">Start free trial</h1>
-        <p className="text-sm text-muted-foreground mt-1">14 days free — no card required.</p>
+        <h1 className="font-display text-2xl font-bold">Get started with your family</h1>
+        <p className="text-sm text-muted-foreground mt-1">Add your kids and start filling the jar together.</p>
         <form onSubmit={onSubmit} className="mt-5 space-y-3">
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family name</span>
@@ -165,6 +188,25 @@ function SignUpPage() {
               className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5"
             />
           </label>
+          <label className="flex items-start gap-3 mt-3">
+            <input
+              type="checkbox"
+              checked={foundingTester}
+              disabled={testerFull}
+              onChange={(e) => setFoundingTester(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-input accent-foreground disabled:opacity-40"
+            />
+            <span className="text-sm text-muted-foreground leading-relaxed">
+              {testerFull ? (
+                "Founding member spots are full"
+              ) : (
+                <>
+                  I&apos;d like to be a <strong>founding member</strong> &mdash; I&apos;m happy
+                  to test new features and fill in feedback forms to help shape PointPals.
+                </>
+              )}
+            </span>
+          </label>
           {err && <p className="text-sm text-destructive">{err}</p>}
           {info && <p className="text-sm text-muted-foreground">{info}</p>}
           <div className="flex items-center gap-3 my-4">
@@ -173,6 +215,7 @@ function SignUpPage() {
             <span className="flex-1 h-px bg-border" />
           </div>
           <GoogleSignInButton />
+          <AppleSignInButton label="Sign up with Apple" />
           <button
             type="submit"
             disabled={busy}

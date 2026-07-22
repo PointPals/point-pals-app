@@ -38,9 +38,10 @@ function HomePage() {
   const { entered } = Route.useSearch();
   const navigate = useNavigate();
   const [activeKidId, setActiveKidId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ batch: AwardBatch; text: string } | null>(null);
+  const [toast, setToast] = useState<{ batches: AwardBatch[]; text: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jarsRef = useRef<HTMLElement>(null);
   useEffect(() => setMounted(true), []);
 
   // First-time-visitor redirect to the marketing page (§8).
@@ -69,29 +70,52 @@ function HomePage() {
   // user-gesture grant still applies. Verified on iOS Safari (the strictest
   // autoplay case): primeAudio() resumes the AudioContext inside the earlier
   // avatar-tap gesture, and playChime() here plays on the award tap. §3c.
-  const award = (item: { name: string; icon: string; points: number }) => {
-    if (!activeKidId) return;
-    const positiveAward = item.points >= 0;
+  const award = (items: { name: string; icon: string; points: number }[]) => {
+    if (!activeKidId || items.length === 0) return;
     const kidId = activeKidId;
-    // Close the modal immediately so the marble drop into the jar is visible.
+    const totalPoints = items.reduce((sum, it) => sum + it.points, 0);
+    // Close the modal immediately so the marble drops into the jar are visible.
     // primeAudio() already unlocked the AudioContext on the earlier avatar tap,
     // so deferring the chime/award out of the gesture is safe on iOS.
     setActiveKidId(null);
-    triggerAwardFeedback(positiveAward ? "positive" : "needs-work");
-    // Fire-and-forget points write — feedback has already been called
-    // synchronously inside the gesture so the AudioContext is live.
-    window.setTimeout(() => {
-      const batch = awardPoints([kidId], item);
-      const text = `${item.points > 0 ? "+" : ""}${item.points} ${item.name}`;
-      setToast({ batch, text });
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      toastTimer.current = setTimeout(() => setToast(null), 5000);
-    }, 180);
+    // On mobile the jar sits below the fold, so once the modal closes, smooth-
+    // scroll it into view and hold the drops until the scroll lands — the child
+    // watches the marbles fall in. Desktop keeps the snappy timing since the
+    // jar is already beside the kid row.
+    const onMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    if (onMobile) {
+      requestAnimationFrame(() =>
+        jarsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      );
+    }
+    // Drop the marbles one at a time (~260ms apart) with a chime per award, so
+    // a batch of taps reads as several distinct drops — kids hear "+3" as three
+    // separate chimes. AudioContext was already unlocked on the avatar tap, so
+    // the deferred chimes still play on iOS.
+    const startDelay = onMobile ? 620 : 160;
+    const STAGGER_MS = 260;
+    const batches: AwardBatch[] = [];
+    items.forEach((item, i) => {
+      window.setTimeout(() => {
+        triggerAwardFeedback(item.points >= 0 ? "positive" : "needs-work");
+        batches.push(awardPoints([kidId], item));
+        if (i === items.length - 1) {
+          const text =
+            items.length === 1
+              ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
+              : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
+          setToast({ batches, text });
+          if (toastTimer.current) clearTimeout(toastTimer.current);
+          toastTimer.current = setTimeout(() => setToast(null), 5000);
+        }
+      }, startDelay + i * STAGGER_MS);
+    });
   };
 
   const undo = () => {
     if (!toast) return;
-    undoBatch(toast.batch);
+    // Reverse each award in the batch (newest first).
+    [...toast.batches].reverse().forEach(undoBatch);
     haptic("light");
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(null);
@@ -138,7 +162,7 @@ function HomePage() {
       </section>
 
       {/* Jars — personal jars flank the family jar when split jars are on (§6) */}
-      <section aria-labelledby="jars-heading">
+      <section aria-labelledby="jars-heading" ref={jarsRef}>
         <h2 id="jars-heading" className="sr-only">Jars</h2>
         <div className="flex flex-col items-center gap-6">
           {/* Personal jars row — above the family jar when split jars enabled */}
@@ -148,7 +172,7 @@ function HomePage() {
                 .filter((k) => (k.personalTarget ?? 0) > 0)
                 .map((k) => (
                   <div key={k.id} className="w-[130px]">
-                    <PersonalJarCard kid={k} size={100} />
+                    <PersonalJarCard kid={k} size={100} showControls={false} />
                   </div>
                 ))}
             </div>
@@ -169,7 +193,7 @@ function HomePage() {
 
       {/* Award modal (§2) */}
       {activeKid && (
-        <AwardModal kid={activeKid} onAward={award} onClose={() => setActiveKidId(null)} />
+        <AwardModal kid={activeKid} onAwardBatch={award} onClose={() => setActiveKidId(null)} />
       )}
 
       {/* Undo toast — above the modal so it's visible while awarding */}

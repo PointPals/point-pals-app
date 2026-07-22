@@ -12,7 +12,9 @@ const BUCKET =
 export const LOGO_URL = `${BUCKET}/pointpals.logo.png`;
 export const LOGO_POINTS_URL = `${BUCKET}/pointpals-logo-points.png`;
 export const APP_ICON_URL = `${BUCKET}/pointpals-app-icon.png`;
-export const HERO_IMAGE_URL = `${BUCKET}/pp-hero.jpg`;
+// Social share / OpenGraph card (1200×630). Served from the app's own
+// /public so it deploys with the site — replace public/pp-share.png to change it.
+export const HERO_IMAGE_URL = "https://pointpals.co.nz/pp-share.png";
 
 // ── Marketing ───────────────────────────────────────────────────────────────
 export const ABOUT_HERO = `${BUCKET}/about-hero.jpg`;

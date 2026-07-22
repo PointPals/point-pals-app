@@ -14,6 +14,7 @@
 import { COMPANIONS, PASTEL_HEX, type Chore, type Companion, type Kid } from "./mock-data";
 import { iconUrl, isIconKey } from "./icons";
 import { companionArtUrl } from "./companion-assets";
+import { orderChores } from "./chore-order";
 import { addDays, format, startOfWeek } from "date-fns";
 
 // Cache images so repeated renders don't refetch.
@@ -89,12 +90,19 @@ export function companionForKid(kid: Kid): Companion {
 
 /** Chores that belong on a weekly chart: every chore on the household's list.
  * Custom chores default to recurrence "none", and filtering those out made
- * user-created chores silently vanish from the printable PDF. */
+ * user-created chores silently vanish from the printable PDF.
+ *
+ * When the parent has set a manual print order (Library → Chores, the "Print
+ * order" controls), that order wins — so e.g. morning chores can be made to
+ * appear before afternoon ones on the PDF. Chores without a saved position fall
+ * back to the default recurrence ranking (daily first, then one-off, then
+ * weekly), which also drives which survive if we truncate to fit one page. */
 export function weeklyChores(chores: Chore[]): Chore[] {
-  // Daily chores first, then one-off/custom, then weekly — this order also drives
-  // which chores survive if we ever have to truncate to fit one page.
   const rank = (c: Chore) => (c.recurrence === "daily" ? 0 : c.recurrence === "none" ? 1 : 2);
-  return [...chores].sort((a, b) => rank(a) - rank(b));
+  // Default ordering first, then apply the saved manual order on top (manual
+  // positions win; anything unsaved keeps the recurrence ranking below them).
+  const byRecurrence = [...chores].sort((a, b) => rank(a) - rank(b));
+  return orderChores(byRecurrence);
 }
 
 // ---- colour helpers -------------------------------------------------------

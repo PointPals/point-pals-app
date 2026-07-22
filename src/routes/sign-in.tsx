@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 import { PublicLogo } from "@/components/PublicLogo";
+import { AppleSignInButton } from "@/components/AppleSignInButton";
 
 function GoogleSignInButton() {
   const [busy, setBusy] = useState(false);
@@ -130,6 +131,7 @@ function SignInPage() {
             <span className="flex-1 h-px bg-border" />
           </div>
           <GoogleSignInButton />
+          <AppleSignInButton label="Continue with Apple" />
           <button
             type="submit"
             disabled={busy}

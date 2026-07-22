@@ -203,7 +203,7 @@ function Onboarding() {
           <input
             type="range"
             min={30}
-            max={300}
+            max={100}
             step={10}
             value={target}
             onChange={(e) => setTarget(Number(e.target.value))}

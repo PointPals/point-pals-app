@@ -180,7 +180,8 @@ function SeasonBanner({ householdId }: { householdId: string }) {
       <div className="pl-11">
         {season.montageCount >= season.montageCap && montageState.phase !== "ready" ? (
           <div className="text-xs text-muted-foreground">
-            You've already made this season's montage{season.daysLeft > 0
+            You've already made this season's montage
+            {season.daysLeft > 0
               ? ". Your video will be emailed to you when the season ends."
               : ". Your video has been emailed to you."}
           </div>
@@ -847,7 +848,8 @@ function MemoryCard({
   const tagged = kids.filter((k) => memory.kidIds.includes(k.id));
   // When no one is explicitly tagged ("the whole family"), show all
   // current kids the same way as a multi-tag — avatars and names.
-  const displayKids = tagged.length > 0 ? tagged : kids;
+  const wholeFamily = tagged.length === 0;
+  const displayKids = wholeFamily ? kids : tagged;
   const shown = tagsExpanded ? displayKids : displayKids.slice(0, 2);
   const overflow = displayKids.length - 2;
 
@@ -871,7 +873,9 @@ function MemoryCard({
         setComments(fb.comments);
         setFeedbackLoaded(true);
       })
-      .catch(() => { if (firstVersion === 0) setFeedbackLoaded(true); });
+      .catch(() => {
+        if (firstVersion === 0) setFeedbackLoaded(true);
+      });
   }, [memory.id, memory.remote, feedbackVersion]);
 
   const handleLike = async () => {
@@ -918,25 +922,33 @@ function MemoryCard({
           parent — same data, just a cleaner arrangement. */}
       <div className="px-4 py-3 flex items-start gap-3 border-b border-border/40">
         <div className="flex -space-x-2 shrink-0">
-          {displayKids.slice(0, 3).map((k) => (
-            <span
-              key={k.id}
-              className="h-9 w-9 rounded-full border-2 border-card overflow-hidden flex items-center justify-center"
-              style={{
-                backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
-              }}
-            >
-              <CompanionAvatar
-                seed={k.id}
-                color={k.color as PastelKey}
-                size={32}
-                companionId={k.companionId}
-              />
-            </span>
-          ))}
-          {displayKids.length > 3 && (
-            <span className="h-9 w-9 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[11px] font-bold">
-              +{displayKids.length - 3}
+          {displayKids.length > 0 ? (
+            <>
+              {displayKids.slice(0, 3).map((k) => (
+                <span
+                  key={k.id}
+                  className="h-9 w-9 rounded-full border-2 border-card overflow-hidden flex items-center justify-center"
+                  style={{
+                    backgroundColor: PASTEL_HEX[k.color as keyof typeof PASTEL_HEX] ?? "#ccc",
+                  }}
+                >
+                  <CompanionAvatar
+                    seed={k.id}
+                    color={k.color as PastelKey}
+                    size={32}
+                    companionId={k.companionId}
+                  />
+                </span>
+              ))}
+              {displayKids.length > 3 && (
+                <span className="h-9 w-9 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[11px] font-bold">
+                  +{displayKids.length - 3}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
+              ?
             </span>
           )}
         </div>
@@ -945,9 +957,11 @@ function MemoryCard({
           <div className="flex items-baseline justify-between gap-2">
             <div className="text-sm font-semibold truncate flex items-baseline gap-1.5 min-w-0">
               <span className="truncate">
-                {shown.map((k) => k.name).join(displayKids.length > 2 ? ", " : " & ")}
+                {wholeFamily
+                  ? "The whole family"
+                  : shown.map((k) => k.name).join(displayKids.length > 2 ? ", " : " & ")}
               </span>
-              {!tagsExpanded && overflow > 0 && (
+              {!wholeFamily && !tagsExpanded && overflow > 0 && (
                 <button
                   onClick={() => setTagsExpanded(true)}
                   className="tap text-xs font-semibold text-muted-foreground hover:text-foreground shrink-0"

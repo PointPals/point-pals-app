@@ -255,9 +255,12 @@ export function MarbleJar({
   }, [size]);
 
   // How many marbles the jar shows — honest fraction of target, capped so the
-  // jar can physically hold them. Each marble ≈ one point until the cap, then
+  // jar can physically hold them. Each marble == one point up to the cap, then
   // marbles represent proportional chunks so a full jar still means "reached".
-  const cap = 90;
+  // Cap is 100 (the default reward target) so the common case maps one marble
+  // to one point exactly — below the cap, `perMarble` is 1 and no rounding can
+  // drop a marble (e.g. 8 points showed 7 marbles when the cap was 90).
+  const cap = 100;
   const perMarble = target > cap ? target / cap : 1;
   const full = value >= target;
 

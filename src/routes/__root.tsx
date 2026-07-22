@@ -96,21 +96,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "PointPals" },
       { property: "og:url", content: "https://pointpals.co.nz/welcome" },
-      { property: "og:image", content: "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/pp-hero.jpg" },
+      { property: "og:image", content: "https://pointpals.co.nz/pp-share.png" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:locale", content: "en_NZ" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://tcpbvcgvtwrqsrzerwwr.supabase.co/storage/v1/object/public/assets/pp-hero.jpg" },
+      { name: "twitter:image", content: "https://pointpals.co.nz/pp-share.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png?v=2", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/app-icon.png" },
+      { rel: "apple-touch-icon", href: "/app-icon.png?v=3" },
       // iOS launch screen fallback. Without per-device PNGs iOS shows the
       // icon centered on the manifest background_color — good enough until
       // dedicated splash art is generated.
-      { rel: "apple-touch-startup-image", href: "/app-icon.png" },
+      { rel: "apple-touch-startup-image", href: "/app-icon.png?v=3" },
       { rel: "canonical", href: "https://pointpals.co.nz/welcome" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],

@@ -6,26 +6,43 @@ import { PASTEL_HEX, appliesToKid } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-store";
 import { hasEntitlement, formatPrice, isSubscribed, BILLING_CONFIG } from "@/lib/entitlements";
 import { startCheckout } from "@/lib/billing";
+import { isNativePlatform } from "@/lib/platform";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
 
+type AwardItem = { name: string; icon: string; points: number };
+
 export function AwardModal({
   kid,
-  onAward,
+  onAwardBatch,
   onClose,
 }: {
   kid: Kid;
-  onAward: (item: { name: string; icon: string; points: number }) => void;
+  onAwardBatch: (items: AwardItem[]) => void;
   onClose: () => void;
 }) {
-  const { household, chores, skills } = useApp();
+  const { household, chores, skills, refreshFromServer } = useApp();
+  // Native uses store billing (RevenueCat) — hide Stripe branding and our own
+  // web price there; the store paywall provides the real price.
+  const [native, setNative] = useState(false);
+  useEffect(() => {
+    void isNativePlatform().then(setNative);
+  }, []);
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work">("chores");
   const [pointsFlash, setPointsFlash] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [paywallItem, setPaywallItem] = useState<{ name: string; icon: string; points: number } | null>(null);
+  const [paywallItem, setPaywallItem] = useState<{
+    name: string;
+    icon: string;
+    points: number;
+  } | null>(null);
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallErr, setPaywallErr] = useState<string | null>(null);
+  // Batch tray: tapping tiles adds them here; "Add to jar" awards them all at
+  // once so N marbles drop together instead of one award closing the sheet.
+  const [tray, setTray] = useState<AwardItem[]>([]);
+  const trayPoints = tray.reduce((sum, it) => sum + it.points, 0);
   const prevPoints = useRef(kid.currentPoints);
   const closeRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -40,10 +57,10 @@ export function AwardModal({
     () => chores.filter((c) => appliesToKid(c, kid.id)),
     [chores, kid.id],
   );
-  const eligibleSkills = useMemo(
-    () => skills.filter((s) => appliesToKid(s, kid.id)),
-    [skills, kid.id],
-  );
+  // Positive and needs-work behaviours are NOT assigned per child — every
+  // positive/negative point is always awardable for whichever kid is selected,
+  // no tagging required. (Chores above still respect per-kid assignment.)
+  const eligibleSkills = skills;
   const positive = useMemo(() => eligibleSkills.filter((s) => s.isPositive), [eligibleSkills]);
   const needsWork = useMemo(() => eligibleSkills.filter((s) => !s.isPositive), [eligibleSkills]);
 
@@ -120,12 +137,12 @@ export function AwardModal({
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bottom-[var(--nav-h,68px)] bg-foreground/30 backdrop-blur-[2px] cursor-default md:bottom-0"
+        className="absolute inset-0 bottom-[calc(5.75rem_+_env(safe-area-inset-bottom))] bg-foreground/30 backdrop-blur-[2px] cursor-default md:bottom-0"
         tabIndex={-1}
       />
 
       {/* card - stops above the bottom nav on mobile */}
-      <div className="relative w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[88vh] mb-[var(--nav-h,68px)] sm:mb-0 flex flex-col bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl animate-pop-in overflow-hidden">
+      <div className="relative w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[88vh] mb-[calc(5.75rem_+_env(safe-area-inset-bottom))] sm:mb-0 flex flex-col bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl animate-pop-in overflow-hidden">
         {/* header — kid identity + live points + X */}
         <div
           className="flex items-center gap-3 px-5 py-4"
@@ -146,7 +163,9 @@ export function AwardModal({
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-display text-2xl font-bold leading-none truncate">{kid.name}</div>
-            <div className="text-xs text-muted-foreground mt-1">Tap your character to award points</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Tap your character to award points
+            </div>
           </div>
           <div
             className={`font-display text-2xl font-bold rounded-full px-3 py-1 transition-colors ${
@@ -233,8 +252,8 @@ export function AwardModal({
           </div>
         )}
 
-        {/* tile grid */}
-        <div className="flex-1 overflow-y-auto px-5 pt-4 pb-16">
+        {/* tile grid — min-h-0 lets this flex child actually shrink & scroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-16">
           {empty ? (
             <div className="text-center py-10">
               <PlusCircle className="mx-auto h-10 w-10 text-muted-foreground/60" />
@@ -250,11 +269,28 @@ export function AwardModal({
               </Link>
             </div>
           ) : list.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-10">
-              {search || tagFilter
-                ? "Nothing matches your search or filter."
-                : "Nothing in this category yet."}
-            </p>
+            search || tagFilter ? (
+              <p className="text-center text-sm text-muted-foreground py-10">
+                Nothing matches your search or filter.
+              </p>
+            ) : tab === "chores" ? (
+              <div className="text-center py-10">
+                <p className="text-sm text-muted-foreground">
+                  Chores appear here once you tag them for {kid.name} on the Points page.
+                </p>
+                <Link
+                  to="/library"
+                  onClick={onClose}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition"
+                >
+                  Go to Points
+                </Link>
+              </div>
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-10">
+                Nothing in this category yet.
+              </p>
+            )
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-2 gap-y-5 justify-items-center">
               {list.map((item) => (
@@ -267,7 +303,10 @@ export function AwardModal({
                   muted={tab === "needs-work"}
                   onClick={() => {
                     if (canAward) {
-                      onAward({ name: item.name, icon: item.icon, points: item.points });
+                      setTray((t) => [
+                        ...t,
+                        { name: item.name, icon: item.icon, points: item.points },
+                      ]);
                     } else {
                       setPaywallItem({ name: item.name, icon: item.icon, points: item.points });
                     }
@@ -277,6 +316,35 @@ export function AwardModal({
             </div>
           )}
         </div>
+
+        {/* Batch tray — appears once at least one tile is tapped. Review the
+            running total, then drop them all into the jar together. */}
+        {tray.length > 0 && (
+          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-3">
+            <button
+              onClick={() => setTray([])}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground shrink-0"
+            >
+              Clear
+            </button>
+            <div className="flex-1 min-w-0 text-center">
+              <div className="font-display text-lg font-bold leading-none">
+                {trayPoints > 0 ? "+" : ""}
+                {trayPoints}
+                <span className="text-sm font-sans font-normal text-muted-foreground">
+                  {" "}
+                  · {tray.length} {tray.length === 1 ? "tap" : "taps"}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => onAwardBatch(tray)}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+            >
+              <Sparkles className="h-4 w-4" /> Add to jar
+            </button>
+          </div>
+        )}
 
         {/* Paywall overlay — shown when a free user taps a tile */}
         {paywallItem && (
@@ -297,12 +365,16 @@ export function AwardModal({
               <p className="mt-1 text-sm text-foreground/70">
                 {subscribed
                   ? "Your trial includes premium features. When it ends, subscribe to keep awarding points, filling the marble jar, and unlocking rewards."
-                  : `Subscribe for ${formatPrice()} to award points, fill the marble jar, and unlock rewards for your family.`}
+                  : native
+                    ? "Subscribe to award points, fill the marble jar, and unlock rewards for your family."
+                    : `Subscribe for ${formatPrice()} to award points, fill the marble jar, and unlock rewards for your family.`}
               </p>
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="font-display text-3xl font-bold">{formatPrice()}</span>
+                {!native && (
+                  <span className="font-display text-3xl font-bold">{formatPrice()}</span>
+                )}
                 <span className="text-sm text-foreground/60">
-                  {subscribed ? "after trial" : "/month"}
+                  {subscribed ? "after trial" : native ? "" : "/month"}
                 </span>
               </div>
               <button
@@ -312,6 +384,16 @@ export function AwardModal({
                   const res = await startCheckout(household.id);
                   if (res.url) {
                     window.location.href = res.url;
+                    return;
+                  }
+                  if (res.native) {
+                    if (res.activated) {
+                      await refreshFromServer();
+                      setPaywallItem(null);
+                    } else if (res.error) {
+                      setPaywallErr(res.error);
+                    }
+                    setPaywallBusy(false);
                     return;
                   }
                   setPaywallErr(res.error ?? "Billing backend not connected.");
@@ -328,8 +410,14 @@ export function AwardModal({
                 {subscribed ? "Confirm now" : "Subscribe"}
               </button>
               <p className="mt-3 text-xs text-foreground/50">
-                Secure checkout by Stripe &middot; cancel anytime &middot; prices in{" "}
-                {BILLING_CONFIG.primaryCurrency}.
+                {native ? (
+                  "Cancel anytime from your store account."
+                ) : (
+                  <>
+                    Secure checkout by Stripe &middot; cancel anytime &middot; prices in{" "}
+                    {BILLING_CONFIG.primaryCurrency}.
+                  </>
+                )}
               </p>
               {paywallErr && <p className="mt-2 text-xs text-destructive">{paywallErr}</p>}
               <button

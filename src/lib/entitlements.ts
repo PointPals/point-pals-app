@@ -11,6 +11,23 @@
 
 import type { Household } from "./app-store";
 
+// ── RevenueCat (native iOS/Android IAP) ──────────────────────────────────────
+// The entitlement identifier configured in the RevenueCat dashboard. A customer
+// holding this entitlement is treated as subscribed on native, exactly like an
+// active Stripe subscription on web. Must match the dashboard string EXACTLY.
+export const RC_ENTITLEMENT_ID = "PointPals Pro";
+
+// Product identifiers backing the entitlement, grouped in one Offering. These
+// mirror the products created in App Store Connect / Play Console and attached
+// to the RevenueCat Offering. The prebuilt Paywall reads them from the Offering
+// at runtime — kept here only for reference / analytics, never hardcoded into
+// purchase calls.
+export const RC_PRODUCTS = {
+  lifetime: "lifetime",
+  yearly: "yearly",
+  monthly: "monthly",
+} as const;
+
 export type BillingModel = "subscription" | "one_off" | "freemium";
 
 export type CurrencyCode = "NZD" | "AUD" | "USD" | "GBP" | "EUR";
