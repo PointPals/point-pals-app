@@ -67,7 +67,10 @@ export function mapHousehold(row: DbHousehold): Household {
     onboarded: row.onboarded,
     splitJarsEnabled: (row as { split_jars_enabled?: boolean }).split_jars_enabled ?? false,
     splitRatio: (row as { split_ratio?: number }).split_ratio ?? 50,
-    splitMode: (row as { split_mode?: string }).split_mode === "match" ? "match" : "percentage",
+    // Default to "match" (1:1 — every point fills both the child's jar and the
+    // family jar) to match the DB column default + mock defaults; only an
+    // explicit "percentage" opts into the split ratio.
+    splitMode: (row as { split_mode?: string }).split_mode === "percentage" ? "percentage" : "match",
     sharedJarEnabled: (row as { shared_jar_enabled?: boolean }).shared_jar_enabled ?? true,
     activeRewardName: (row as { active_reward_name?: string | null }).active_reward_name ?? null,
     activeRewardTarget: (row as { active_reward_target?: number | null }).active_reward_target ?? null,
