@@ -3,8 +3,28 @@ import { useEffect, useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { MarbleJar } from "@/components/MarbleJar";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
-import { PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
-import { fetchKidsView, type KidsViewData } from "@/lib/kids-view-link";
+import { PASTEL_HEX, type PastelKey, type Kid, type PointEvent } from "@/lib/mock-data";
+import { fetchKidsView, type KidsViewData, type KidsViewKid } from "@/lib/kids-view-link";
+
+// The public page has jar totals but no event log, so synthesise one point
+// event per marble for the given kid(s). That drives MarbleJar's kid-coloured
+// marbles (Ruby pink, Leo blue) instead of the neutral rainbow fallback.
+function synthEvents(entries: { kidId: string; n: number }[]): PointEvent[] {
+  const events: PointEvent[] = [];
+  let i = 0;
+  for (const { kidId, n } of entries) {
+    for (let j = 0; j < Math.max(0, n); j++) {
+      events.push({ id: `${kidId}-${i}`, kidId, itemName: "", itemIcon: "", points: 1, at: i });
+      i++;
+    }
+  }
+  return events;
+}
+
+// Minimal Kid shape MarbleJar needs for per-kid marble colour.
+function asKid(k: KidsViewKid): Kid {
+  return { id: k.id, color: k.color as PastelKey } as Kid;
+}
 
 // Public, read-only family "Kids' view" — opened via a private share link
 // (/k/<token>). No login, no PIN: the unguessable token is the gate. Kids save
@@ -85,14 +105,25 @@ function KidsViewPublic() {
 
   useEffect(() => {
     let cancelled = false;
+    let attempts = 0;
     const load = async (initial: boolean) => {
       const res = await fetchKidsView(token);
       if (cancelled) return;
-      if (res) {
-        setData(res);
+      if (res.status === "ok") {
+        attempts = 0;
+        setData(res.data);
         setStatus("ready");
-      } else if (initial) {
-        setStatus("notfound");
+      } else if (res.status === "empty") {
+        // The token genuinely doesn't match — only then is it "not found".
+        if (initial) setStatus("notfound");
+      } else {
+        // Transient error — retry a few times before giving up, so a blip on
+        // reload doesn't wrongly show "no longer active".
+        if (initial) {
+          attempts += 1;
+          if (attempts <= 5) window.setTimeout(() => void load(true), 1500);
+          else setStatus("notfound");
+        }
       }
     };
     void load(true);
@@ -131,6 +162,17 @@ function KidsViewPublic() {
   const { household, kids } = data;
   const showFamily = household.sharedJarEnabled;
   const jarKids = kids.filter((k) => k.personalTarget > 0);
+  const allKids = kids.map(asKid);
+  // Round-robin the shared pool across kids so the family jar shows the kids'
+  // colours rather than a rainbow (we don't have per-kid contribution here).
+  const familyEvents = kids.length
+    ? synthEvents(
+        Array.from({ length: household.sharedPool }, (_, i) => ({
+          kidId: kids[i % kids.length].id,
+          n: 1,
+        })),
+      )
+    : [];
 
   return (
     <div className="min-h-dvh bg-background">
@@ -152,6 +194,8 @@ function KidsViewPublic() {
             <MarbleJar
               value={household.sharedPool}
               target={household.rewardTarget}
+              events={familyEvents}
+              kids={allKids}
               size={260}
               reducedMotion={reducedMotion}
               className="-my-2"
@@ -181,6 +225,8 @@ function KidsViewPublic() {
                 <MarbleJar
                   value={k.personalPool}
                   target={k.personalTarget > 0 ? k.personalTarget : 999}
+                  events={synthEvents([{ kidId: k.id, n: k.personalPool }])}
+                  kids={[asKid(k)]}
                   size={150}
                   reducedMotion={reducedMotion}
                   className="-my-1"

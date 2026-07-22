@@ -46,13 +46,23 @@ type RpcClient = {
   rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 };
 
+export type KidsViewResult =
+  | { status: "ok"; data: KidsViewData }
+  | { status: "empty" } // the RPC ran but no household matched the token
+  | { status: "error" }; // transient / network / RPC failure — safe to retry
+
 /** Public read: fetch the read-only jars/points for a share token. */
-export async function fetchKidsView(token: string): Promise<KidsViewData | null> {
-  const { data, error } = await (supabase as unknown as RpcClient).rpc("get_kids_view", {
-    p_token: token,
-  });
-  if (error || !data) return null;
-  return data as KidsViewData;
+export async function fetchKidsView(token: string): Promise<KidsViewResult> {
+  try {
+    const { data, error } = await (supabase as unknown as RpcClient).rpc("get_kids_view", {
+      p_token: token.trim(),
+    });
+    if (error) return { status: "error" };
+    if (!data) return { status: "empty" };
+    return { status: "ok", data: data as KidsViewData };
+  } catch {
+    return { status: "error" };
+  }
 }
 
 /** Parent (authed): the household's current share token, or null. */
