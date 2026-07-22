@@ -18,6 +18,9 @@ create unique index if not exists households_kids_view_token_key
 -- 2. Read-only fetch by token. Returns the family jar + each kid's jar/points,
 --    or null when the token doesn't match. Marked STABLE + SECURITY DEFINER and
 --    granted to anon so the public page can call it with the publishable key.
+-- Reads columns via to_jsonb(row) ->> 'col' so the function is resilient to
+-- schema drift: a column that doesn't exist yet yields null (coalesced to a
+-- default) instead of failing to create the function.
 create or replace function public.get_kids_view(p_token uuid)
 returns jsonb
 language sql
@@ -25,35 +28,42 @@ stable
 security definer
 set search_path = public
 as $$
+  with hh as (
+    select to_jsonb(x) as j, x.id
+    from public.households x
+    where x.kids_view_token = p_token
+    limit 1
+  )
   select jsonb_build_object(
     'household', jsonb_build_object(
-      'name', h.name,
-      'sharedPool', h.shared_pool,
-      'rewardTarget', h.reward_target,
-      'splitJarsEnabled', coalesce(h.split_jars_enabled, false),
-      'sharedJarEnabled', coalesce(h.shared_jar_enabled, true)
+      'name', hh.j ->> 'name',
+      'sharedPool', coalesce((hh.j ->> 'shared_pool')::int, 0),
+      'rewardTarget', coalesce((hh.j ->> 'reward_target')::int, 0),
+      'splitJarsEnabled', coalesce((hh.j ->> 'split_jars_enabled')::boolean, false),
+      'sharedJarEnabled', coalesce((hh.j ->> 'shared_jar_enabled')::boolean, true)
     ),
     'kids', coalesce((
       select jsonb_agg(
         jsonb_build_object(
-          'id', k.id,
-          'name', k.name,
-          'color', k.color,
-          'companionId', k.avatar_key,
-          'currentPoints', coalesce(k.current_points, k.points),
-          'allTimePoints', coalesce(k.all_time_points, k.points),
-          'personalPool', coalesce(k.personal_pool, 0),
-          'personalTarget', coalesce(k.personal_target, 0)
+          'id', sub.kj ->> 'id',
+          'name', sub.kj ->> 'name',
+          'color', sub.kj ->> 'color',
+          'companionId', sub.kj ->> 'avatar_key',
+          'currentPoints', coalesce((sub.kj ->> 'current_points')::int, (sub.kj ->> 'points')::int, 0),
+          'allTimePoints', coalesce((sub.kj ->> 'all_time_points')::int, (sub.kj ->> 'points')::int, 0),
+          'personalPool', coalesce((sub.kj ->> 'personal_pool')::int, 0),
+          'personalTarget', coalesce((sub.kj ->> 'personal_target')::int, 0)
         )
-        order by k.created_at
+        order by (sub.kj ->> 'created_at')
       )
-      from public.kids k
-      where k.household_id = h.id
+      from (
+        select to_jsonb(kd) as kj
+        from public.kids kd
+        where kd.household_id = hh.id
+      ) sub
     ), '[]'::jsonb)
   )
-  from public.households h
-  where h.kids_view_token = p_token
-  limit 1;
+  from hh;
 $$;
 
 revoke all on function public.get_kids_view(uuid) from public;
