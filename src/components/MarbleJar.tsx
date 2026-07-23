@@ -85,6 +85,31 @@ function buildSynthetic(
   return list;
 }
 
+// Interleaved kid sequence for colouring gap-fill marbles, weighted by each
+// kid's points (currentPoints, falling back to personalPool). So a family jar
+// whose event log hasn't synced still fills with the kids' colours in the right
+// proportion — Leo (blue) + Ruby (pink) — instead of a neutral orange. One kid
+// → just that kid; no points yet → an even split.
+function gapKidSequence(kids: Kid[]): Kid[] {
+  if (kids.length <= 1) return kids;
+  const weight = (k: Kid) => Math.max(0, k.currentPoints || k.personalPool || 0);
+  const remaining = kids.map(weight);
+  if (remaining.reduce((a, b) => a + b, 0) === 0) return kids;
+  const seq: Kid[] = [];
+  let added = true;
+  while (added) {
+    added = false;
+    for (let i = 0; i < kids.length; i++) {
+      if (remaining[i] > 0) {
+        seq.push(kids[i]);
+        remaining[i] -= 1;
+        added = true;
+      }
+    }
+  }
+  return seq;
+}
+
 // Build the deterministic desired marble list from the event log. Walking
 // chronologically means the marble stack ends up in the same order every time
 // the component re-renders — critical for stable ids so the diff below can
@@ -173,19 +198,17 @@ function buildDesired(
   }
 
   // Fill any remaining gap so the jar always has the right marble count even
-  // when history is sparse (e.g. after a storage clear / reload). For a
-  // single-kid (personal) jar every marble is that child's, so gap marbles take
-  // the kid's colour — otherwise the fallback tint (e.g. orange) reads as a
-  // different child's colour. The shared/family jar keeps a neutral tint.
-  const soleKid = kids.length === 1 ? kids[0] : null;
-  const gap = soleKid ? (MARBLE_TINT[soleKid.color] ?? DEFAULT_TINT) : (MARBLE_TINT.sand ?? DEFAULT_TINT);
+  // when the event history is sparse (after a reload / before events sync).
+  // Colour gap marbles by kid so the jar reflects who has points, not a neutral
+  // fallback: a personal jar → that child's colour; the family jar → the kids'
+  // colours distributed by their points (e.g. Leo blue + Ruby pink, not orange).
+  const gapSeq = gapKidSequence(kids);
+  let gapIdx = 0;
   while (list.length < desiredCount) {
-    list.push({
-      id: `gap-${list.length}`,
-      kidId: soleKid ? soleKid.id : "gap",
-      color: gap[0],
-      hue: gap[1],
-    });
+    const gk = gapSeq.length ? gapSeq[gapIdx % gapSeq.length] : null;
+    const t = gk ? (MARBLE_TINT[gk.color] ?? DEFAULT_TINT) : (MARBLE_TINT.sand ?? DEFAULT_TINT);
+    list.push({ id: `gap-${list.length}`, kidId: gk ? gk.id : "gap", color: t[0], hue: t[1] });
+    gapIdx++;
   }
 
   // Cap: keep the newest `cap` marbles so an old jar full of ancient events

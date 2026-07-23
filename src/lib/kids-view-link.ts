@@ -24,6 +24,7 @@ export type KidsViewKid = {
 
 export type KidsViewData = {
   household: {
+    id: string;
     name: string;
     sharedPool: number;
     rewardTarget: number;

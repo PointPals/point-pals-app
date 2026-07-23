@@ -241,6 +241,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const userIdRef = useRef<string | null>(null);
   // Row ids we just wrote - used to suppress realtime echoes of our own writes.
   const echoIds = useRef<Set<string>>(new Set());
+  // The live household channel, kept so award actions can broadcast an instant
+  // "points changed" ping to the read-only Kids' view (/k/<token>) so it
+  // refetches + animates the moment a parent awards, without waiting for a poll.
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const broadcastJarPing = () => {
+    channelRef.current?.send({ type: "broadcast", event: "jar", payload: { at: Date.now() } });
+  };
   const markEcho = (id: string) => {
     echoIds.current.add(id);
     // Free memory after a while - realtime round-trip is < 2s in practice.
@@ -595,7 +602,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
       )
       .subscribe();
+    channelRef.current = channel;
     return () => {
+      channelRef.current = null;
       supabase.removeChannel(channel);
     };
   }, [mode]);
@@ -764,6 +773,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 .eq("id", kidId),
           );
         });
+        broadcastJarPing();
       }
       return batch;
     },
@@ -822,6 +832,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 .eq("id", kidId),
           );
         });
+        broadcastJarPing();
       }
     },
     undoEvent: (eventId) => {

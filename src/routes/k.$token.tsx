@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { MarbleJar } from "@/components/MarbleJar";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { PASTEL_HEX, type PastelKey, type Kid, type PointEvent } from "@/lib/mock-data";
 import { fetchKidsView, type KidsViewData, type KidsViewKid } from "@/lib/kids-view-link";
+import { supabase } from "@/integrations/supabase/client";
+import { primeAudio } from "@/lib/feedback";
 
 // The public page has jar totals but no event log, so synthesise one point
 // event per marble for the given kid(s). That drives MarbleJar's kid-coloured
@@ -40,12 +42,17 @@ export const Route = createFileRoute("/k/$token")({
   }),
 });
 
-const REFRESH_MS = 30_000;
+// Near-real-time: re-poll every few seconds so a parent's award shows on the
+// kid's device within moments (MarbleJar animates the newly-added marbles).
+const REFRESH_MS = 4_000;
 
 function KidsViewPublic() {
   const { token } = Route.useParams();
   const [data, setData] = useState<KidsViewData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "notfound">("loading");
+  // Latest silent refetch, so the realtime broadcast handler can pull fresh
+  // jars the instant a parent awards — without re-subscribing on every render.
+  const refetchRef = useRef<() => void>(() => {});
   const reducedMotion =
     typeof window !== "undefined"
       ? (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false)
@@ -126,16 +133,45 @@ function KidsViewPublic() {
         }
       }
     };
+    refetchRef.current = () => void load(false);
     void load(true);
     const onFocus = () => void load(false);
     const interval = window.setInterval(() => void load(false), REFRESH_MS);
     window.addEventListener("focus", onFocus);
     return () => {
       cancelled = true;
+      refetchRef.current = () => {};
       window.clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
   }, [token]);
+
+  // Instant sync: join the same Realtime broadcast channel the parent app pings
+  // on every award/undo (`household:<id>`). On a ping we refetch straight away,
+  // so the newly-added marbles animate + clink on the kid's device within a
+  // moment — the 4s poll above is just the fallback. Broadcast is ephemeral
+  // messaging, so no household data is exposed by joining.
+  const householdId = data?.household.id;
+  useEffect(() => {
+    if (!householdId) return;
+    const channel = supabase
+      .channel(`household:${householdId}`)
+      .on("broadcast", { event: "jar" }, () => refetchRef.current())
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [householdId]);
+
+  // Mobile browsers block sound until the first touch. Prime the audio engine
+  // on the kid's first tap so the marble clinks can play when a broadcast
+  // award drops new marbles into the jar.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onFirstTap = () => primeAudio();
+    window.addEventListener("pointerdown", onFirstTap, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirstTap);
+  }, []);
 
   if (status === "loading") {
     return (
