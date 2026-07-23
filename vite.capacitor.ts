@@ -23,19 +23,15 @@ export default defineConfig(({ mode }) => {
   // Unlike the web build (Vercel injects these), the Capacitor bundle only has
   // what's in a local .env at build time. If they're missing, the app can't
   // reach the backend and shows a blank/stuck screen after install. Both values
-  // are PUBLIC (already visible in the web bundle) and safe to embed:
-  //   • URL       → default to the known project URL so it's never the culprit.
-  //   • publishable key → project-specific; FAIL THE BUILD LOUDLY if absent so a
-  //     misconfigured build can never be uploaded to the store.
+  // are PUBLIC (already visible in the web bundle) and safe to embed, so we
+  // provide them as fallbacks — a native build works even without a local .env,
+  // and a real .env still overrides them. This makes the store build reproducible
+  // regardless of who/what runs it.
   const SUPABASE_URL_FALLBACK = 'https://tcpbvcgvtwrqsrzerwwr.supabase.co'
+  const SUPABASE_PUBLISHABLE_KEY_FALLBACK = 'sb_publishable_6u4OJzH7WbE7uEF9Fy4idQ_KnUaiGRg'
   if (!loadedEnv.VITE_SUPABASE_URL) loadedEnv.VITE_SUPABASE_URL = SUPABASE_URL_FALLBACK
   if (!loadedEnv.VITE_SUPABASE_PUBLISHABLE_KEY) {
-    throw new Error(
-      '\n[capacitor build] VITE_SUPABASE_PUBLISHABLE_KEY is not set.\n' +
-        'Create a .env file in the project root (copy .env.example) with your\n' +
-        'Supabase URL + publishable key BEFORE running `npm run build:cap`.\n' +
-        'The publishable key is public and safe to embed in the app.\n',
-    )
+    loadedEnv.VITE_SUPABASE_PUBLISHABLE_KEY = SUPABASE_PUBLISHABLE_KEY_FALLBACK
   }
 
   const envDefine: Record<string, string> = {}
