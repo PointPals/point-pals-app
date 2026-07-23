@@ -18,6 +18,26 @@ import viteReact from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
   const loadedEnv = loadEnv(mode, process.cwd(), 'VITE_')
+
+  // ── Supabase client config MUST be baked into the native bundle ────────────
+  // Unlike the web build (Vercel injects these), the Capacitor bundle only has
+  // what's in a local .env at build time. If they're missing, the app can't
+  // reach the backend and shows a blank/stuck screen after install. Both values
+  // are PUBLIC (already visible in the web bundle) and safe to embed:
+  //   • URL       → default to the known project URL so it's never the culprit.
+  //   • publishable key → project-specific; FAIL THE BUILD LOUDLY if absent so a
+  //     misconfigured build can never be uploaded to the store.
+  const SUPABASE_URL_FALLBACK = 'https://tcpbvcgvtwrqsrzerwwr.supabase.co'
+  if (!loadedEnv.VITE_SUPABASE_URL) loadedEnv.VITE_SUPABASE_URL = SUPABASE_URL_FALLBACK
+  if (!loadedEnv.VITE_SUPABASE_PUBLISHABLE_KEY) {
+    throw new Error(
+      '\n[capacitor build] VITE_SUPABASE_PUBLISHABLE_KEY is not set.\n' +
+        'Create a .env file in the project root (copy .env.example) with your\n' +
+        'Supabase URL + publishable key BEFORE running `npm run build:cap`.\n' +
+        'The publishable key is public and safe to embed in the app.\n',
+    )
+  }
+
   const envDefine: Record<string, string> = {}
   for (const [key, value] of Object.entries(loadedEnv)) {
     envDefine[`import.meta.env.${key}`] = JSON.stringify(value)
