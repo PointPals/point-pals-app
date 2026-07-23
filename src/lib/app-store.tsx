@@ -132,6 +132,9 @@ type Ctx = {
   setPersonalTarget: (kidId: string, target: number, reward?: string) => void;
   /** Claim a kid's personal reward - resets only that kid's personalPool. */
   claimPersonalReward: (kidId: string) => void;
+  /** Restart a kid's jar: zero their personalPool AND pull their share back out
+   *  of the family jar (in split mode each award fed both). */
+  resetKidPoints: (kidId: string) => void;
   /** Permanently delete the household and all data, then sign out. */
   deleteAccount: () => Promise<void>;
 };
@@ -1303,6 +1306,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .update({ personal_pool: 0 } as never)
               .eq("id", kidId),
         );
+      }
+    },
+    resetKidPoints: (kidId) => {
+      const kid = kids.find((k) => k.id === kidId);
+      if (!kid) return;
+      // In split mode each award added to BOTH this kid's jar and the family
+      // jar, so resetting the kid must also pull their share back out of the
+      // family jar — otherwise the family total keeps marbles for points that
+      // no longer exist. personalPool is the kid's live contribution (exact in
+      // match mode, the default). No shared jar → nothing to pull back.
+      const drop =
+        household.splitJarsEnabled && household.sharedJarEnabled ? kid.personalPool : 0;
+      const nextPool = Math.max(0, household.sharedPool - drop);
+      setState((s) => ({
+        ...s,
+        kids: s.kids.map((k) => (k.id === kidId ? { ...k, personalPool: 0 } : k)),
+        household: { ...s.household, sharedPool: nextPool },
+      }));
+      if (live) {
+        void dbWrite(
+          async () =>
+            await supabase
+              .from("kids")
+              .update({ personal_pool: 0 } as never)
+              .eq("id", kidId),
+        );
+        if (drop > 0) {
+          void dbWrite(
+            async () =>
+              await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
+          );
+        }
       }
     },
     removeKid: (id) => {

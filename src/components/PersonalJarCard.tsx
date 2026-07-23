@@ -23,7 +23,7 @@ export const PersonalJarCard = memo(function PersonalJarCard({
   size?: number;
   showControls?: boolean;
 }) {
-  const { history, claimPersonalReward, setPersonalTarget } = useApp();
+  const { history, claimPersonalReward, resetKidPoints, setPersonalTarget } = useApp();
   const settings = useSettings();
   const [celebrating, setCelebrating] = useState(false);
   const [claimed, setClaimed] = useState(false);
@@ -71,12 +71,12 @@ export const PersonalJarCard = memo(function PersonalJarCard({
   const handleRestart = useCallback(() => {
     if (
       !window.confirm(
-        `Restart ${kid.name}'s reward? This resets their jar to 0 points.`,
+        `Restart ${kid.name}'s reward? This resets their jar to 0 points and removes those points from the family jar.`,
       )
     )
       return;
-    claimPersonalReward(kid.id);
-  }, [kid.id, kid.name, claimPersonalReward]);
+    resetKidPoints(kid.id);
+  }, [kid.id, kid.name, resetKidPoints]);
 
   return (
     <div className="card-soft relative overflow-hidden p-4 flex flex-col items-center text-center">
