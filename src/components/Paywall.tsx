@@ -144,18 +144,16 @@ export function Paywall({ reason }: { reason?: string }) {
       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-foreground/60">
         <Sparkles className="h-3.5 w-3.5" /> PointPals Plus
       </div>
-      <h3 className="mt-2 font-display text-2xl font-bold">Keep the habits growing</h3>
+      <h3 className="mt-2 font-display text-2xl font-bold">Your free trial has ended</h3>
       <p className="mt-1 text-sm text-foreground/70 max-w-md">
         {reason ??
-          "Unlock custom AI icon generation, unlimited kids and the full weekly recap. Your subscription keeps the app's generation and hosting running."}
+          "Subscribe to keep awarding points, filling the marble jar and unlocking rewards. Your subscription keeps the app's generation and hosting running."}
       </p>
       <div className="mt-4 flex items-baseline gap-2">
         {/* Store policy: don't show our own web price on native — the store
             paywall shows the real, store-approved price. */}
         {!native && <span className="font-display text-3xl font-bold">{formatPrice()}</span>}
-        <span className="text-sm text-foreground/60">
-          after a {BILLING_CONFIG.trialDays}-day free trial
-        </span>
+        <span className="text-sm text-foreground/60">{native ? "" : "billed monthly"}</span>
       </div>
       <button
         onClick={go}
@@ -163,7 +161,7 @@ export function Paywall({ reason }: { reason?: string }) {
         className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        Start free trial
+        Subscribe to continue
       </button>
       <p className="mt-3 text-xs text-foreground/50">
         {native

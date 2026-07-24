@@ -360,14 +360,14 @@ export function AwardModal({
                 <Sparkles className="h-3.5 w-3.5" /> PointPals Plus
               </div>
               <h3 className="mt-2 font-display text-2xl font-bold">
-                Assign points to your chore chart
+                {subscribed ? "Assign points to your chore chart" : "Your free trial has ended"}
               </h3>
               <p className="mt-1 text-sm text-foreground/70">
                 {subscribed
                   ? "Your trial includes premium features. When it ends, subscribe to keep awarding points, filling the marble jar, and unlocking rewards."
                   : native
-                    ? "Subscribe to award points, fill the marble jar, and unlock rewards for your family."
-                    : `Subscribe for ${formatPrice()} to award points, fill the marble jar, and unlock rewards for your family.`}
+                    ? "Subscribe to keep awarding points, filling the marble jar, and unlocking rewards for your family."
+                    : `Subscribe for ${formatPrice()} to keep awarding points, filling the marble jar, and unlocking rewards for your family.`}
               </p>
               <div className="mt-4 flex items-baseline gap-2">
                 {!native && (
