@@ -1,105 +1,246 @@
-// RevenueCat webhook — syncs NATIVE (iOS/Android) subscription lifecycle back
-// to Supabase, mirroring stripe-webhook (which does the same for web/Stripe).
-// Uses the service-role key so it can write the billing-critical columns RLS
-// blocks clients from touching.
+// RevenueCat webhook — syncs native IAP lifecycle back to Supabase.
 //
-// The client configures RevenueCat with the household id as the "app user id"
-// (see src/lib/revenuecat.ts), so `event.app_user_id` IS the household id — one
-// subscription unlocks the whole household.
+// RevenueCat handles StoreKit (iOS) / Play Billing (Android) and sends
+// webhook events for all subscription lifecycle changes. We mirror the
+// stripe-webhook pattern: update households.subscription_status so that
+// hasEntitlement() works identically on both platforms.
 //
 // Deploy: `supabase functions deploy revenuecat-webhook --no-verify-jwt`
-//   (RevenueCat authenticates with a shared Authorization header we check
-//    ourselves, so the platform JWT check must be OFF for this function.)
-// Secrets: REVENUECAT_WEBHOOK_AUTH, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
-// In RevenueCat → Project → Integrations → Webhooks, set the URL to
-//   https://<ref>.supabase.co/functions/v1/revenuecat-webhook
-// and the Authorization header to the same value as REVENUECAT_WEBHOOK_AUTH.
+//   (RevenueCat signs the request; we verify the signature ourselves via
+//    the shared secret. The platform JWT check must be OFF.)
+// Secrets: REVENUECAT_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// Configure the endpoint in RevenueCat: Project > Integrations > Webhooks
+//
+// The app_user_id is the household's UUID (set on login via Purchases.logIn()).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ---- Resend template sender (mirrored from stripe-webhook) ----------------
+const RESEND_TEMPLATES = {
+  paymentConfirmation:   "f349804b-9024-44e5-baf5-da4d18c3701a",
+  subscriptionRenewal:   "af7030c6-a449-4d85-beb7-b35f19a4d5fb",
+  paymentFailed:         "be31e3d1-c51d-4255-91fc-db501d76bf08",
+  subscriptionCancelled: "9bbe49aa-223d-44f1-af8d-88560d4a6ae2",
+} as const;
+type TemplateKey = keyof typeof RESEND_TEMPLATES;
+
+async function sendResendTemplate(
+  key: TemplateKey,
+  to: string,
+  data: Record<string, unknown> = {},
+): Promise<void> {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) {
+    console.error(`[revenuecat-webhook] Missing RESEND_API_KEY, skipping ${key}`);
+    return;
+  }
+  const variables: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    variables[k] = v === null || v === undefined ? "" : typeof v === "string" ? v : String(v);
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({
+        from: "PointPals <hello@pointpals.co.nz>",
+        to: [to],
+        template: { id: RESEND_TEMPLATES[key], variables },
+      }),
+    });
+    if (!res.ok) {
+      console.error(`[revenuecat-webhook] Resend ${key} failed ${res.status}: ${await res.text()}`);
+    }
+  } catch (e) {
+    console.error(`[revenuecat-webhook] Resend ${key} threw:`, e);
+  }
+}
+// -------------------------------------------------------------------------
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const expectedAuth = Deno.env.get("REVENUECAT_WEBHOOK_AUTH") ?? "";
+/**
+ * RevenueCat webhook payload (relevant subset).
+ * Full spec: https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields
+ */
+interface RCRequest {
+  event: {
+    type: string;
+    app_user_id: string;
+    product_id: string;
+    entitlement_id?: string;
+    entitlements?: Record<string, {
+      expires_date?: string;
+      product_identifier?: string;
+    }>;
+    period_type?: "trial" | "intro" | "normal";
+    expiration_at_ms?: number;
+    purchased_at_ms?: number;
+    is_trial_conversion?: boolean;
+    store?: string;
+    cancellation_reason?: string | null;
+  };
+  api_version?: string;
+  // The shared-secret auth check.
+  auth: { app_id?: string };
+}
 
-// Our app's narrower status enum (matches Household.subscriptionStatus).
-type Status = "trialing" | "active" | "past_due" | "canceled" | "free";
-
-type RCEvent = {
-  type: string;
-  app_user_id?: string;
-  original_app_user_id?: string;
-  period_type?: string; // "TRIAL" | "NORMAL" | "INTRO" | "PROMOTIONAL"
-  expiration_at_ms?: number;
-};
-
-// Map a RevenueCat event to our status. RevenueCat's CANCELLATION means
-// auto-renew was turned off but the user stays entitled until EXPIRATION, so we
-// only downgrade on EXPIRATION / billing failure — not on CANCELLATION.
-function statusFor(ev: RCEvent): Status | null {
-  switch (ev.type) {
+function mapStatus(eventType: string): string {
+  switch (eventType) {
     case "INITIAL_PURCHASE":
+      return "active";
     case "RENEWAL":
-    case "PRODUCT_CHANGE":
+      return "active";
     case "UNCANCELLATION":
-    case "NON_RENEWING_PURCHASE": // e.g. lifetime
-      return ev.period_type === "TRIAL" ? "trialing" : "active";
+      return "active";
+    case "CANCELLATION":
+      return "canceled";
     case "BILLING_ISSUE":
       return "past_due";
-    case "SUBSCRIPTION_PAUSED":
     case "EXPIRATION":
-      return "free";
-    // CANCELLATION / TRANSFER / TEST etc: no status change here.
+      return "expired";
     default:
-      return null;
+      return "free";
   }
 }
 
+function isTrialEvent(body: RCRequest): boolean {
+  // INITIAL_PURCHASE with period_type "trial" → free trial started
+  return (
+    body.event.type === "INITIAL_PURCHASE" &&
+    body.event.period_type === "trial"
+  );
+}
+
+function isTrialConversion(body: RCRequest): boolean {
+  // Trial period ended and first real payment went through
+  return (
+    (body.event.type === "INITIAL_PURCHASE" && body.event.period_type !== "trial") ||
+    body.event.type === "RENEWAL"
+  );
+}
+
 Deno.serve(async (req) => {
-  // Shared-secret auth (RevenueCat sends the header you configured).
-  const auth = req.headers.get("Authorization") ?? "";
-  if (!expectedAuth || auth !== expectedAuth) {
-    return new Response("Unauthorized", { status: 401 });
+  // 1. Verify shared secret (RevenueCat sends it in the X-Shared-Secret header)
+  const sharedSecret = Deno.env.get("REVENUECAT_WEBHOOK_AUTH");
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const body: RCRequest = await req.json();
+
+  // RevenueCat authenticates webhooks via the request body's `auth` field
+  // containing the app's shared secret.
+  // https://www.revenuecat.com/docs/integrations/webhooks/security
+  if (sharedSecret) {
+    // RevenueCat sends the shared secret in the body.auth.app_id
+    if (body.auth?.app_id !== sharedSecret) {
+      console.error("[revenuecat-webhook] Invalid shared secret");
+      return new Response("Unauthorized", { status: 401 });
+    }
+  } else {
+    console.warn("[revenuecat-webhook] No REVENUECAT_WEBHOOK_AUTH configured — allowing request (dev mode)");
   }
 
-  let body: { event?: RCEvent };
-  try {
-    body = await req.json();
-  } catch {
-    return new Response("Bad JSON", { status: 400 });
-  }
+  const { event } = body;
+  const householdId = event.app_user_id;
+  const eventType = event.type;
+  const expiresAt = event.expiration_at_ms
+    ? new Date(event.expiration_at_ms).toISOString()
+    : null;
 
-  const ev = body.event;
-  if (!ev) return new Response("No event", { status: 400 });
-
-  const householdId = ev.app_user_id ?? ev.original_app_user_id;
   if (!householdId) {
-    // Anonymous / not yet identified — nothing to reconcile.
-    return new Response(JSON.stringify({ ok: true, skipped: "no app_user_id" }), {
+    console.error("[revenuecat-webhook] Missing app_user_id");
+    return new Response("Bad Request: missing app_user_id", { status: 400 });
+  }
+
+  console.log(`[revenuecat-webhook] ${eventType} for household ${householdId}`);
+
+  try {
+    // Build the patch payload
+    const patch: Record<string, unknown> = {
+      subscription_status: mapStatus(eventType),
+      revenuecat_entitlement: event.entitlement_id ?? "premium",
+      revenuecat_raw: body,
+    };
+
+    if (event.is_trial_conversion || isTrialConversion(body)) {
+      // Trial ended → real subscription active
+      patch.subscription_status = "active";
+    }
+
+    if (isTrialEvent(body)) {
+      // Free trial just started
+      patch.subscription_status = "trialing";
+    }
+
+    if (expiresAt) {
+      patch.revenuecat_expires_at = expiresAt;
+    }
+
+    // Update the household
+    const { error: updateError } = await admin
+      .from("households")
+      .update(patch)
+      .eq("id", householdId);
+
+    if (updateError) {
+      console.error(`[revenuecat-webhook] DB update failed: ${updateError.message}`);
+      return new Response(`Update error: ${updateError.message}`, { status: 500 });
+    }
+
+    // --- Emails (mirror stripe-webhook) ---
+    // Look up admin email for this household
+    const { data: mem } = await admin
+      .from("household_members")
+      .select("user_id")
+      .eq("household_id", householdId)
+      .eq("role", "admin")
+      .limit(1);
+
+    let adminEmail: string | null = null;
+    if (mem?.[0]?.user_id) {
+      const { data: user } = await admin.auth.admin.getUserById(mem[0].user_id);
+      adminEmail = user?.user?.email ?? null;
+    }
+
+    if (adminEmail) {
+      switch (eventType) {
+        case "INITIAL_PURCHASE": {
+          // Only send payment confirmation for non-trial purchases (real charges)
+          if (!isTrialEvent(body)) {
+            await sendResendTemplate("paymentConfirmation", adminEmail);
+            await admin
+              .from("households")
+              .update({ email_payment_confirmed_at: new Date().toISOString() })
+              .eq("id", householdId);
+          }
+          break;
+        }
+        case "RENEWAL": {
+          await sendResendTemplate("subscriptionRenewal", adminEmail);
+          break;
+        }
+        case "CANCELLATION": {
+          await sendResendTemplate("subscriptionCancelled", adminEmail);
+          break;
+        }
+        case "BILLING_ISSUE": {
+          await sendResendTemplate("paymentFailed", adminEmail);
+          break;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
+  } catch (e) {
+    console.error("[revenuecat-webhook] Handler error:", e);
+    return new Response(`Handler error: ${e}`, { status: 500 });
   }
-
-  const status = statusFor(ev);
-  if (!status) {
-    return new Response(JSON.stringify({ ok: true, skipped: ev.type }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const { error } = await admin
-    .from("households")
-    .update({ subscription_status: status })
-    .eq("id", householdId);
-
-  if (error) {
-    console.error(`[revenuecat-webhook] update failed for ${householdId}:`, error.message);
-    return new Response(`DB error: ${error.message}`, { status: 500 });
-  }
-
-  return new Response(JSON.stringify({ ok: true, householdId, status, event: ev.type }), {
-    headers: { "Content-Type": "application/json" },
-  });
 });

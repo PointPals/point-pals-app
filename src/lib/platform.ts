@@ -1,28 +1,24 @@
-// Runtime platform detection for the web ⇄ native split.
-//
-// PointPals ships as a web/PWA (served over HTTPS) AND as a Capacitor-wrapped
-// native app on iOS/Android. A few flows differ by platform — most importantly
-// billing: web/PWA uses Stripe, native must use StoreKit / Play Billing via
-// RevenueCat (see billing.ts / revenuecat.ts).
-//
-// @capacitor/core is dynamically imported so it never lands in the SSR/server
-// bundle. On the web it resolves to "web" and every native code path no-ops.
+/**
+ * Platform detection for PointPals.
+ *
+ * Web/PWA uses Stripe.  Capacitor (iOS/Android) uses native IAP.
+ * This module provides a single `isNative()` check so UI can gate
+ * store-sensitive copy (e.g. "Secure checkout by Stripe") per platform.
+ */
 
-export type Platform = "ios" | "android" | "web";
+// Detect Capacitor at runtime.
+// Capacitor sets `window.Capacitor` when running inside the WebView.
+const _native = !!(globalThis as any).Capacitor?.isNativePlatform?.();
 
-export async function getPlatform(): Promise<Platform> {
-  if (typeof window === "undefined") return "web";
-  try {
-    const { Capacitor } = await import("@capacitor/core");
-    if (!Capacitor.isNativePlatform()) return "web";
-    const p = Capacitor.getPlatform();
-    return p === "ios" || p === "android" ? p : "web";
-  } catch {
-    // @capacitor/core unavailable (plain browser) — treat as web.
-    return "web";
-  }
+/** True when running inside the Capacitor WebView (iOS App Store / Play Store build). */
+export function isNative(): boolean {
+  return _native;
 }
 
-export async function isNativePlatform(): Promise<boolean> {
-  return (await getPlatform()) !== "web";
+/**
+ * True when running in a web browser PWA.
+ * (Inverse of isNative().)
+ */
+export function isWeb(): boolean {
+  return !_native;
 }

@@ -6,7 +6,8 @@ import { PASTEL_HEX, appliesToKid } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-store";
 import { hasEntitlement, formatPrice, isSubscribed, BILLING_CONFIG } from "@/lib/entitlements";
 import { startCheckout } from "@/lib/billing";
-import { isNativePlatform } from "@/lib/platform";
+import { isNative } from "@/lib/platform";
+import { ParentalGate } from "@/components/ParentalGate";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
 
@@ -24,10 +25,7 @@ export function AwardModal({
   const { household, chores, skills, refreshFromServer } = useApp();
   // Native uses store billing (RevenueCat) — hide Stripe branding and our own
   // web price there; the store paywall provides the real price.
-  const [native, setNative] = useState(false);
-  useEffect(() => {
-    void isNativePlatform().then(setNative);
-  }, []);
+  const native = isNative();
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work">("chores");
   const [pointsFlash, setPointsFlash] = useState(false);
   const [search, setSearch] = useState("");
@@ -377,8 +375,7 @@ export function AwardModal({
                   {subscribed ? "after trial" : native ? "" : "/month"}
                 </span>
               </div>
-              <button
-                onClick={async () => {
+              <ParentalGate onPassed={async () => {
                   setPaywallBusy(true);
                   setPaywallErr(null);
                   const res = await startCheckout(household.id);
@@ -398,26 +395,23 @@ export function AwardModal({
                   }
                   setPaywallErr(res.error ?? "Billing backend not connected.");
                   setPaywallBusy(false);
-                }}
-                disabled={paywallBusy}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
-              >
-                {paywallBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                {subscribed ? "Confirm now" : "Subscribe"}
-              </button>
+                }}>
+                <button
+                  disabled={paywallBusy}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {paywallBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {subscribed ? "Confirm now" : "Subscribe"}
+                </button>
+              </ParentalGate>
               <p className="mt-3 text-xs text-foreground/50">
-                {native ? (
-                  "Cancel anytime from your store account."
-                ) : (
-                  <>
-                    Secure checkout by Stripe &middot; cancel anytime &middot; prices in{" "}
-                    {BILLING_CONFIG.primaryCurrency}.
-                  </>
-                )}
+                {isNative()
+                  ? `Cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`
+                  : `Secure checkout by Stripe · cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`}
               </p>
               {paywallErr && <p className="mt-2 text-xs text-destructive">{paywallErr}</p>}
               <button

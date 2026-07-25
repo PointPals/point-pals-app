@@ -37,6 +37,7 @@ import {
   Send,
   MailQuestion,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -60,6 +61,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { submitContactForm } from "@/lib/emails.functions";
 import { fetchSeasonInfo, setSeasonRefreshEnabled } from "@/lib/montage";
 import { exportMemoriesZip } from "@/lib/montage";
@@ -92,6 +104,25 @@ function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Stripe checkout callback — read ?checkout=success|cancelled from the URL.
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("checkout");
+    if (status === "success") {
+      setCheckoutMessage("Your subscription is confirmed — thanks for supporting PointPals!");
+    } else if (status === "cancelled") {
+      setCheckoutMessage("No worries — your trial is still active. You can upgrade anytime from here.");
+    }
+    if (status) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState(null, "", url);
+    }
+  }, []);
   useEffect(() => {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
@@ -299,6 +330,11 @@ function SettingsPage() {
       {/* Subscription / paywall — parent screen only */}
       <section className="space-y-3">
         <SectionTitle icon={<Sparkles className="h-4 w-4" />}>Subscription</SectionTitle>
+        {checkoutMessage && (
+          <div className="rounded-2xl bg-butter/40 border border-butter p-4 text-sm font-medium">
+            {checkoutMessage}
+          </div>
+        )}
         <Paywall />
       </section>
 
@@ -705,12 +741,7 @@ function SettingsPage() {
           <SectionTitle icon={<Download className="h-4 w-4" />}>Your data</SectionTitle>
           <div className="card-soft p-5 space-y-3">
             <p className="text-sm text-muted-foreground">
-              You can export a copy of your family's data at any time. To delete your account and
-              data, email us at{" "}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
-                {SUPPORT_EMAIL}
-              </a>
-              , or use the button below to permanently remove everything.
+              Export a copy of your family's data at any time.
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -745,6 +776,77 @@ function SettingsPage() {
                   )}
                 </button>
               )}
+            </div>
+
+            <div className="border-t border-border/60 -mx-4 pt-4 mt-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition">
+                    <AlertTriangle className="h-4 w-4" /> Delete account &amp; all data
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-5 w-5" /> Delete your account?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-3">
+                      <p>
+                        This <strong>permanently deletes</strong> your household, kids, chores,
+                        points, rewards, memories, and settings. This action cannot be undone.
+                      </p>
+                      <p>
+                        Type <strong>DELETE</strong> below to confirm.
+                      </p>
+                      {deleteError && (
+                        <p className="text-xs text-destructive">{deleteError}</p>
+                      )}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="px-6 pb-2">
+                    <input
+                      type="text"
+                      placeholder="Type DELETE to confirm"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
+                    />
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel
+                      onClick={() => {
+                        setDeleteConfirmText("");
+                        setDeleteError(null);
+                      }}
+                    >
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      disabled={deleteConfirmText !== "DELETE" || deleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                      onClick={async () => {
+                        if (deleteConfirmText !== "DELETE" || deleting) return;
+                        setDeleting(true);
+                        setDeleteError(null);
+                        try {
+                          const { error } = await supabase.rpc("delete_my_account");
+                          if (error) throw error;
+                          await supabase.auth.signOut();
+                          navigate({ to: "/welcome" });
+                        } catch (err) {
+                          setDeleteError(
+                            err instanceof Error ? err.message : "Deletion failed"
+                          );
+                          setDeleteConfirmText("");
+                          setDeleting(false);
+                        }
+                      }}
+                    >
+                      {deleting ? "Deleting…" : "Delete everything"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
             {isLive && seasonRefresh !== null && (
               <div className="border-t border-border/60 -mx-4 mt-1">

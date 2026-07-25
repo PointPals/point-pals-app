@@ -1,16 +1,25 @@
-// Billing client (§5) — thin wrapper over the Stripe Checkout + Customer Portal
-// edge functions. No custom billing UI: Checkout handles purchase, the Portal
-// handles card updates / cancellation / invoices.
+// Billing client (§5) — platform-adaptive checkout.
 //
-// The edge function source lives in supabase/functions/{stripe-checkout,
-// stripe-portal,stripe-webhook}. They are committed but not deployed here (the
-// Supabase project isn't reachable from this environment); deploy with
-// `supabase functions deploy` once it is.
+// Web/PWA uses Stripe Checkout + Customer Portal edge functions.
+// Native (iOS/Android Capacitor) uses RevenueCat Purchases SDK for
+// StoreKit / Play Billing.
+//
+// The entitlement layer (hasEntitlement) is unified: both paths write
+// to households.subscription_status, so the rest of the app doesn't
+// need to know which platform it's on.
 
 import { supabase } from "@/integrations/supabase/client";
 import { BILLING_CONFIG, type CurrencyCode } from "./entitlements";
-import { isNativePlatform } from "./platform";
-import { presentProPaywall, presentCustomerCenter } from "./revenuecat";
+import { isNative } from "./platform";
+
+// Lazy import — RevenueCat SDK is only available in the Capacitor build.
+async function getPurchases() {
+  // @revenuecat/purchases-capacitor is a Capacitor plugin; it's not
+  // installed on web, so we dynamic-import so web doesn't crash on
+  // a missing module.
+  const mod = await import(/* @vite-ignore */ "@revenuecat/purchases-capacitor");
+  return mod.Purchases;
+}
 
 export type CheckoutResult = {
   // Web: the Stripe URL to redirect to.
@@ -23,30 +32,56 @@ export type CheckoutResult = {
   error?: string;
 };
 
-// Start a subscription for the household.
-//   • Native (iOS/Android): present the RevenueCat Paywall (StoreKit / Play
-//     Billing). Nothing to redirect to — the result comes back inline.
-//   • Web/PWA: start Stripe Checkout and return a URL to redirect to.
+// Start checkout for the household.
+// - Web: returns a Stripe Checkout URL to redirect to.
+// - Native: initiates StoreKit/Play Billing purchase via RevenueCat.
 export async function startCheckout(
   householdId: string,
   currency: CurrencyCode = BILLING_CONFIG.primaryCurrency,
 ): Promise<CheckoutResult> {
-  if (await isNativePlatform()) {
-    const outcome = await presentProPaywall(householdId);
-    switch (outcome) {
-      case "purchased":
-      case "restored":
-      case "already_entitled":
-        return { native: true, activated: true };
-      case "cancelled":
-        return { native: true, activated: false };
-      case "unavailable":
-        return { native: true, activated: false, error: "In-app purchases aren't available." };
-      default:
-        return { native: true, activated: false, error: "Purchase could not be completed." };
+  // ── Native (RevenueCat) ──────────────────────────────────────────────
+  if (isNative()) {
+    try {
+      const Purchases = await getPurchases();
+
+      // Link the RevenueCat anonymous user to this household.
+      // This means the RevenueCat webhook receives app_user_id = householdId
+      // and can look up the household directly.
+      const logInResult = await Purchases.logIn(householdId);
+
+      // Start the purchase flow — RevenueCat shows the native modal.
+      // We use getProducts to find the offering, then purchase it.
+      const offerings = await Purchases.getOfferings();
+      const current = offerings.current;
+      if (!current?.monthly?.product) {
+        return { error: "No products available" };
+      }
+
+      const product = current.monthly;
+      const { customerInfo } = await Purchases.purchaseStoreProduct(product);
+
+      // If successful, the RevenueCat webhook will update Supabase.
+      // We optimistically update the local state here so the UI reflects
+      // immediately.
+      const entitlement = customerInfo.entitlements.active["premium"];
+      if (entitlement) {
+        // The webhook will fire soon; for now the caller should re-fetch
+        // the household or we can return success.
+        return {};
+      }
+
+      return { error: "Purchase completed but entitlement not active. Please wait a moment and refresh." };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Purchase failed";
+      // RevenueCat throws on user cancellation — that's not an error.
+      if (msg.includes("User cancelled") || msg.includes("CANCELLED")) {
+        return { error: "Purchase cancelled" };
+      }
+      return { error: msg };
     }
   }
 
+  // ── Web (Stripe) ─────────────────────────────────────────────────────
   try {
     const { data, error } = await supabase.functions.invoke("stripe-checkout", {
       body: {
@@ -64,15 +99,26 @@ export async function startCheckout(
   }
 }
 
-// Open subscription self-service management.
-//   • Native: RevenueCat Customer Center (manage / cancel / refunds).
-//   • Web/PWA: the Stripe Customer Portal (returns a URL to redirect to).
+// Open subscription management.
+// - Web: Stripe Customer Portal URL.
+// - Native: RevenueCat's manage subscription sheet (iOS shows App Store's
+//   subscription management UI).
 export async function openPortal(householdId: string): Promise<CheckoutResult> {
-  if (await isNativePlatform()) {
-    const ok = await presentCustomerCenter(householdId);
-    return { native: true, error: ok ? undefined : "Subscription management is unavailable." };
+  // ── Native (RevenueCat) ──────────────────────────────────────────────
+  if (isNative()) {
+    try {
+      const Purchases = await getPurchases();
+      await Purchases.logIn(householdId);
+      // iOS: opens the system subscription management sheet.
+      // Android: opens Play Store subscription management.
+      await Purchases.showManageSubscriptions();
+      return {};
+    } catch (e: unknown) {
+      return { error: e instanceof Error ? e.message : "Could not open subscription management" };
+    }
   }
 
+  // ── Web (Stripe) ─────────────────────────────────────────────────────
   try {
     const { data, error } = await supabase.functions.invoke("stripe-portal", {
       body: { householdId, returnUrl: `${origin()}/settings` },

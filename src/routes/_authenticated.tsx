@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useApp } from "@/lib/app-store";
+import { isNative } from "@/lib/platform";
 
 // Pathless layout that gates every child route on a live Supabase session.
 // ssr:false because Supabase persists the session in localStorage — the
@@ -62,6 +63,28 @@ function AuthLayout() {
       navigate({ to: "/welcome-back" });
     }
   }, [needsHousehold, hydrated, navigate, safeWithoutHousehold]);
+
+  // Initialise RevenueCat on native builds when household is available.
+  useEffect(() => {
+    if (!household?.id || !isNative()) return;
+    (async () => {
+      try {
+        const { Purchases } = await import(/* @vite-ignore */ "@revenuecat/purchases-capacitor");
+        const apiKey =
+          (import.meta as any).env.VITE_REVENUECAT_API_KEY_IOS ??
+          (import.meta as any).env.VITE_REVENUECAT_API_KEY_ANDROID;
+        if (!apiKey) {
+          console.warn("[RevenueCat] No API key configured");
+          return;
+        }
+        await Purchases.configure({ apiKey });
+        await Purchases.logIn(household.id);
+        console.log("[RevenueCat] Initialised for household", household.id);
+      } catch (e) {
+        console.warn("[RevenueCat] Init failed (non-fatal):", e);
+      }
+    })();
+  }, [household?.id]);
 
   if (loading || !hydrated) {
     return <SplashScreen />;
