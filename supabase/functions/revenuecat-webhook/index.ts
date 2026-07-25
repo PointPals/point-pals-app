@@ -128,7 +128,7 @@ function isTrialConversion(body: RCRequest): boolean {
 
 Deno.serve(async (req) => {
   // 1. Verify shared secret (RevenueCat sends it in the X-Shared-Secret header)
-  const sharedSecret = Deno.env.get("REVENUECAT_WEBHOOK_SECRET");
+  const sharedSecret = Deno.env.get("REVENUECAT_WEBHOOK_AUTH");
   const authHeader = req.headers.get("Authorization") ?? "";
   const body: RCRequest = await req.json();
 
@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
       return new Response("Unauthorized", { status: 401 });
     }
   } else {
-    console.warn("[revenuecat-webhook] No REVENUECAT_WEBHOOK_SECRET configured — allowing request (dev mode)");
+    console.warn("[revenuecat-webhook] No REVENUECAT_WEBHOOK_AUTH configured — allowing request (dev mode)");
   }
 
   const { event } = body;
