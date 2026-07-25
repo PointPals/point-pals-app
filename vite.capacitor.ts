@@ -54,6 +54,16 @@ export default defineConfig(({ mode }) => {
           find: /^@\/lib\/emails\.functions$/,
           replacement: `${process.cwd()}/src/lib/emails.functions.capacitor.ts`,
         },
+        // Server-only modules — replace with noop so they don't leak into the
+        // Capacitor SPA bundle (pulled in by dynamic imports in API routes).
+        {
+          find: /^@\/lib\/emails\.server$/,
+          replacement: `${process.cwd()}/src/capacitor-noop.ts`,
+        },
+        {
+          find: /^@\/integrations\/supabase\/client\.server$/,
+          replacement: `${process.cwd()}/src/capacitor-noop.ts`,
+        },
         // Catch-all for @/ paths
         { find: /^@\//, replacement: `${process.cwd()}/src/` },
         // TanStack Start SSR packages — noop in the SPA build
