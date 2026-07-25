@@ -32,6 +32,7 @@ function WelcomeBackPage() {
   const [accepting, setAccepting] = useState(false);
   const [foundingTester, setFoundingTester] = useState(false);
   const [testerFull, setTesterFull] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   // Auto-accept an invite code stashed by the join page's Google button.
   useEffect(() => {

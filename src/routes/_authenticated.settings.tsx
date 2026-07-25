@@ -109,6 +109,24 @@ function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Stripe checkout callback — read ?checkout=success|cancelled from the URL.
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("checkout");
+    if (status === "success") {
+      setCheckoutMessage("Your subscription is confirmed — thanks for supporting PointPals!");
+    } else if (status === "cancelled") {
+      setCheckoutMessage("No worries — your trial is still active. You can upgrade anytime from here.");
+    }
+    if (status) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState(null, "", url);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
@@ -315,6 +333,11 @@ function SettingsPage() {
       {/* Subscription / paywall — parent screen only */}
       <section className="space-y-3">
         <SectionTitle icon={<Sparkles className="h-4 w-4" />}>Subscription</SectionTitle>
+        {checkoutMessage && (
+          <div className="rounded-2xl bg-butter/40 border border-butter p-4 text-sm font-medium">
+            {checkoutMessage}
+          </div>
+        )}
         <Paywall />
       </section>
 
