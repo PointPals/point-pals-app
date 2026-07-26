@@ -22,3 +22,27 @@ export function isNative(): boolean {
 export function isWeb(): boolean {
   return !_native;
 }
+
+export type Platform = "ios" | "android" | "web";
+
+/**
+ * Which platform we're on. Async so @capacitor/core is dynamically imported
+ * and never lands in the SSR/server bundle; resolves to "web" in a plain
+ * browser. Used by RevenueCat (billing) and the native OAuth deep-link flow.
+ */
+export async function getPlatform(): Promise<Platform> {
+  if (typeof window === "undefined") return "web";
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform()) return "web";
+    const p = Capacitor.getPlatform();
+    return p === "ios" || p === "android" ? p : "web";
+  } catch {
+    // @capacitor/core unavailable (plain browser) — treat as web.
+    return "web";
+  }
+}
+
+export async function isNativePlatform(): Promise<boolean> {
+  return (await getPlatform()) !== "web";
+}
