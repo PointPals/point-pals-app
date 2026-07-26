@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { oauthSignIn } from "@/lib/native-auth";
 
 /**
  * Sign in with Apple. Apple's App Store guidelines require this option to be
@@ -15,14 +15,9 @@ export function AppleSignInButton({ label = "Continue with Apple" }: { label?: s
   const onClick = async () => {
     setBusy(true);
     setErr(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      // Trailing slash so the URL matches the Supabase "https://…/**" redirect
-      // allowlist (same reason as the Google button).
-      options: { redirectTo: window.location.origin + "/" },
-    });
+    const { error } = await oauthSignIn("apple");
     if (error) {
-      setErr(error.message);
+      setErr(error);
       setBusy(false);
     }
   };

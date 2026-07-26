@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
+import { oauthSignIn } from "@/lib/native-auth";
 import {
   CheckCircle,
   XCircle,
@@ -21,13 +22,7 @@ function GoogleSignInButton({ joinCode }: { joinCode: string }) {
     setBusy(true);
     // Stash the invite code so we can accept it after the OAuth redirect.
     if (joinCode) sessionStorage.setItem(PENDING_CODE_KEY, joinCode);
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      // Trailing slash so the URL matches the Supabase "https://…/**" redirect
-      // allowlist; a bare origin is rejected and silently falls back to the
-      // Site URL, which is what caused the post-OAuth redirect loop.
-      options: { redirectTo: window.location.origin + "/" },
-    });
+    await oauthSignIn("google");
   };
 
   return (
