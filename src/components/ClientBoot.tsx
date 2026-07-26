@@ -5,6 +5,7 @@ import { getSettings, setSetting } from "@/lib/settings";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 import { configureRevenueCat } from "@/lib/revenuecat";
+import { initAuthDeepLinks } from "@/lib/native-auth";
 
 const PUBLIC_PATHS = new Set([
   "/welcome",
@@ -91,6 +92,22 @@ export function ClientBoot() {
   useEffect(() => {
     if (household?.id) void configureRevenueCat(household.id);
   }, [household?.id]);
+
+  // Native OAuth: complete a Google/Apple sign-in when the provider bounces
+  // back to the pointpals://callback deep link, then land on the dashboard.
+  // No-op on web (the web flow uses a normal redirect). Registered once.
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    void initAuthDeepLinks(() => navigate({ to: "/" })).then((fn) => {
+      if (cancelled) fn();
+      else cleanup = fn;
+    });
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [navigate]);
 
   // Bounce authed-but-no-household users to the "create or join" chooser.
   useEffect(() => {
