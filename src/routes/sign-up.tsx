@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sendTrialWelcome } from "@/lib/emails.functions";
 import { useApp } from "@/lib/app-store";
+import { oauthSignIn } from "@/lib/native-auth";
 import { PublicLogo } from "@/components/PublicLogo";
 import { AppleSignInButton } from "@/components/AppleSignInButton";
 
@@ -13,20 +14,12 @@ function GoogleSignInButton() {
   const onClick = async () => {
     setBusy(true);
     setErr(null);
-    // On success signInWithOAuth performs a full-page redirect to Google, so
-    // control never returns here. If it returns with an error, the flow never
-    // started (e.g. the Google provider is disabled in Supabase, or this
-    // origin isn't in the allowed Redirect URLs) — surface it and re-enable
-    // the button instead of leaving it stuck on "Redirecting…".
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      // Trailing slash so the URL matches the Supabase "https://…/**" redirect
-      // allowlist; a bare origin is rejected and silently falls back to the
-      // Site URL, which is what caused the post-OAuth redirect loop.
-      options: { redirectTo: window.location.origin + "/" },
-    });
+    // Web: full-page redirect to Google. Native: system browser + the
+    // pointpals://callback deep link (see native-auth.ts). Surface an error and
+    // re-enable the button if the flow never started.
+    const { error } = await oauthSignIn("google");
     if (error) {
-      setErr(error.message);
+      setErr(error);
       setBusy(false);
     }
   };
