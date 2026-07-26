@@ -4,7 +4,7 @@
 -- Required by Apple App Store Guideline 5.1.1(v): users must be able to
 -- delete their account from within the app.
 --
-── The flow:
+-- The flow:
 --   1. Client prompts supabase.rpc('delete_my_account')
 --   2. RPC verifies the caller owns/deletes their household_members rows
 --   3. Deletes the household (on delete cascade clears kids, chores,
