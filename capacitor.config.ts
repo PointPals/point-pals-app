@@ -20,12 +20,20 @@ const config: CapacitorConfig = {
   },
 
   // ── Plugins ───────────────────────────────────────────────────────────────
+  // CapacitorHttp / CapacitorCookies are intentionally DISABLED. CapacitorHttp
+  // patches the WebView's fetch/XHR (and cross-origin resource loads) to route
+  // through native HTTP, which broke Supabase queries and Storage image loads
+  // on native only — the Points page icon grid stuck on "Loading custom icons…"
+  // with blank tiles, even though the same pages load fine in a mobile browser.
+  // Letting the WebView do its own networking matches the working browser
+  // behaviour. Supabase auth uses localStorage, not cookies, so CapacitorCookies
+  // isn't needed either.
   plugins: {
     CapacitorCookies: {
-      enabled: true,
+      enabled: false,
     },
     CapacitorHttp: {
-      enabled: true,
+      enabled: false,
     },
   },
 };
