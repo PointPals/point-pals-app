@@ -65,21 +65,15 @@ function AuthLayout() {
   }, [needsHousehold, hydrated, navigate, safeWithoutHousehold]);
 
   // Initialise RevenueCat on native builds when household is available.
+  // configureRevenueCat picks the right per-platform key (VITE_RC_IOS_KEY /
+  // VITE_RC_ANDROID_KEY) and sets appUserID to the household id. No-op on web.
   useEffect(() => {
     if (!household?.id || !isNative()) return;
     (async () => {
       try {
-        const { Purchases } = await import(/* @vite-ignore */ "@revenuecat/purchases-capacitor");
-        const apiKey =
-          (import.meta as any).env.VITE_REVENUECAT_API_KEY_IOS ??
-          (import.meta as any).env.VITE_REVENUECAT_API_KEY_ANDROID;
-        if (!apiKey) {
-          console.warn("[RevenueCat] No API key configured");
-          return;
-        }
-        await Purchases.configure({ apiKey });
-        await Purchases.logIn(household.id);
-        console.log("[RevenueCat] Initialised for household", household.id);
+        const { configureRevenueCat } = await import("@/lib/revenuecat");
+        const ok = await configureRevenueCat(household.id);
+        if (ok) console.log("[RevenueCat] Initialised for household", household.id);
       } catch (e) {
         console.warn("[RevenueCat] Init failed (non-fatal):", e);
       }
