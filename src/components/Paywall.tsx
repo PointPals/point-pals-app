@@ -1,22 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Sparkles, Loader2, ExternalLink } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { BILLING_CONFIG, formatPrice, isSubscribed, trialDaysLeft } from "@/lib/entitlements";
 import { startCheckout, openPortal } from "@/lib/billing";
-import { isNative } from "@/lib/platform";
 import { ParentalGate } from "@/components/ParentalGate";
 
-// The upgrade prompt (§5). IMPORTANT: only ever rendered on parent-facing
-// screens (Settings/Library/Admin) — never on a kid-facing award screen. A kid
-// tapping their avatar must never hit an upgrade wall.
 export function Paywall({ reason }: { reason?: string }) {
-  const { household, setSubscriptionStatus, refreshFromServer } = useApp();
+  const { household, setSubscriptionStatus } = useApp();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  // On native, purchasing goes through the store (StoreKit/Play Billing via
-  // RevenueCat). We must not show Stripe branding or our own web price there —
-  // the store paywall provides the real, store-approved price.
-  const native = isNative();
   const subscribed = isSubscribed(household);
   const daysLeft = trialDaysLeft(household);
 
@@ -25,22 +17,9 @@ export function Paywall({ reason }: { reason?: string }) {
     setErr(null);
     const res = await startCheckout(household.id);
     if (res.url) {
-      // Web: hand off to Stripe Checkout.
       window.location.href = res.url;
       return;
     }
-    if (res.native) {
-      // Native: the RevenueCat Paywall already ran in-app.
-      if (res.activated) {
-        await refreshFromServer();
-      } else if (res.error) {
-        setErr(res.error);
-      }
-      setBusy(false);
-      return;
-    }
-    // In this environment Stripe/Supabase aren't reachable; fall back to a local
-    // simulated activation so the gated UI can be exercised end-to-end.
     setErr(
       res.error
         ? `${res.error} — simulating activation locally for now.`
@@ -56,12 +35,6 @@ export function Paywall({ reason }: { reason?: string }) {
     const res = await openPortal(household.id);
     if (res.url) {
       window.location.href = res.url;
-      return;
-    }
-    if (res.native) {
-      // Native: RevenueCat Customer Center was presented (or reported an error).
-      if (res.error) setErr(res.error);
-      setBusy(false);
       return;
     }
     setErr(res.error ?? "Customer Portal not connected in this environment.");
@@ -110,9 +83,7 @@ export function Paywall({ reason }: { reason?: string }) {
           )}
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          {native
-            ? "Thanks for supporting PointPals. Manage or cancel your subscription anytime from your store account."
-            : "Thanks for supporting PointPals. Manage your card, invoices or cancel anytime through the secure Stripe portal."}
+          Thanks for supporting PointPals. Manage your card, invoices or cancel anytime through the secure Stripe portal.
         </p>
         <button
           onClick={manage}
@@ -148,10 +119,8 @@ export function Paywall({ reason }: { reason?: string }) {
           "Subscribe to keep awarding points, filling the marble jar and unlocking rewards. Your subscription keeps the app's generation and hosting running."}
       </p>
       <div className="mt-4 flex items-baseline gap-2">
-        {/* Store policy: don't show our own web price on native — the store
-            paywall shows the real, store-approved price. */}
-        {!native && <span className="font-display text-3xl font-bold">{formatPrice()}</span>}
-        <span className="text-sm text-foreground/60">{native ? "" : "billed monthly"}</span>
+        <span className="font-display text-3xl font-bold">{formatPrice()}</span>
+        <span className="text-sm text-foreground/60">billed monthly</span>
       </div>
       <ParentalGate onPassed={go}>
         <button
@@ -163,9 +132,7 @@ export function Paywall({ reason }: { reason?: string }) {
         </button>
       </ParentalGate>
       <p className="mt-3 text-xs text-foreground/50">
-        {isNative()
-          ? `Cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`
-          : `Secure checkout by Stripe · cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`}
+        Secure checkout by Stripe · cancel anytime · prices in {BILLING_CONFIG.primaryCurrency}.
       </p>
       {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
     </div>

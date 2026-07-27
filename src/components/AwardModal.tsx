@@ -6,7 +6,6 @@ import { PASTEL_HEX, appliesToKid } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-store";
 import { hasEntitlement, formatPrice, isSubscribed, BILLING_CONFIG } from "@/lib/entitlements";
 import { startCheckout } from "@/lib/billing";
-import { isNative } from "@/lib/platform";
 import { ParentalGate } from "@/components/ParentalGate";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
@@ -22,10 +21,7 @@ export function AwardModal({
   onAwardBatch: (items: AwardItem[]) => void;
   onClose: () => void;
 }) {
-  const { household, chores, skills, refreshFromServer } = useApp();
-  // Native uses store billing (RevenueCat) — hide Stripe branding and our own
-  // web price there; the store paywall provides the real price.
-  const native = isNative();
+  const { household, chores, skills } = useApp();
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work">("chores");
   const [pointsFlash, setPointsFlash] = useState(false);
   const [search, setSearch] = useState("");
@@ -363,16 +359,12 @@ export function AwardModal({
               <p className="mt-1 text-sm text-foreground/70">
                 {subscribed
                   ? "Your trial includes premium features. When it ends, subscribe to keep awarding points, filling the marble jar, and unlocking rewards."
-                  : native
-                    ? "Subscribe to keep awarding points, filling the marble jar, and unlocking rewards for your family."
-                    : `Subscribe for ${formatPrice()} to keep awarding points, filling the marble jar, and unlocking rewards for your family.`}
+                  : `Subscribe for ${formatPrice()} to keep awarding points, filling the marble jar, and unlocking rewards for your family.`}
               </p>
               <div className="mt-4 flex items-baseline gap-2">
-                {!native && (
-                  <span className="font-display text-3xl font-bold">{formatPrice()}</span>
-                )}
+                <span className="font-display text-3xl font-bold">{formatPrice()}</span>
                 <span className="text-sm text-foreground/60">
-                  {subscribed ? "after trial" : native ? "" : "/month"}
+                  {subscribed ? "after trial" : "/month"}
                 </span>
               </div>
               <ParentalGate onPassed={async () => {
@@ -381,16 +373,6 @@ export function AwardModal({
                   const res = await startCheckout(household.id);
                   if (res.url) {
                     window.location.href = res.url;
-                    return;
-                  }
-                  if (res.native) {
-                    if (res.activated) {
-                      await refreshFromServer();
-                      setPaywallItem(null);
-                    } else if (res.error) {
-                      setPaywallErr(res.error);
-                    }
-                    setPaywallBusy(false);
                     return;
                   }
                   setPaywallErr(res.error ?? "Billing backend not connected.");
@@ -409,9 +391,7 @@ export function AwardModal({
                 </button>
               </ParentalGate>
               <p className="mt-3 text-xs text-foreground/50">
-                {isNative()
-                  ? `Cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`
-                  : `Secure checkout by Stripe · cancel anytime · prices in ${BILLING_CONFIG.primaryCurrency}.`}
+                Secure checkout by Stripe · cancel anytime · prices in {BILLING_CONFIG.primaryCurrency}.
               </p>
               {paywallErr && <p className="mt-2 text-xs text-destructive">{paywallErr}</p>}
               <button

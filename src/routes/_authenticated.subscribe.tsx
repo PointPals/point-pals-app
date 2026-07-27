@@ -8,10 +8,10 @@ import { useEffect, useState } from "react";
 import { useApp } from "@/lib/app-store";
 import { isSubscribed } from "@/lib/entitlements";
 import { startCheckout } from "@/lib/billing";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, XCircle } from "lucide-react";
 
 function SubscribePage() {
-  const { household, refreshFromServer } = useApp();
+  const { household } = useApp();
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "redirecting" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState<string>("");
@@ -29,30 +29,17 @@ function SubscribePage() {
       return;
     }
 
-    // Start checkout — Stripe redirect on web, RevenueCat Paywall on native.
+    // Start checkout via Stripe.
     setStatus("redirecting");
     startCheckout(household.id).then((res) => {
       if (res.url) {
-        // Web: hand off to Stripe.
         window.location.href = res.url;
-        return;
-      }
-      if (res.native) {
-        // Native: the Paywall already ran in-app. On success refresh household
-        // state (the RevenueCat webhook also persists it) and land in settings.
-        if (res.activated) {
-          void refreshFromServer();
-          navigate({ to: "/settings" });
-        } else {
-          setStatus("error");
-          setErrorMsg(res.error ?? "Purchase cancelled.");
-        }
         return;
       }
       setStatus("error");
       setErrorMsg(res.error ?? "Something went wrong. Please try again.");
     });
-  }, [household, navigate, refreshFromServer]);
+  }, [household, navigate]);
 
   if (status === "loading") {
     return (

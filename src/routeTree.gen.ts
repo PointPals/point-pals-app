@@ -18,11 +18,13 @@ import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as KTokenRouteImport } from './routes/k.$token'
 import { Route as AuthenticatedWelcomeBackRouteImport } from './routes/_authenticated.welcome-back'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated.subscribe'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
@@ -78,6 +80,11 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -101,6 +108,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const KTokenRoute = KTokenRouteImport.update({
+  id: '/k/$token',
+  path: '/k/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWelcomeBackRoute =
   AuthenticatedWelcomeBackRouteImport.update({
@@ -154,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
   '/privacy': typeof PrivacyRoute
@@ -171,12 +184,14 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/welcome-back': typeof AuthenticatedWelcomeBackRoute
+  '/k/$token': typeof KTokenRoute
   '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
   '/privacy': typeof PrivacyRoute
@@ -194,6 +209,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/welcome-back': typeof AuthenticatedWelcomeBackRoute
+  '/k/$token': typeof KTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
@@ -203,6 +219,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
   '/privacy': typeof PrivacyRoute
@@ -220,6 +237,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/_authenticated/welcome-back': typeof AuthenticatedWelcomeBackRoute
+  '/k/$token': typeof KTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
 }
@@ -230,6 +248,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/blog'
     | '/contact'
+    | '/delete-account'
     | '/faq'
     | '/join'
     | '/privacy'
@@ -247,12 +266,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/welcome-back'
+    | '/k/$token'
     | '/api/public/hooks/email-cron'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
     | '/blog'
     | '/contact'
+    | '/delete-account'
     | '/faq'
     | '/join'
     | '/privacy'
@@ -270,6 +291,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/welcome-back'
+    | '/k/$token'
     | '/'
     | '/api/public/hooks/email-cron'
   id:
@@ -278,6 +300,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/blog'
     | '/contact'
+    | '/delete-account'
     | '/faq'
     | '/join'
     | '/privacy'
@@ -295,6 +318,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/subscribe'
     | '/_authenticated/welcome-back'
+    | '/k/$token'
     | '/_authenticated/'
     | '/api/public/hooks/email-cron'
   fileRoutesById: FileRoutesById
@@ -304,6 +328,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   BlogRoute: typeof BlogRoute
   ContactRoute: typeof ContactRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   FaqRoute: typeof FaqRoute
   JoinRoute: typeof JoinRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -313,6 +338,7 @@ export interface RootRouteChildren {
   SignUpRoute: typeof SignUpRoute
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
+  KTokenRoute: typeof KTokenRoute
   ApiPublicHooksEmailCronRoute: typeof ApiPublicHooksEmailCronRoute
 }
 
@@ -381,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -415,6 +448,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/k/$token': {
+      id: '/k/$token'
+      path: '/k/$token'
+      fullPath: '/k/$token'
+      preLoaderRoute: typeof KTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/welcome-back': {
       id: '/_authenticated/welcome-back'
@@ -515,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   BlogRoute: BlogRoute,
   ContactRoute: ContactRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   FaqRoute: FaqRoute,
   JoinRoute: JoinRoute,
   PrivacyRoute: PrivacyRoute,
@@ -524,6 +565,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignUpRoute: SignUpRoute,
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
+  KTokenRoute: KTokenRoute,
   ApiPublicHooksEmailCronRoute: ApiPublicHooksEmailCronRoute,
 }
 export const routeTree = rootRouteImport

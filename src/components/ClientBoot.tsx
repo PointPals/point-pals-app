@@ -4,7 +4,7 @@ import { initMonitoring } from "@/lib/monitoring";
 import { getSettings, setSetting } from "@/lib/settings";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
-import { configureRevenueCat } from "@/lib/revenuecat";
+
 import { initAuthDeepLinks } from "@/lib/native-auth";
 
 const PUBLIC_PATHS = new Set([
@@ -87,11 +87,6 @@ export function ClientBoot() {
     return () => sub.subscription.unsubscribe();
   }, [pathname, navigate]);
 
-  // Configure RevenueCat (native only) once we know the household, so the store
-  // paywall, entitlement checks and restore are ready. No-op on web.
-  useEffect(() => {
-    if (household?.id) void configureRevenueCat(household.id);
-  }, [household?.id]);
 
   // Native OAuth: complete a Google/Apple sign-in when the provider bounces
   // back to the pointpals://callback deep link, then land on the dashboard.
