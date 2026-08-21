@@ -11,11 +11,11 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomePage,
   head: () => ({
     meta: [
-      { title: "PointPals — Family Chore & Behaviour Chart, NZ-Made" },
+      { title: "PointPals — Free Family Chore & Behaviour Chart, NZ-Made" },
       {
         name: "description",
         content:
-          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ.",
+          "Chores that don't feel like a fight. A free, research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
       {
         name: "keywords",
@@ -23,11 +23,11 @@ export const Route = createFileRoute("/welcome")({
           "chore chart, behaviour chart NZ, chore chart app, family chore tracker, reward chart for kids, parenting app NZ, token economy for kids, NZ-made app, behaviour chart for children, award chart, chore reward system",
       },
       { name: "theme-color", content: "#F3E1A0" },
-      { property: "og:title", content: "PointPals — NZ-made Family Chore & Behaviour Chart" },
+      { property: "og:title", content: "PointPals — Free NZ-made Family Chore & Behaviour Chart" },
       {
         property: "og:description",
         content:
-          "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ.",
+          "Chores that don't feel like a fight. A free, research-backed system that turns everyday responsibilities into rewards your family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://pointpals.co.nz/welcome" },
@@ -132,8 +132,13 @@ function WelcomePage() {
           {/* Text — left column on desktop, last on mobile */}
           <div className="lg:order-1 relative z-20 max-w-3xl mx-auto lg:max-w-none lg:mx-0">
             <div className="rounded-3xl bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(236,72,153,0.35)] border border-white/60">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 border border-butter px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
-              <BadgeCheck className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 border border-butter px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                <BadgeCheck className="h-3.5 w-3.5" /> Research-backed &amp; NZ-made
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-sage/50 border border-sage px-3 py-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                <Heart className="h-3.5 w-3.5" /> 100% free for families
+              </div>
             </div>
             <h1 className="mt-4 font-display text-[2.5rem] sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
               Chores that don't feel like a fight.
@@ -156,7 +161,7 @@ function WelcomePage() {
               </Link>
             </div>
             <p className="mt-3 text-xs text-foreground/60">
-              Set up your family in a couple of minutes.
+              Free to use — no card, no subscription. Set up your family in a couple of minutes.
             </p>
           </div>
         </div>
@@ -224,7 +229,8 @@ function WelcomePage() {
             Ready to start?
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create your family, add your kids, and start filling the jar together.
+            PointPals is free for every family. Create your family, add your kids, and start
+            filling the jar together — no card, no subscription.
           </p>
           <Link
             to="/sign-up"

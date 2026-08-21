@@ -49,7 +49,7 @@ export const Route = createFileRoute("/sign-up")({
   head: () => ({
     meta: [
       { title: "Sign up — PointPals" },
-      { name: "description", content: "Create your PointPals family account." },
+      { name: "description", content: "Create your free PointPals family account." },
     ],
   }),
 });
@@ -126,7 +126,9 @@ function SignUpPage() {
       <PublicLogo fixed />
       <div className="card-soft p-6 w-full max-w-sm">
         <h1 className="font-display text-2xl font-bold">Get started with your family</h1>
-        <p className="text-sm text-muted-foreground mt-1">Add your kids and start filling the jar together.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Free to use — add your kids and start filling the jar together.
+        </p>
         <form onSubmit={onSubmit} className="mt-5 space-y-3">
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family name</span>
