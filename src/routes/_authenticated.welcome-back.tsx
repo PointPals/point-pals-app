@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Sparkles, Users, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
-import { sendTrialWelcome } from "@/lib/emails.functions";
 
 const PENDING_CODE_KEY = "pointpals.pending.invite.code";
 
@@ -30,8 +29,6 @@ function WelcomeBackPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
-  const [foundingTester, setFoundingTester] = useState(false);
-  const [testerFull, setTesterFull] = useState(false);
   const [consent, setConsent] = useState(false);
 
   // Auto-accept an invite code stashed by the join page's Google button.
@@ -74,24 +71,9 @@ function WelcomeBackPage() {
   const createFamily = async () => {
     const trimmed = name.trim() || "My Family";
 
-    // Cap founding testers at 50, same as the sign-up page.
-    let canBeTester = foundingTester;
-    if (foundingTester) {
-      const { count } = await supabase
-        .from("households")
-        .select("*", { count: "exact", head: true })
-        .eq("founding_tester", true);
-      if (count != null && count >= 50) {
-        canBeTester = false;
-        setFoundingTester(false);
-        setTesterFull(true);
-      }
-    }
-
     setBusy(true);
     setErr(null);
     const payload: Record<string, unknown> = { name: trimmed };
-    if (canBeTester) payload.founding_tester = true;
     const { error } = await supabase.from("households").insert(payload);
     if (error) {
       setBusy(false);
@@ -99,8 +81,6 @@ function WelcomeBackPage() {
       return;
     }
     // Trigger already added us as admin — reload the app-store from the server.
-    // Fire welcome email (idempotent server-side).
-    sendTrialWelcome().catch((e) => console.error("[welcome-back] welcome email failed:", e));
     await refreshFromServer();
     setBusy(false);
     navigate({ to: "/onboarding" });
@@ -130,25 +110,6 @@ function WelcomeBackPage() {
               placeholder="The Rivers Family"
               className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5"
             />
-          </label>
-          <label className="flex items-start gap-3 mt-2">
-            <input
-              type="checkbox"
-              checked={foundingTester}
-              disabled={testerFull}
-              onChange={(e) => setFoundingTester(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-input accent-foreground disabled:opacity-40"
-            />
-            <span className="text-sm text-muted-foreground leading-relaxed">
-              {testerFull ? (
-                "Founding member spots are full"
-              ) : (
-                <>
-                  I&apos;d like to be a <strong>founding member</strong> &mdash; I&apos;m happy
-                  to test new features and fill in feedback forms.
-                </>
-              )}
-            </span>
           </label>
           <label className="flex items-start gap-3 mt-2">
             <input

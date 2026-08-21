@@ -1,5 +1,9 @@
 # PointPals Brand Voice & Tone
 
+> **Status update (free model):** PointPals is now completely free. Any copy
+> guidance below about "free trial," pricing, or "unlocking premium" is
+> outdated — the app is free for every family, no paid tier.
+
 ## Core Identity
 
 PointPals is the family chore system that doesn't feel like a system. We're the warm, research-backed alternative to gamified gimmicks. We believe in connection over control, teamwork over competition, and celebration over reward-chasing.

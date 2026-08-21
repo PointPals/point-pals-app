@@ -25,7 +25,7 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const CAP = 10; // same as FREE_MONTHLY_CAP / PREMIUM_MONTHLY_CAP
+const CAP = 10; // same as MONTHLY_CAP in generate-icon / upload-icon
 
 /** ISO string for the start of the current calendar month (UTC). */
 function monthStartISO(): string {

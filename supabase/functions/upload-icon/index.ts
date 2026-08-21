@@ -21,8 +21,8 @@ const admin = createClient(
 const GOOGLE_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? Deno.env.get("GOOGLE_API_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
-const FREE_MONTHLY_CAP = 10;
-const PREMIUM_MONTHLY_CAP = 10;
+// PointPals is free — a single monthly cap for every household.
+const MONTHLY_CAP = 10;
 
 function monthStartISO(): string {
   const d = new Date();
@@ -303,18 +303,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check household exists and subscription status
+    // Check household exists
     const { data: household, error: hErr } = await admin
       .from("households")
-      .select("subscription_status")
+      .select("id")
       .eq("id", householdId)
       .single();
     if (hErr || !household) return json({ error: "Unknown household" }, 404);
 
-    const premium =
-      household.subscription_status === "active" ||
-      household.subscription_status === "trialing";
-    const cap = premium ? PREMIUM_MONTHLY_CAP : FREE_MONTHLY_CAP;
+    // PointPals is free — every household gets the same monthly allowance.
+    const cap = MONTHLY_CAP;
 
     // Count this household's generations/uploads since the start of the month
     const { count, error: cErr } = await admin
@@ -326,7 +324,7 @@ Deno.serve(async (req) => {
 
     if ((count ?? 0) >= cap) {
       return json(
-        { error: "monthly_limit_reached", cap, used: count, premium },
+        { error: "monthly_limit_reached", cap, used: count },
         429,
       );
     }

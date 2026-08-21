@@ -27,10 +27,10 @@ supabase link --project-ref <ref>
 supabase db push          # applies supabase/migrations/0001_init.sql, 0002_rls.sql
 ```
 
-Schema highlights: `households` carries the entitlement fields
-(`subscription_status`, `stripe_customer_id`, …); `icon_generations` is the
-rate-limit ledger; RLS is member-scoped and billing columns are service-role
-only (`0004_billing_guard.sql` adds a BEFORE-UPDATE trigger enforcing this).
+Schema highlights: `households` carries legacy entitlement fields
+(`subscription_status`, `stripe_customer_id`, …) from the paid era — they are
+ignored now that PointPals is free; `icon_generations` is the rate-limit
+ledger; RLS is member-scoped.
 
 ### Regenerating the client types
 
@@ -47,30 +47,16 @@ cast the client (`supabase as unknown as SupabaseClient`) or individual calls
 (`as never`) from when those tables predated the generated types — safe to
 drop those casts opportunistically now that the types include them.
 
-## 3. Stripe (§5)
+## 3. Billing — none (PointPals is free)
 
-1. Create a Product + recurring Price per currency in the Stripe dashboard.
-2. Set function secrets:
-   ```bash
-   supabase secrets set STRIPE_SECRET_KEY=sk_live_...
-   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
-   supabase secrets set STRIPE_PRICE_NZD=price_... STRIPE_PRICE_AUD=price_... STRIPE_PRICE_USD=price_...
-   ```
-3. Deploy the functions:
-   ```bash
-   supabase functions deploy stripe-checkout
-   supabase functions deploy stripe-portal
-   supabase functions deploy stripe-webhook --no-verify-jwt
-   supabase functions deploy generate-icon
-   ```
-4. Add a Stripe webhook endpoint → `.../functions/v1/stripe-webhook` sending:
-   `checkout.session.completed`, `customer.subscription.updated`,
-   `customer.subscription.deleted`, `invoice.payment_failed`.
-5. Client Price IDs: set `VITE_STRIPE_PRICE_*` (see `.env.example`).
+There is no Stripe integration, checkout, subscription, or trial. Every
+household has full access. The legacy `subscription_status` column and the old
+`stripe-*` edge functions have been retired; `src/lib/entitlements.ts` simply
+grants every feature to everyone. Deploy only the remaining functions:
 
-**Switching pricing model** (one-off / monthly / freemium) is a config change in
-`src/lib/entitlements.ts` (`BILLING_CONFIG.model` + the `FEATURES` gate map) —
-no rebuild. NZD is primary; add a currency by adding a Price ID.
+```bash
+supabase functions deploy generate-icon
+```
 
 ## 4. Analytics & error tracking (§7)
 

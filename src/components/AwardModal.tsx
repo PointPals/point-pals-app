@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, PlusCircle, Search, Sparkles, Loader2 } from "lucide-react";
+import { X, PlusCircle, Search, Sparkles } from "lucide-react";
 import type { Kid } from "@/lib/mock-data";
 import { PASTEL_HEX, appliesToKid } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-store";
-import { hasEntitlement, formatPrice, isSubscribed, BILLING_CONFIG } from "@/lib/entitlements";
-import { startCheckout } from "@/lib/billing";
-import { ParentalGate } from "@/components/ParentalGate";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile } from "./IconTile";
 
@@ -21,18 +18,11 @@ export function AwardModal({
   onAwardBatch: (items: AwardItem[]) => void;
   onClose: () => void;
 }) {
-  const { household, chores, skills } = useApp();
+  const { chores, skills } = useApp();
   const [tab, setTab] = useState<"chores" | "positive" | "needs-work">("chores");
   const [pointsFlash, setPointsFlash] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [paywallItem, setPaywallItem] = useState<{
-    name: string;
-    icon: string;
-    points: number;
-  } | null>(null);
-  const [paywallBusy, setPaywallBusy] = useState(false);
-  const [paywallErr, setPaywallErr] = useState<string | null>(null);
   // Batch tray: tapping tiles adds them here; "Add to jar" awards them all at
   // once so N marbles drop together instead of one award closing the sheet.
   const [tray, setTray] = useState<AwardItem[]>([]);
@@ -40,9 +30,6 @@ export function AwardModal({
   const prevPoints = useRef(kid.currentPoints);
   const closeRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  const canAward = hasEntitlement(household, "award_points");
-  const subscribed = isSubscribed(household);
 
   // Per-kid assignment: this modal awards to exactly one kid, so hide anything
   // narrowed to other kids. Must stay in lockstep with the printable-chart
@@ -296,14 +283,10 @@ export function AwardModal({
                   points={item.points}
                   muted={tab === "needs-work"}
                   onClick={() => {
-                    if (canAward) {
-                      setTray((t) => [
-                        ...t,
-                        { name: item.name, icon: item.icon, points: item.points },
-                      ]);
-                    } else {
-                      setPaywallItem({ name: item.name, icon: item.icon, points: item.points });
-                    }
+                    setTray((t) => [
+                      ...t,
+                      { name: item.name, icon: item.icon, points: item.points },
+                    ]);
                   }}
                 />
               ))}
@@ -340,72 +323,6 @@ export function AwardModal({
           </div>
         )}
 
-        {/* Paywall overlay — shown when a free user taps a tile */}
-        {paywallItem && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm rounded-t-3xl sm:rounded-3xl p-6">
-            <div
-              className="w-full max-w-sm rounded-3xl p-6 relative overflow-hidden"
-              style={{
-                background:
-                  "linear-gradient(135deg, color-mix(in oklab, var(--pastel-butter) 55%, white), color-mix(in oklab, var(--pastel-lilac) 45%, white))",
-              }}
-            >
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-foreground/60">
-                <Sparkles className="h-3.5 w-3.5" /> PointPals Plus
-              </div>
-              <h3 className="mt-2 font-display text-2xl font-bold">
-                {subscribed ? "Assign points to your chore chart" : "Your free trial has ended"}
-              </h3>
-              <p className="mt-1 text-sm text-foreground/70">
-                {subscribed
-                  ? "Your trial includes premium features. When it ends, subscribe to keep awarding points, filling the marble jar, and unlocking rewards."
-                  : `Subscribe for ${formatPrice()} to keep awarding points, filling the marble jar, and unlocking rewards for your family.`}
-              </p>
-              <div className="mt-4 flex items-baseline gap-2">
-                <span className="font-display text-3xl font-bold">{formatPrice()}</span>
-                <span className="text-sm text-foreground/60">
-                  {subscribed ? "after trial" : "/month"}
-                </span>
-              </div>
-              <ParentalGate onPassed={async () => {
-                  setPaywallBusy(true);
-                  setPaywallErr(null);
-                  const res = await startCheckout(household.id);
-                  if (res.url) {
-                    window.location.href = res.url;
-                    return;
-                  }
-                  setPaywallErr(res.error ?? "Billing backend not connected.");
-                  setPaywallBusy(false);
-                }}>
-                <button
-                  disabled={paywallBusy}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
-                >
-                  {paywallBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  {subscribed ? "Confirm now" : "Subscribe"}
-                </button>
-              </ParentalGate>
-              <p className="mt-3 text-xs text-foreground/50">
-                Secure checkout by Stripe · cancel anytime · prices in {BILLING_CONFIG.primaryCurrency}.
-              </p>
-              {paywallErr && <p className="mt-2 text-xs text-destructive">{paywallErr}</p>}
-              <button
-                onClick={() => {
-                  setPaywallItem(null);
-                  setPaywallErr(null);
-                }}
-                className="mt-3 text-xs text-foreground/60 underline hover:text-foreground transition"
-              >
-                Go back to browsing
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -26,7 +26,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as KTokenRouteImport } from './routes/k.$token'
 import { Route as AuthenticatedWelcomeBackRouteImport } from './routes/_authenticated.welcome-back'
-import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated.subscribe'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedRewardsRouteImport } from './routes/_authenticated.rewards'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated.reports'
@@ -120,11 +119,6 @@ const AuthenticatedWelcomeBackRoute =
     path: '/welcome-back',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSubscribeRoute = AuthenticatedSubscribeRouteImport.update({
-  id: '/subscribe',
-  path: '/subscribe',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -182,7 +176,6 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/rewards': typeof AuthenticatedRewardsRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/subscribe': typeof AuthenticatedSubscribeRoute
   '/welcome-back': typeof AuthenticatedWelcomeBackRoute
   '/k/$token': typeof KTokenRoute
   '/api/public/hooks/email-cron': typeof ApiPublicHooksEmailCronRoute
@@ -207,7 +200,6 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/rewards': typeof AuthenticatedRewardsRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/subscribe': typeof AuthenticatedSubscribeRoute
   '/welcome-back': typeof AuthenticatedWelcomeBackRoute
   '/k/$token': typeof KTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -235,7 +227,6 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/rewards': typeof AuthenticatedRewardsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/_authenticated/welcome-back': typeof AuthenticatedWelcomeBackRoute
   '/k/$token': typeof KTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -264,7 +255,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/rewards'
     | '/settings'
-    | '/subscribe'
     | '/welcome-back'
     | '/k/$token'
     | '/api/public/hooks/email-cron'
@@ -289,7 +279,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/rewards'
     | '/settings'
-    | '/subscribe'
     | '/welcome-back'
     | '/k/$token'
     | '/'
@@ -316,7 +305,6 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/rewards'
     | '/_authenticated/settings'
-    | '/_authenticated/subscribe'
     | '/_authenticated/welcome-back'
     | '/k/$token'
     | '/_authenticated/'
@@ -463,13 +451,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWelcomeBackRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/subscribe': {
-      id: '/_authenticated/subscribe'
-      path: '/subscribe'
-      fullPath: '/subscribe'
-      preLoaderRoute: typeof AuthenticatedSubscribeRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -529,7 +510,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedRewardsRoute: typeof AuthenticatedRewardsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedSubscribeRoute: typeof AuthenticatedSubscribeRoute
   AuthenticatedWelcomeBackRoute: typeof AuthenticatedWelcomeBackRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -541,7 +521,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedRewardsRoute: AuthenticatedRewardsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedSubscribeRoute: AuthenticatedSubscribeRoute,
   AuthenticatedWelcomeBackRoute: AuthenticatedWelcomeBackRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

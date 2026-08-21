@@ -27,27 +27,11 @@ function Terms() {
         You're responsible for the information you enter and for supervising children's use.
       </p>
 
-      <H2>Subscriptions &amp; billing</H2>
-      <ul className="list-disc pl-5 space-y-1.5">
-        <li>
-          Some features require a paid subscription, offered after a free trial where applicable.
-        </li>
-        <li>
-          Payments are processed securely by Stripe. Prices are shown in NZD (or your selected
-          currency) before you pay.
-        </li>
-        <li>
-          Subscriptions renew automatically until cancelled. You can cancel anytime via the Stripe
-          customer portal in Settings — access continues until the end of the paid period.
-        </li>
-        <li>
-          Refunds are governed by our{" "}
-          <a className="underline" href="/refunds">
-            Refund Policy
-          </a>
-          .
-        </li>
-      </ul>
+      <H2>Free to use</H2>
+      <p>
+        PointPals is free. There are no subscriptions, trials, or payment details required — every
+        feature is available to every family at no cost.
+      </p>
 
       <H2>Acceptable use</H2>
       <p>
@@ -70,9 +54,9 @@ function Terms() {
 
       <H2>Liability</H2>
       <p>
-        To the extent permitted by law, PointPals is provided "as is" and our liability is limited
-        to the amount you paid us in the prior 12 months. Nothing here limits rights you have under
-        mandatory consumer law (for example, the New Zealand Consumer Guarantees Act).
+        To the extent permitted by law, PointPals is provided "as is". Because the app is free, our
+        liability is limited to the maximum extent permitted by law. Nothing here limits rights you
+        have under mandatory consumer law (for example, the New Zealand Consumer Guarantees Act).
       </p>
 
       <H2>Contact</H2>

@@ -1,11 +1,10 @@
-// Daily lifecycle-email cron hook. Scheduled by pg_cron once per day (09:00
-// UTC) via the SQL job installed in this project. Sends the four
-// trial/subscription lifecycle emails whose triggers are time-based:
+// Daily nurture-email cron hook. Scheduled by pg_cron once per day (09:00
+// UTC) via the SQL job installed in this project. Sends the time-based
+// parenting-tip emails (PointPals is free — no trial/billing lifecycle):
 //
-//   02 tip-day3       — day 3 of trial
-//   03 tip-day7       — day 7 of trial
-//   04 trial-ending   — 3 days before trial_ends_at
-//   08 tip-month1     — day 30 of subscription
+//   02 tip-day3       — day 3 after sign-up
+//   03 tip-day7       — day 7 after sign-up
+//   08 tip-month1     — day 30 after sign-up
 //
 // Auth: pg_cron sends the Supabase anon key in the `apikey` header. We match
 // it against SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY.
@@ -15,13 +14,9 @@ import { createFileRoute } from "@tanstack/react-router";
 type HouseholdRow = {
   id: string;
   created_at: string;
-  trial_ends_at: string | null;
-  subscription_status: string;
   email_tip_day3_sent_at: string | null;
   email_tip_day7_sent_at: string | null;
-  email_trial_ending_sent_at: string | null;
   email_tip_month1_sent_at: string | null;
-  email_payment_confirmed_at: string | null;
 };
 
 function daysBetween(a: Date, b: Date) {
@@ -59,10 +54,7 @@ export const Route = createFileRoute("/api/public/hooks/email-cron")({
 
         const { data: rows, error } = await supabaseAdmin
           .from("households")
-          .select(
-            "id, created_at, trial_ends_at, subscription_status, email_tip_day3_sent_at, email_tip_day7_sent_at, email_trial_ending_sent_at, email_tip_month1_sent_at, email_payment_confirmed_at",
-          )
-          .in("subscription_status", ["trialing", "active"]);
+          .select("id, created_at, email_tip_day3_sent_at, email_tip_day7_sent_at, email_tip_month1_sent_at");
 
         if (error) {
           console.error("[email-cron] fetch households failed:", error);
@@ -70,33 +62,20 @@ export const Route = createFileRoute("/api/public/hooks/email-cron")({
         }
 
         const now = new Date();
-        const summary = { trialing: 0, active: 0, sent: [] as string[], failed: [] as string[] };
+        const summary = { sent: [] as string[], failed: [] as string[] };
 
         for (const h of (rows ?? []) as HouseholdRow[]) {
           const created = new Date(h.created_at);
           const daysSinceCreated = daysBetween(created, now);
           const nowIso = now.toISOString();
-          let toSend: { key: "tipDay3" | "tipDay7" | "trialEnding" | "tipMonth1"; column: string } | null = null;
+          let toSend: { key: "tipDay3" | "tipDay7" | "tipMonth1"; column: string } | null = null;
 
-          if (h.subscription_status === "trialing") {
-            summary.trialing++;
-            if (daysSinceCreated >= 3 && !h.email_tip_day3_sent_at) {
-              toSend = { key: "tipDay3", column: "email_tip_day3_sent_at" };
-            } else if (daysSinceCreated >= 7 && !h.email_tip_day7_sent_at) {
-              toSend = { key: "tipDay7", column: "email_tip_day7_sent_at" };
-            } else if (h.trial_ends_at && !h.email_trial_ending_sent_at) {
-              const daysToEnd = daysBetween(now, new Date(h.trial_ends_at));
-              if (daysToEnd <= 3 && daysToEnd >= 0) {
-                toSend = { key: "trialEnding", column: "email_trial_ending_sent_at" };
-              }
-            }
-          } else if (h.subscription_status === "active") {
-            summary.active++;
-            const anchor = h.email_payment_confirmed_at ? new Date(h.email_payment_confirmed_at) : created;
-            const daysSinceActive = daysBetween(anchor, now);
-            if (daysSinceActive >= 30 && !h.email_tip_month1_sent_at) {
-              toSend = { key: "tipMonth1", column: "email_tip_month1_sent_at" };
-            }
+          if (daysSinceCreated >= 3 && !h.email_tip_day3_sent_at) {
+            toSend = { key: "tipDay3", column: "email_tip_day3_sent_at" };
+          } else if (daysSinceCreated >= 7 && !h.email_tip_day7_sent_at) {
+            toSend = { key: "tipDay7", column: "email_tip_day7_sent_at" };
+          } else if (daysSinceCreated >= 30 && !h.email_tip_month1_sent_at) {
+            toSend = { key: "tipMonth1", column: "email_tip_month1_sent_at" };
           }
 
           if (!toSend) continue;

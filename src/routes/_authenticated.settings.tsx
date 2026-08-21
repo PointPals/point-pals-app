@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-store";
 import { useSettings, setSetting } from "@/lib/settings";
-import { Paywall } from "@/components/Paywall";
 import { trackParent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { primeAudio } from "@/lib/feedback";
@@ -19,7 +18,6 @@ import {
   LifeBuoy,
   Eye,
   Target,
-  Sparkles,
   Users,
   Copy,
   RefreshCw,
@@ -47,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { title: "Settings — PointPals" },
       {
         name: "description",
-        content: "Manage your subscription, sound, family settings, and your data.",
+        content: "Manage sound, family settings, and your data.",
       },
     ],
   }),
@@ -107,22 +105,6 @@ function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Stripe checkout callback — read ?checkout=success|cancelled from the URL.
-  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get("checkout");
-    if (status === "success") {
-      setCheckoutMessage("Your subscription is confirmed — thanks for supporting PointPals!");
-    } else if (status === "cancelled") {
-      setCheckoutMessage("No worries — your trial is still active. You can upgrade anytime from here.");
-    }
-    if (status) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("checkout");
-      window.history.replaceState(null, "", url);
-    }
-  }, []);
   useEffect(() => {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
@@ -323,20 +305,9 @@ function SettingsPage() {
       <div>
         <h1 className="font-display text-3xl font-bold">Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Parent controls, subscription, and your data.
+          Parent controls and your data.
         </p>
       </div>
-
-      {/* Subscription / paywall — parent screen only */}
-      <section className="space-y-3">
-        <SectionTitle icon={<Sparkles className="h-4 w-4" />}>Subscription</SectionTitle>
-        {checkoutMessage && (
-          <div className="rounded-2xl bg-butter/40 border border-butter p-4 text-sm font-medium">
-            {checkoutMessage}
-          </div>
-        )}
-        <Paywall />
-      </section>
 
       {/* Household */}
       <section className="space-y-3">

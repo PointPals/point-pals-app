@@ -16,10 +16,7 @@ prefixed `VITE_`.
 | `VITE_SENTRY_DSN` | optional | Sentry DSN. **Unset = Sentry off.** When set, errors report with PII scrubbed and Session Replay masks all text/media. |
 | `VITE_POSTHOG_KEY` | optional | PostHog project API key. Unset = analytics off. |
 | `VITE_POSTHOG_HOST` | optional | Defaults to `https://us.i.posthog.com`. Set for EU/self-host. |
-| `VITE_STRIPE_PRICE_NZD` | for billing | Stripe Price ID (NZD, primary) |
-| `VITE_STRIPE_PRICE_AUD` | optional | Stripe Price ID (AUD) |
-| `VITE_STRIPE_PRICE_USD` | optional | Stripe Price ID (USD) |
-| `RESEND_API_KEY` | for email | Used by the TanStack **server functions** (contact form + trial welcome). Server-only — do NOT prefix `VITE_`. |
+| `RESEND_API_KEY` | for email | Used by the TanStack **server functions** (contact form). Server-only — do NOT prefix `VITE_`. |
 
 > Sentry/PostHog are read at build time via `import.meta.env`, so after adding
 > them you must **redeploy** (not just save) for them to take effect.
@@ -27,20 +24,17 @@ prefixed `VITE_`.
 ## Supabase → Project → Edge Functions → Secrets
 
 Set with `supabase secrets set NAME=value` (or the dashboard). These are for the
-edge functions (Stripe, email, AI icons, cron).
+edge functions (email, AI icons, montage, cron).
 
 | Secret | Used by | Notes |
 |---|---|---|
 | `SUPABASE_URL` | all | auto-provided by Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | all | auto-provided by Supabase |
-| `RESEND_API_KEY` | stripe-webhook, notify-trial-ending, notify-nurture-sequence, generate-icon, upload-icon | direct Resend API now — **`LOVABLE_API_KEY` is no longer needed** |
-| `STRIPE_SECRET_KEY` | stripe-checkout, stripe-portal, stripe-webhook | |
-| `STRIPE_WEBHOOK_SECRET` | stripe-webhook | from the Stripe webhook endpoint |
-| `STRIPE_COUPON_ID` | stripe-checkout | optional intro coupon |
+| `RESEND_API_KEY` | notify-nurture-sequence, notify-memory-expiry, generate-icon, upload-icon, render-montage | direct Resend API — **`LOVABLE_API_KEY` is no longer needed** |
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | generate-icon | Gemini image model |
 | `OPENAI_API_KEY` | transcribe-memory | Whisper transcription |
-| `CRON_SECRET` | notify-trial-ending, notify-nurture-sequence, notify-memory-expiry, purge-expired-memories | shared secret guarding the cron endpoints (also stored in Supabase **Vault** under the same name — the `cron.schedule` jobs read it from there) |
-| `PUBLIC_SITE_URL` | notify-*, stripe-* | canonical site URL for links in emails/redirects |
+| `CRON_SECRET` | notify-nurture-sequence, notify-memory-expiry, purge-expired-memories | shared secret guarding the cron endpoints (also stored in Supabase **Vault** under the same name — the `cron.schedule` jobs read it from there) |
+| `PUBLIC_SITE_URL` | notify-* | canonical site URL for links in emails/redirects |
 | `SHOTSTACK_API_KEY` | render-montage | Shotstack render API key. **Unset = montage off** — the Memories-page button shows a friendly "coming soon" message. |
 | `SHOTSTACK_ENV` | render-montage | `v1` (production, default) or `stage` (free sandbox renders with a watermark) |
 | `SHOTSTACK_SOUNDTRACK_URL` | render-montage | optional: public URL of a royalty-free MP3 used as the montage soundtrack |

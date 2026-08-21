@@ -49,7 +49,8 @@ export type Household = {
   name: string;
   sharedPool: number;
   rewardTarget: number;
-  // Entitlement layer (§5) - checked to gate parent-facing premium features.
+  // Legacy billing fields from the paid era. PointPals is free now — these
+  // are kept only because the DB rows / persisted state still carry them.
   subscriptionStatus: "trialing" | "active" | "past_due" | "canceled" | "free" | "founding_tester";
   trialEndsAt: number | null;
   foundingTester: boolean;
@@ -256,6 +257,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Free memory after a while - realtime round-trip is < 2s in practice.
     setTimeout(() => echoIds.current.delete(id), 15000);
   };
+  // Timestamps of our own recent writes to jar totals. Realtime echoes of
+  // those writes (and of unrelated households/kids updates that happen to
+  // carry a stale pool value) arrive asynchronously — while one is in flight
+  // we trust the local total, otherwise a lagging echo can roll the jar back
+  // and the marble count/total visibly disagrees with what was just awarded.
+  const poolWriteAt = useRef(0);
+  const kidWriteAt = useRef<Map<string, number>>(new Map());
+  const WRITE_ECHO_MS = 15000;
+  const markPoolWrite = () => {
+    poolWriteAt.current = Date.now();
+  };
+  const markKidWrite = (kidId: string) => {
+    kidWriteAt.current.set(kidId, Date.now());
+  };
+  // Every jar-total mutation goes through here: it computes the next state
+  // from the freshest known state (the ref), updates the ref synchronously,
+  // then hands the value to React. Calls made back-to-back in the same tick
+  // (batch awards, multi-item undo) chain correctly instead of all reading
+  // the same stale snapshot — and the returned state is exactly what the
+  // follow-up DB write should persist.
+  const commit = (updater: (s: Persisted) => Persisted): Persisted => {
+    const next = updater(stateRef.current);
+    stateRef.current = next;
+    setState(next);
+    return next;
+  };
   const didHydrate = useRef(false);
 
   // Safety net: never stay stuck on the splash screen longer than 8 s, even if
@@ -387,21 +414,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!bundle) return;
     householdIdRef.current = hid;
 
-    // ── Boot-time trial expiry check (§5) ─────────────────────────────
-    // If the server says we're trialing but the trial timestamp is in the
-    // past, transition to "free" locally AND on the server so the route
-    // guard (see _authenticated.tsx) redirects to the paywall.
+    // PointPals is free — legacy subscription columns from the paid era are
+    // ignored and every household simply has full access.
     const hh = bundle.household;
-    if (hh.subscriptionStatus === "trialing" && hh.trialEndsAt && Date.now() > hh.trialEndsAt) {
-      // Founding testers keep full access automatically (no Stripe coupon needed).
-      hh.subscriptionStatus = hh.foundingTester ? "active" : "free";
-      // Fire-and-forget server write - we won't block boot on it.
-      void supabase
-        .from("households")
-        .update({ subscription_status: hh.subscriptionStatus })
-        .eq("id", hid)
-        .then();
-    }
+    hh.subscriptionStatus = "active";
+    hh.trialEndsAt = null;
 
     // ── Apply local jar settings as overrides ────────────────────────
     // The server may lack some columns (e.g. split_mode, shared_jar_enabled)
@@ -485,7 +502,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             );
             const event = mapEvent(newRow);
             const pts = event.points;
-            setState((s) => {
+            commit((s) => {
               const sharedDelta = s.household.splitJarsEnabled
                 ? s.household.splitMode === "match"
                   ? pts
@@ -517,7 +534,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
               };
             });
           } else if (payload.eventType === "DELETE" && oldRow?.id) {
-            setState((s) => ({ ...s, history: s.history.filter((e) => e.id !== oldRow.id) }));
+            // Our own undo already adjusted local totals — just drop the row.
+            if (echoIds.current.has(oldRow.id)) {
+              commit((s) => ({ ...s, history: s.history.filter((e) => e.id !== oldRow.id) }));
+              return;
+            }
+            // Remote removal (another parent undid an award): reverse the same
+            // delta the INSERT path applies so every device's jar recalculates.
+            const oldFull = payload.old as Database["public"]["Tables"]["point_events"]["Row"] | null;
+            if (!oldFull) {
+              commit((s) => ({ ...s, history: s.history.filter((e) => e.id !== oldRow.id) }));
+              return;
+            }
+            const event = mapEvent(oldFull);
+            const pts = event.points;
+            // Corrections never touched the jar — only strike them from the log.
+            if (event.type === "correction") {
+              commit((s) => ({ ...s, history: s.history.filter((e) => e.id !== event.id) }));
+              return;
+            }
+            commit((s) => {
+              const sharedDelta = s.household.splitJarsEnabled
+                ? s.household.splitMode === "match"
+                  ? pts
+                  : Math.floor((pts * s.household.splitRatio) / 100)
+                : pts;
+              return {
+                ...s,
+                history: s.history.filter((e) => e.id !== event.id),
+                household: {
+                  ...s.household,
+                  sharedPool: Math.max(0, s.household.sharedPool - sharedDelta),
+                },
+                kids: s.kids.map((k) =>
+                  k.id === event.kidId
+                    ? {
+                        ...k,
+                        currentPoints: Math.max(0, k.currentPoints - pts),
+                        allTimePoints: Math.max(0, k.allTimePoints - pts),
+                        personalPool: s.household.splitJarsEnabled
+                          ? Math.max(
+                              0,
+                              k.personalPool -
+                                (s.household.splitMode === "match" ? pts : pts - sharedDelta),
+                            )
+                          : k.personalPool,
+                      }
+                    : k,
+                ),
+              };
+            });
           }
         },
       )
@@ -528,8 +594,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const row = payload.new as Parameters<typeof mapKid>[0];
             if (echoIds.current.has(row.id) && payload.eventType === "INSERT") return;
+            // While our own point/pool write for this kid is in flight the DB
+            // row can lag behind local state — keep our totals instead of
+            // letting the echo roll them back.
+            const wroteRecently =
+              Date.now() - (kidWriteAt.current.get(row.id) ?? 0) < WRITE_ECHO_MS;
+            if (payload.eventType === "UPDATE" && wroteRecently) return;
             const kid = mapKid(row);
-            setState((s) => {
+            commit((s) => {
               const exists = s.kids.some((k) => k.id === kid.id);
               return {
                 ...s,
@@ -561,7 +633,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
               rewardTarget: localJar.rewardTarget ?? mapped.rewardTarget,
             });
           }
-          setState((s) => ({ ...s, household: mapped }));
+          // While our own shared_pool write is in flight the echoed row can
+          // carry a stale total (or none of our latest change at all). Keep
+          // the local jar total so it never visibly rolls back; every other
+          // household field still syncs normally.
+          const poolInFlight = Date.now() - poolWriteAt.current < WRITE_ECHO_MS;
+          commit((s) => ({
+            ...s,
+            household: poolInFlight
+              ? { ...mapped, sharedPool: s.household.sharedPool }
+              : mapped,
+          }));
         },
       )
       .on(
@@ -630,6 +712,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   const live = mode === "live" && householdIdRef.current;
   const hid = () => householdIdRef.current!;
+  // Jar-total writes carry absolute values computed from committed state. Run
+  // them strictly in order so a slow earlier write can't land AFTER a newer
+  // one and resurrect a stale total in the database.
+  const pointsWriteChain = useRef<Promise<void>>(Promise.resolve());
+  const enqueuePointsWrite = (
+    fn: () => Promise<{ error: { message: string } | null }>,
+    ids: string[] = [],
+  ) => {
+    // Never let one failed write break the chain for every later one.
+    pointsWriteChain.current = pointsWriteChain.current
+      .then(() => dbWrite(fn, ids))
+      .catch(() => {});
+  };
   const dbWrite = async (
     fn: () => Promise<{ error: { message: string } | null }>,
     ids: string[] = [],
@@ -659,28 +754,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const now = Date.now();
       const batchId = uid();
 
-      // ── Compute shared vs personal jar portions ───────────────────
-      //   splitJars OFF       → legacy single-jar mode (all to shared)
-      //   sharedJarEnabled OFF → individual j.ars only (all to personal)
-      //   splitMode "match"    → 1:1 - full points to BOTH jars
-      //   splitMode "%"        → split per splitRatio
-      let sharedPoints: number;
-      let personalPoints: number;
-      if (!household.splitJarsEnabled) {
-        sharedPoints = item.points;
-        personalPoints = 0;
-      } else if (!household.sharedJarEnabled) {
-        sharedPoints = 0;
-        personalPoints = item.points;
-      } else if (household.splitMode === "match") {
-        sharedPoints = item.points;
-        personalPoints = item.points;
-      } else {
-        sharedPoints = Math.floor((item.points * household.splitRatio) / 100);
-        personalPoints = item.points - sharedPoints;
-      }
-      const poolDelta = sharedPoints;
-
       const eventRows = kidIds.map((kidId) => ({
         id: uid(),
         kid_id: kidId,
@@ -689,22 +762,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         points: item.points,
         batch_id: batchId,
       }));
-      const batch: AwardBatch = {
-        id: batchId,
-        at: now,
-        kidIds,
-        item,
-        poolDelta,
-        personalDelta: household.splitJarsEnabled ? personalPoints : undefined,
-      };
-      setState((s) => {
-        // Recompute split logic from latest state in case realtime changed settings
+
+      // ── Compute shared vs personal jar portions from the LATEST state ──
+      //   splitJars OFF        → legacy single-jar mode (all to shared)
+      //   sharedJarEnabled OFF → individual jars only (all to personal)
+      //   splitMode "match"    → 1:1 - full points to BOTH jars
+      //   splitMode "%"        → split per splitRatio
+      // Captured inside the commit so back-to-back awards in the same tick
+      // each see the settings as they stand, then reused for the DB writes
+      // and the returned batch (undo needs the exact deltas).
+      let poolDelta = item.points;
+      let personalDelta = 0;
+      const next = commit((s) => {
         const hh = s.household;
-        let pp = 0;
-        if (!hh.splitJarsEnabled) pp = 0;
-        else if (!hh.sharedJarEnabled) pp = item.points;
-        else if (hh.splitMode === "match") pp = item.points;
-        else pp = item.points - Math.floor((item.points * hh.splitRatio) / 100);
+        let shared: number;
+        let pp: number;
+        if (!hh.splitJarsEnabled) {
+          shared = item.points;
+          pp = 0;
+        } else if (!hh.sharedJarEnabled) {
+          shared = 0;
+          pp = item.points;
+        } else if (hh.splitMode === "match") {
+          shared = item.points;
+          pp = item.points;
+        } else {
+          shared = Math.floor((item.points * hh.splitRatio) / 100);
+          pp = item.points - shared;
+        }
+        poolDelta = shared;
+        personalDelta = pp;
         return {
           ...s,
           kids: s.kids.map((k) =>
@@ -713,15 +800,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   ...k,
                   currentPoints: Math.max(0, k.currentPoints + item.points),
                   allTimePoints: Math.max(0, k.allTimePoints + item.points),
-                  personalPool: hh.splitJarsEnabled
-                    ? Math.max(0, k.personalPool + pp)
-                    : k.personalPool,
+                  personalPool: hh.splitJarsEnabled ? Math.max(0, k.personalPool + pp) : k.personalPool,
                 }
               : k,
           ),
           household: {
             ...hh,
-            sharedPool: Math.max(0, hh.sharedPool + poolDelta),
+            sharedPool: Math.max(0, hh.sharedPool + shared),
           },
           history: [
             ...eventRows.map((row) => ({
@@ -731,14 +816,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
               itemIcon: item.icon,
               points: item.points,
               at: now,
+              batchId,
             })),
             ...s.history,
           ].slice(0, 200),
         };
       });
+      const batch: AwardBatch = {
+        id: batchId,
+        at: now,
+        kidIds,
+        item,
+        poolDelta,
+        personalDelta: next.household.splitJarsEnabled ? personalDelta : undefined,
+      };
       if (live) {
-        const snap = stateRef.current;
-        const nextPool = Math.max(0, snap.household.sharedPool + poolDelta);
+        // Persist exactly what was committed locally — no re-derivation from a
+        // possibly-stale snapshot, so rapid awards/undos can't desync the DB.
+        markPoolWrite();
         void dbWrite(
           async () =>
             await supabase
@@ -750,30 +845,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ),
           eventRows.map((r) => r.id),
         );
-        void dbWrite(
-          async () =>
-            await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
+        enqueuePointsWrite(async () =>
+          await supabase
+            .from("households")
+            .update({ shared_pool: next.household.sharedPool })
+            .eq("id", hid()),
         );
         // Sync per-kid totals - update current_points, all_time_points, and personal_pool.
         kidIds.forEach((kidId) => {
-          const kid = snap.kids.find((k) => k.id === kidId);
+          const kid = next.kids.find((k) => k.id === kidId);
           if (!kid) return;
-          const nextCur = Math.max(0, kid.currentPoints + item.points);
-          const nextAll = Math.max(0, kid.allTimePoints + item.points);
-          const nextPersonal = snap.household.splitJarsEnabled
-            ? Math.max(0, kid.personalPool + personalPoints)
-            : kid.personalPool;
+          markKidWrite(kidId);
           const dbPatch: Record<string, unknown> = {
-            current_points: nextCur,
-            all_time_points: nextAll,
+            current_points: kid.currentPoints,
+            all_time_points: kid.allTimePoints,
           };
-          if (snap.household.splitJarsEnabled) dbPatch.personal_pool = nextPersonal;
-          void dbWrite(
-            async () =>
-              await supabase
-                .from("kids")
-                .update(dbPatch as never)
-                .eq("id", kidId),
+          if (next.household.splitJarsEnabled) dbPatch.personal_pool = kid.personalPool;
+          enqueuePointsWrite(async () =>
+            await supabase
+              .from("kids")
+              .update(dbPatch as never)
+              .eq("id", kidId),
           );
         });
         broadcastJarPing();
@@ -782,7 +874,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     undoBatch: (batch) => {
       const personalDelta = batch.personalDelta ?? 0;
-      setState((s) => ({
+      // Capture before the commit strikes them from history — marking these
+      // ids suppresses the realtime DELETE echo of our own undo.
+      const removedEventIds = stateRef.current.history
+        .filter((e) => e.batchId === batch.id || e.id.startsWith(batch.id))
+        .map((e) => e.id);
+      const next = commit((s) => ({
         ...s,
         kids: s.kids.map((k) =>
           batch.kidIds.includes(k.id)
@@ -800,106 +897,112 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sharedPool: Math.max(0, s.household.sharedPool - batch.poolDelta),
         },
         history: s.history.filter(
-          (e) =>
-            (e as PointEvent & { batchId?: string }).batchId !== batch.id &&
-            !e.id.startsWith(batch.id),
+          (e) => e.batchId !== batch.id && !e.id.startsWith(batch.id),
         ),
       }));
       if (live) {
+        // Persist the committed totals — multi-item undos loop through here
+        // synchronously, so deriving from anything but `next` would make the
+        // last write win with a stale value and the jar total would drift.
+        markPoolWrite();
         void dbWrite(
           async () => await supabase.from("point_events").delete().eq("batch_id", batch.id),
+          removedEventIds,
         );
-        const nextPool = Math.max(0, household.sharedPool - batch.poolDelta);
-        void dbWrite(
-          async () =>
-            await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
+        enqueuePointsWrite(async () =>
+          await supabase
+            .from("households")
+            .update({ shared_pool: next.household.sharedPool })
+            .eq("id", hid()),
         );
         batch.kidIds.forEach((kidId) => {
-          const kid = kids.find((k) => k.id === kidId);
+          const kid = next.kids.find((k) => k.id === kidId);
           if (!kid) return;
-          const nextCur = Math.max(0, kid.currentPoints - batch.item.points);
-          const nextAll = Math.max(0, kid.allTimePoints - batch.item.points);
+          markKidWrite(kidId);
           const dbPatch: Record<string, unknown> = {
-            current_points: nextCur,
-            all_time_points: nextAll,
+            current_points: kid.currentPoints,
+            all_time_points: kid.allTimePoints,
           };
-          if (personalDelta > 0) {
-            const nextPersonal = Math.max(0, kid.personalPool - personalDelta);
-            dbPatch.personal_pool = nextPersonal;
-          }
-          void dbWrite(
-            async () =>
-              await supabase
-                .from("kids")
-                .update(dbPatch as never)
-                .eq("id", kidId),
+          if (personalDelta > 0) dbPatch.personal_pool = kid.personalPool;
+          enqueuePointsWrite(async () =>
+            await supabase
+              .from("kids")
+              .update(dbPatch as never)
+              .eq("id", kidId),
           );
         });
         broadcastJarPing();
       }
     },
     undoEvent: (eventId) => {
-      const ev = history.find((e) => e.id === eventId);
+      const ev = stateRef.current.history.find((e) => e.id === eventId);
       if (!ev) return;
       const points = ev.points;
-      // Recompute the shared/personal split with current settings — accurate
-      // for a recent mis-tap (the jar hasn't been reset/reconfigured between).
-      let shared: number;
-      let personal: number;
-      if (!household.splitJarsEnabled) {
-        shared = points;
-        personal = 0;
-      } else if (!household.sharedJarEnabled) {
-        shared = 0;
-        personal = points;
-      } else if (household.splitMode === "match") {
-        shared = points;
-        personal = points;
-      } else {
-        shared = Math.floor((points * household.splitRatio) / 100);
-        personal = points - shared;
-      }
 
-      setState((s) => ({
-        ...s,
-        kids: s.kids.map((k) =>
-          k.id === ev.kidId
-            ? {
-                ...k,
-                currentPoints: Math.max(0, k.currentPoints - points),
-                allTimePoints: Math.max(0, k.allTimePoints - points),
-                personalPool: household.splitJarsEnabled
-                  ? Math.max(0, k.personalPool - personal)
-                  : k.personalPool,
-              }
-            : k,
-        ),
-        household: { ...s.household, sharedPool: Math.max(0, s.household.sharedPool - shared) },
-        history: s.history.filter((e) => e.id !== eventId),
-      }));
+      // Recompute the shared/personal split and apply the reversal in one
+      // committed step — the DB write below persists exactly this result, so
+      // removing a marble always recalculates the jar totals everywhere.
+      const next = commit((s) => {
+        const hh = s.household;
+        let shared: number;
+        let personal: number;
+        if (!hh.splitJarsEnabled) {
+          shared = points;
+          personal = 0;
+        } else if (!hh.sharedJarEnabled) {
+          shared = 0;
+          personal = points;
+        } else if (hh.splitMode === "match") {
+          shared = points;
+          personal = points;
+        } else {
+          shared = Math.floor((points * hh.splitRatio) / 100);
+          personal = points - shared;
+        }
+        return {
+          ...s,
+          kids: s.kids.map((k) =>
+            k.id === ev.kidId
+              ? {
+                  ...k,
+                  currentPoints: Math.max(0, k.currentPoints - points),
+                  allTimePoints: Math.max(0, k.allTimePoints - points),
+                  personalPool: hh.splitJarsEnabled
+                    ? Math.max(0, k.personalPool - personal)
+                    : k.personalPool,
+                }
+              : k,
+          ),
+          household: { ...hh, sharedPool: Math.max(0, hh.sharedPool - shared) },
+          history: s.history.filter((e) => e.id !== eventId),
+        };
+      });
 
       if (live) {
-        void dbWrite(async () => await supabase.from("point_events").delete().eq("id", eventId));
-        const nextPool = Math.max(0, household.sharedPool - shared);
+        markPoolWrite();
         void dbWrite(
-          async () =>
-            await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
+          async () => await supabase.from("point_events").delete().eq("id", eventId),
+          [eventId],
         );
-        const kid = kids.find((k) => k.id === ev.kidId);
+        enqueuePointsWrite(async () =>
+          await supabase
+            .from("households")
+            .update({ shared_pool: next.household.sharedPool })
+            .eq("id", hid()),
+        );
+        const kid = next.kids.find((k) => k.id === ev.kidId);
         if (kid) {
+          markKidWrite(ev.kidId);
           const dbPatch: Record<string, unknown> = {
-            current_points: Math.max(0, kid.currentPoints - points),
-            all_time_points: Math.max(0, kid.allTimePoints - points),
+            current_points: kid.currentPoints,
+            all_time_points: kid.allTimePoints,
           };
-          if (household.splitJarsEnabled) {
-            dbPatch.personal_pool = Math.max(0, kid.personalPool - personal);
-          }
-          void dbWrite(
-            async () =>
-              await supabase
-                .from("kids")
-                .update(dbPatch as never)
-                .eq("id", ev.kidId),
+          if (next.household.splitJarsEnabled) dbPatch.personal_pool = kid.personalPool;
+          enqueuePointsWrite(async () =>
+            await supabase
+              .from("kids")
+              .update(dbPatch as never)
+              .eq("id", ev.kidId),
           );
         }
       }
@@ -1038,17 +1141,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     resetRewardCycle: () => {
-      setState((s) => ({
+      const next = commit((s) => ({
         ...s,
         kids: s.kids.map((k) => ({ ...k, currentPoints: 0, personalPool: 0 })),
         household: { ...s.household, sharedPool: 0 },
       }));
       if (live) {
-        void dbWrite(
+        markPoolWrite();
+        enqueuePointsWrite(
           async () => await supabase.from("households").update({ shared_pool: 0 }).eq("id", hid()),
         );
-        for (const kid of kids) {
-          void dbWrite(
+        for (const kid of next.kids) {
+          markKidWrite(kid.id);
+          enqueuePointsWrite(
             async () =>
               await supabase
                 .from("kids")
@@ -1059,17 +1164,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     correctPoints: (kidId, delta, reason) => {
-      const kid = kids.find((k) => k.id === kidId);
-      if (!kid || delta === 0) return;
+      if (delta === 0) return;
+      if (!stateRef.current.kids.some((k) => k.id === kidId)) return;
       const eventId = uid();
       const now = Date.now();
-      const nextCur = Math.max(0, kid.currentPoints + delta);
-      const nextAll = Math.max(0, kid.allTimePoints + delta);
       const itemName = reason ? `Correction: ${reason}` : "Correction";
-      setState((s) => ({
+      const next = commit((s) => ({
         ...s,
         kids: s.kids.map((k) =>
-          k.id === kidId ? { ...k, currentPoints: nextCur, allTimePoints: nextAll } : k,
+          k.id === kidId
+            ? {
+                ...k,
+                currentPoints: Math.max(0, k.currentPoints + delta),
+                allTimePoints: Math.max(0, k.allTimePoints + delta),
+              }
+            : k,
         ),
         // Corrections deliberately do NOT touch the shared pool: the jar is the
         // family-facing celebration surface, and an admin fix shouldn't yank
@@ -1088,6 +1197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ].slice(0, 200),
       }));
       if (live) {
+        const kid = next.kids.find((k) => k.id === kidId);
         void dbWrite(
           async () =>
             await supabase.from("point_events").insert({
@@ -1102,13 +1212,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             } as never),
           [eventId],
         );
-        void dbWrite(
-          async () =>
-            await supabase
-              .from("kids")
-              .update({ current_points: nextCur, all_time_points: nextAll } as never)
-              .eq("id", kidId),
-        );
+        if (kid) {
+          markKidWrite(kidId);
+          enqueuePointsWrite(
+            async () =>
+              await supabase
+                .from("kids")
+                .update({ current_points: kid.currentPoints, all_time_points: kid.allTimePoints } as never)
+                .eq("id", kidId),
+          );
+        }
       }
     },
     setRewardTarget: (n) => {
@@ -1133,8 +1246,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     setSubscriptionStatus: (status) =>
-      // Server-managed by Stripe webhook - local only, for the Paywall's "simulate
-      // activation" fallback when Stripe isn't wired up.
+      // Legacy from the paid era — PointPals is free now; kept only so the
+      // type surface stays stable for existing persisted state.
       setState((s) => ({ ...s, household: { ...s.household, subscriptionStatus: status } })),
     completeOnboarding: () => {
       setState((s) => ({ ...s, household: { ...s.household, onboarded: true } }));
@@ -1294,12 +1407,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     claimPersonalReward: (kidId) => {
-      setState((s) => ({
+      commit((s) => ({
         ...s,
         kids: s.kids.map((k) => (k.id === kidId ? { ...k, personalPool: 0 } : k)),
       }));
       if (live) {
-        void dbWrite(
+        markKidWrite(kidId);
+        enqueuePointsWrite(
           async () =>
             await supabase
               .from("kids")
@@ -1309,23 +1423,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     resetKidPoints: (kidId) => {
-      const kid = kids.find((k) => k.id === kidId);
-      if (!kid) return;
       // In split mode each award added to BOTH this kid's jar and the family
       // jar, so resetting the kid must also pull their share back out of the
       // family jar — otherwise the family total keeps marbles for points that
       // no longer exist. personalPool is the kid's live contribution (exact in
       // match mode, the default). No shared jar → nothing to pull back.
-      const drop =
-        household.splitJarsEnabled && household.sharedJarEnabled ? kid.personalPool : 0;
-      const nextPool = Math.max(0, household.sharedPool - drop);
-      setState((s) => ({
-        ...s,
-        kids: s.kids.map((k) => (k.id === kidId ? { ...k, personalPool: 0 } : k)),
-        household: { ...s.household, sharedPool: nextPool },
-      }));
+      let drop = 0;
+      const next = commit((s) => {
+        const kid = s.kids.find((k) => k.id === kidId);
+        if (!kid) return s;
+        drop =
+          s.household.splitJarsEnabled && s.household.sharedJarEnabled ? kid.personalPool : 0;
+        return {
+          ...s,
+          kids: s.kids.map((k) => (k.id === kidId ? { ...k, personalPool: 0 } : k)),
+          household: { ...s.household, sharedPool: Math.max(0, s.household.sharedPool - drop) },
+        };
+      });
       if (live) {
-        void dbWrite(
+        markKidWrite(kidId);
+        enqueuePointsWrite(
           async () =>
             await supabase
               .from("kids")
@@ -1333,9 +1450,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .eq("id", kidId),
         );
         if (drop > 0) {
-          void dbWrite(
+          markPoolWrite();
+          enqueuePointsWrite(
             async () =>
-              await supabase.from("households").update({ shared_pool: nextPool }).eq("id", hid()),
+              await supabase
+                .from("households")
+                .update({ shared_pool: next.household.sharedPool })
+                .eq("id", hid()),
           );
         }
       }

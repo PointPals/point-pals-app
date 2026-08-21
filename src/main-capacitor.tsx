@@ -3,8 +3,8 @@
  *
  * This is a pure client-side build target for the native mobile app.
  * It uses TanStack Router's <RouterProvider> directly (no SSR / Nitro).
- * Server functions (sendTrialWelcome, submitContactForm) are replaced with
- * the capacitor-compat shim that calls the deployed SSR server over HTTPS.
+ * Server functions (submitContactForm) are replaced with the capacitor-compat
+ * shim that calls the deployed SSR server over HTTPS.
  */
 import { StrictMode, startTransition } from "react";
 import { createRoot } from "react-dom/client";

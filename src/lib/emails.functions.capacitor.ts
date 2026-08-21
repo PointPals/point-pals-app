@@ -5,7 +5,6 @@
  * For the Capacitor SPA build these call Supabase Edge Functions directly.
  *
  * Edge function endpoints can be added later — for the MVP:
- *  - sendTrialWelcome    → no-op (welcome triaged via web, edge fn TBD)
  *  - submitContactForm   → POST to Supabase Edge Function
  *
  * ⚠️  Each function imports the Supabase anon-key client (safe for client use).
@@ -15,14 +14,6 @@ function getClient(): SupabaseClient {
   const url = import.meta.env.VITE_SUPABASE_URL ?? "";
   const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
   return createClient(url, key);
-}
-
-// ── sendTrialWelcome ─────────────────────────────────────────────────────
-/** Sends the trial-welcome email. Fire-and-forget — non-critical on mobile. */
-export async function sendTrialWelcome(): Promise<void> {
-  // TODO: wire up a Supabase Edge Function that accepts the current session
-  //       and calls Resend. For now this is a no-op.
-  if (import.meta.env.DEV) console.log("[capacitor] sendTrialWelcome: skipped (edge fn TBD)");
 }
 
 // ── submitContactForm ────────────────────────────────────────────────────

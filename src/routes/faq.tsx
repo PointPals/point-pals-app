@@ -23,13 +23,13 @@ export const Route = createFileRoute("/faq")({
       {
         name: "description",
         content:
-          "Frequently asked questions about PointPals — how the marble jar works, rewards, consequences, pricing, and more.",
+          "Frequently asked questions about PointPals — how the marble jar works, rewards, consequences, and more.",
       },
-      { property: "og:title", content: "PointPals FAQ — marble jar, rewards & pricing" },
+      { property: "og:title", content: "PointPals FAQ — marble jar, rewards & more" },
       {
         property: "og:description",
         content:
-          "Answers to the most common questions about PointPals: how the shared marble jar works, ages, rewards, consequences, and pricing.",
+          "Answers to the most common questions about PointPals: how the shared marble jar works, ages, rewards, and consequences.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://pointpals.co.nz/faq" },
@@ -77,7 +77,7 @@ const FAQ_SCHEMA: { q: string; a: string }[] = [
   },
   {
     q: "Does PointPals cost anything?",
-    a: "PointPals is free to try. A single low-cost family subscription unlocks the full app for every child and every parent in your household.",
+    a: "PointPals is completely free to use. There's no trial period, no subscription, and no payment details required — create your family and start filling the jar.",
   },
   {
     q: "How long are memories kept?",
@@ -415,12 +415,11 @@ const SECTIONS: FaqSection[] = [
         content: (
           <>
             <p>
-              PointPals is free for your first {14} days — no payment details required to start.
-              After the trial, it&rsquo;s a simple subscription. You can cancel anytime.
+              PointPals is completely free to use. There&rsquo;s no trial period, no subscription,
+              and no payment details required — just create your family and start filling the jar.
             </p>
             <p>
-              We don&rsquo;t have ads, upsells, or hidden fees. A subscription supports ongoing
-              development, new features, and keeping the app safe for families.
+              We don&rsquo;t have ads, upsells, or hidden fees.
             </p>
           </>
         ),

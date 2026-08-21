@@ -1,5 +1,10 @@
 # PointPals — App Store & Play Store readiness checklist
 
+> **Status update (free model):** PointPals is now completely free. There is no
+> subscription, trial, or in-app purchase. Every billing/paywall item below
+> (StoreKit/Play Billing, RevenueCat, introductory offers, Stripe web path) is
+> obsolete and should be skipped — the app ships with all features unlocked.
+
 Working checklist to get PointPals submittable to the Apple App Store and Google
 Play. Each item is tagged:
 

@@ -1,7 +1,7 @@
 // AI icon generation — RATE-LIMITED per household so generation costs stay
 // predictable. Each household gets a capped number of generations per calendar
-// month; premium households get a higher cap. The ledger lives in
-// public.icon_generations.
+// month (PointPals is free, so everyone shares the same cap). The ledger lives
+// in public.icon_generations.
 //
 // Deploy: `supabase functions deploy generate-icon`
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, RESEND_API_KEY
@@ -36,9 +36,8 @@ const admin = createClient(
 const GOOGLE_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? Deno.env.get("GOOGLE_API_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
-// Monthly caps by entitlement — tune freely; this is the cost guardrail.
-const FREE_MONTHLY_CAP = 10;
-const PREMIUM_MONTHLY_CAP = 10;
+// Monthly cap — tune freely; this is the cost guardrail (PointPals is free).
+const MONTHLY_CAP = 10;
 
 // Style prompt to keep generated icons visually consistent with the existing set.
 // NOTE: the image model can't emit real alpha — asking for "transparent" gets a
@@ -220,14 +219,13 @@ Deno.serve(async (req) => {
 
     const { data: household, error: hErr } = await admin
       .from("households")
-      .select("subscription_status")
+      .select("id")
       .eq("id", householdId)
       .single();
     if (hErr || !household) return json({ error: "Unknown household" }, 404);
 
-    const premium =
-      household.subscription_status === "active" || household.subscription_status === "trialing";
-    const cap = premium ? PREMIUM_MONTHLY_CAP : FREE_MONTHLY_CAP;
+    // PointPals is free — every household gets the same monthly allowance.
+    const cap = MONTHLY_CAP;
 
     // Count this household's generations since the start of the month.
     const { count, error: cErr } = await admin
@@ -239,7 +237,7 @@ Deno.serve(async (req) => {
 
     if ((count ?? 0) >= cap) {
       return json(
-        { error: "monthly_limit_reached", cap, used: count, premium },
+        { error: "monthly_limit_reached", cap, used: count },
         429,
       );
     }

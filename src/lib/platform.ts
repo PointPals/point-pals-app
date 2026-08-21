@@ -1,9 +1,9 @@
 /**
  * Platform detection for PointPals.
  *
- * Web/PWA uses Stripe.  Capacitor (iOS/Android) uses native IAP.
- * This module provides a single `isNative()` check so UI can gate
- * store-sensitive copy (e.g. "Secure checkout by Stripe") per platform.
+ * Provides a single `isNative()` check so UI can vary behaviour per platform
+ * (Capacitor iOS/Android build vs. web/PWA). PointPals is free, so there is
+ * no store/payment gating tied to this.
  */
 
 const _native = !!(globalThis as any).Capacitor?.isNativePlatform?.();

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { useApp } from "@/lib/app-store";
@@ -50,6 +50,11 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
     return () => window.clearTimeout(t);
   }, [history, kids, settings.reducedMotion]);
 
+  // The marble walk must mirror what actually moves the shared pool. Correction
+  // entries are an admin fix that deliberately bypass the jar, so feeding them
+  // to the jar would make the derived marble set drift from the real total.
+  const jarEvents = useMemo(() => history.filter((e) => e.type !== "correction"), [history]);
+
   const reached = household.sharedPool >= household.rewardTarget;
   const remaining = Math.max(0, household.rewardTarget - household.sharedPool);
   const pct = Math.min(100, Math.round((household.sharedPool / household.rewardTarget) * 100));
@@ -93,7 +98,7 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
       <MarbleJar
         value={household.sharedPool}
         target={household.rewardTarget}
-        events={history}
+        events={jarEvents}
         kids={kids}
         size={size}
         reducedMotion={settings.reducedMotion}

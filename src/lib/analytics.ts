@@ -1,6 +1,5 @@
 // Product analytics (§7) — PostHog, deliberately scoped to PARENT-facing
-// screens and actions only (admin, library management, settings, paywall/
-// upgrade funnel, onboarding).
+// screens and actions only (admin, library management, settings, onboarding).
 //
 // Hard rules encoded here:
 //  - We never build a behavioural profile of a child. Kid-facing award taps are
@@ -58,7 +57,7 @@ async function ensure(): Promise<void> {
   return loading;
 }
 
-// Track a parent action (admin/library/settings/paywall/onboarding).
+// Track a parent action (admin/library/settings/onboarding).
 export function trackParent(event: string, props?: Props): void {
   if (!enabled()) return;
   void ensure().then(() => ph?.capture(`parent:${event}`, props));

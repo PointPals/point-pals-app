@@ -33,8 +33,8 @@ function Privacy() {
             what to enter — a nickname works fine.
           </li>
           <li>
-            <strong>Account &amp; billing</strong>: if you subscribe, your email and payment are
-            handled by our processor, Stripe. We never see or store full card numbers.
+            <strong>Account</strong>: your email address, used to sign in and to send transactional
+            emails such as password resets. PointPals is free — we don't collect payment details.
           </li>
           <li>
             <strong>Limited product analytics</strong>: see below. We do <em>not</em> track
@@ -53,7 +53,7 @@ function Privacy() {
         <H2>Analytics &amp; error reporting</H2>
         <p>
           Any product analytics are scoped to parent-facing actions (settings, library management,
-          subscription) to help us improve the app. There is no session recording on children's
+          onboarding) to help us improve the app. There is no session recording on children's
           screens. Crash/error reports are scrubbed of personal information (names and emails)
           before they leave your device.
         </p>
@@ -61,8 +61,7 @@ function Privacy() {
         <H2>Where data lives</H2>
         <p>
           App data is stored on your device and, where a backend is connected, in our hosting
-          provider (Supabase). Payment data is held by Stripe under their own privacy terms.
-          Transactional emails (receipts, password resets) are sent via Resend.
+          provider (Supabase). Transactional emails (password resets) are sent via Resend.
         </p>
 
         <H2>How long we keep memories</H2>

@@ -1,5 +1,9 @@
 # PointPals Marketing Plan
 
+> **Status update (free model):** PointPals is now completely free. Any trial,
+> pricing, or "subscribe/conversion" messaging below is outdated — the app has
+> no paid tier, so lead with "free for every family" instead of free trials.
+
 > Launch playbook for NZ parents. Channels, content, ads, and creative briefs.
 > Brand voice reference: [`BRAND-VOICE.md`](./BRAND-VOICE.md)
 

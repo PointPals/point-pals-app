@@ -10,16 +10,10 @@ export const RESEND_FROM = "PointPals <hello@pointpals.co.nz>";
 export const SUPPORT_INBOX = "support@pointpals.co.nz";
 
 export const EMAIL_TEMPLATES = {
-  trialWelcome:         "c47b8f0c-0424-48b9-8298-aea923ae161d",  // Welcome-PointPals
   tipDay3:              "f8fbb7b8-b955-48a6-b3aa-1079aeefd569",  // Parenting-Tip-StartSmall
   tipDay7:              "d12adf3c-3874-4abf-94f3-ed04b349257c",  // Parenting-Tip-LabelPraise
-  trialEnding:          "929843c3-c808-4643-9ce5-3a686917f651",  // Trial-Ending-Soon
-  paymentConfirmation:  "f349804b-9024-44e5-baf5-da4d18c3701a",  // Subscription-Receipt
-  subscriptionRenewal:  "af7030c6-a449-4d85-beb7-b35f19a4d5fb",  // Subscription-Renewal
-  paymentFailed:        "be31e3d1-c51d-4255-91fc-db501d76bf08",  // Payment-Failed
   tipMonth1:            "c61044aa-2146-4715-98c3-030fadc33646",  // Habit-Fading-Tips
   supportAutoreply:     "267dc7da-55bb-4d22-9512-3b6012f61b75",  // Contact-Confirmation
-  subscriptionCancelled:"9bbe49aa-223d-44f1-af8d-88560d4a6ae2",  // Subscription-Cancelled
 } as const;
 
 export type TemplateKey = keyof typeof EMAIL_TEMPLATES;

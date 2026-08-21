@@ -16,7 +16,7 @@ import { Undo2 } from "lucide-react";
 // one), so "has this device ever used the app" is approximated by the presence
 // of the persisted app-store key (see lib/app-store.tsx STORAGE_KEY). A truly
 // first-time visitor is sent to the marketing page at /welcome; `?entered=1`
-// (set by /welcome's "Log in" and "Start free trial" links) always bypasses
+// (set by /welcome's "Log in" and "Get started" links) always bypasses
 // this so nobody gets bounced back and forth.
 const APP_STATE_KEY = "pointpals.state.v2";
 

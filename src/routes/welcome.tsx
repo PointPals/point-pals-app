@@ -279,7 +279,7 @@ function WelcomePage() {
           A <strong>behaviour chart for children</strong> that turns everyday tasks into points toward a shared
           jar — then your family celebrates a reward you earned together.
           The <strong>best family chore tracker</strong> for <strong>Kiwi families</strong>.
-          Try it free.
+          Completely free for every family.
         </p>
       </section>
 

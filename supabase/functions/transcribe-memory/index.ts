@@ -17,8 +17,8 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const FREE_MONTHLY_CAP = 20;
-const PREMIUM_MONTHLY_CAP = 200;
+// PointPals is free — every household gets the full monthly allowance.
+const MONTHLY_CAP = 200;
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024; // ~90s of opus is well under this
 
 function monthStartISO(): string {
@@ -34,14 +34,13 @@ Deno.serve(async (req) => {
 
     const { data: household, error: hErr } = await admin
       .from("households")
-      .select("subscription_status")
+      .select("id")
       .eq("id", householdId)
       .single();
     if (hErr || !household) return json({ error: "Unknown household" }, 404);
 
-    const premium =
-      household.subscription_status === "active" || household.subscription_status === "trialing";
-    const cap = premium ? PREMIUM_MONTHLY_CAP : FREE_MONTHLY_CAP;
+    // PointPals is free — every household gets the full monthly allowance.
+    const cap = MONTHLY_CAP;
 
     const { count, error: cErr } = await admin
       .from("transcriptions")
@@ -50,7 +49,7 @@ Deno.serve(async (req) => {
       .gte("created_at", monthStartISO());
     if (cErr) return json({ error: "rate check failed" }, 500);
     if ((count ?? 0) >= cap) {
-      return json({ error: "monthly_limit_reached", cap, used: count, premium }, 429);
+      return json({ error: "monthly_limit_reached", cap, used: count }, 429);
     }
 
     const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));

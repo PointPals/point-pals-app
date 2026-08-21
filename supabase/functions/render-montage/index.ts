@@ -108,8 +108,7 @@ const TITLE_SECONDS = 3;
 const MAX_CLIPS = 60; // keeps renders/downloads a sane size
 const SIGNED_ASSET_TTL = 24 * 60 * 60; // renders can queue — give sources a day
 const SIGNED_DOWNLOAD_TTL = 60 * 60;
-const FREE_MONTAGES_PER_SEASON = 1;
-const PAID_MONTAGES_PER_SEASON = 5;
+const MONTAGES_PER_SEASON = 5;
 
 function shotstackBase(): string {
   const env = Deno.env.get("SHOTSTACK_ENV") ?? "v1";
@@ -182,7 +181,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
 
   const { data: hh } = await admin
     .from("households")
-    .select("name, subscription_status, memory_cycle_started_at, memory_cycle_ends_at")
+    .select("name, memory_cycle_started_at, memory_cycle_ends_at")
     .eq("id", householdId)
     .maybeSingle();
   if (!hh) return json({ ok: false, error: "Household not found" }, 404);
@@ -200,9 +199,8 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     return json({ ok: true, jobId: existing[0].id, status: existing[0].status });
   }
 
-  // Per-season cap: 1 on the free tier, a small cap for subscribers.
-  const paid = hh.subscription_status === "active" || hh.subscription_status === "trialing";
-  const cap = paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON;
+  // PointPals is free — every household gets the same per-season cap.
+  const cap = MONTAGES_PER_SEASON;
   const { count: doneCount } = await admin
     .from("montage_jobs")
     .select("id", { count: "exact", head: true })
@@ -449,13 +447,6 @@ async function sendMontageReadyEmail(
       ? `${formatNzDate(hh.memory_cycle_started_at)} \u2013 ${formatNzDate(hh.memory_cycle_ends_at)}`
       : "this season";
 
-    const { data: hhSub } = await admin
-      .from("households")
-      .select("subscription_status")
-      .eq("id", householdId)
-      .maybeSingle();
-    const paid = hhSub?.subscription_status === "active" || hhSub?.subscription_status === "trialing";
-
     const { data: signed } = await admin.storage
       .from("exports")
       .createSignedUrl(outputPath, SIGNED_DOWNLOAD_TTL);
@@ -480,7 +471,7 @@ async function sendMontageReadyEmail(
         has_videos: "false",
         download_url: signed.signedUrl,
         expires_in_hours: String(Math.floor(SIGNED_DOWNLOAD_TTL / 3600)),
-        season_limit: String(paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON),
+        season_limit: String(MONTAGES_PER_SEASON),
         memories_url: `${APP_URL}/memories`,
         unsubscribe_url: "https://pointpals.co.nz/settings",
       },

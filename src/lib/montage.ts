@@ -18,27 +18,25 @@ export type SeasonInfo = {
   daysLeft: number;
   /** How many montages have already been generated this season. */
   montageCount: number;
-  /** How many this household is allowed (1 free, 5 paid). */
+  /** How many this household is allowed per season. */
   montageCap: number;
 };
 
-const FREE_MONTAGES_PER_SEASON = 1;
-const PAID_MONTAGES_PER_SEASON = 5;
+const MONTAGES_PER_SEASON = 5;
 
 export async function fetchSeasonInfo(householdId: string): Promise<SeasonInfo | null> {
   const { data, error } = await db
     .from("households")
     .select(
-      "memory_retention_enabled, memory_retention_days, memory_cycle_started_at, memory_cycle_ends_at, subscription_status",
+      "memory_retention_enabled, memory_retention_days, memory_cycle_started_at, memory_cycle_ends_at",
     )
     .eq("id", householdId)
     .maybeSingle();
   if (error || !data || !data.memory_cycle_ends_at) return null;
   const endsAt = new Date(data.memory_cycle_ends_at).getTime();
 
-  // Count how many montages have already been generated this cycle
-  const paid = data.subscription_status === "active" || data.subscription_status === "trialing";
-  const montageCap = paid ? PAID_MONTAGES_PER_SEASON : FREE_MONTAGES_PER_SEASON;
+  // PointPals is free — every household gets the full montage allowance.
+  const montageCap = MONTAGES_PER_SEASON;
   const { count: montageCount } = await db
     .from("montage_jobs")
     .select("id", { count: "exact", head: true })
@@ -229,7 +227,7 @@ export function montageErrorMessage(code: string): string {
     case "not_configured":
       return "Montage rendering isn't switched on yet — it's coming soon.";
     case "season_limit_reached":
-      return "You've already made this season's montage. Subscribers can render a few extra takes.";
+      return "You've reached this season's montage limit — try again next season.";
     case "no_memories":
       return "Nothing in the feed this season yet — add some memories first.";
     default:

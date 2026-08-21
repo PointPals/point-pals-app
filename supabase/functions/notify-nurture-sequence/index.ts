@@ -221,10 +221,6 @@ Deno.serve(async (req) => {
         first_name: firstName,
       };
 
-      if (tip === "month1") {
-        variables.trial_end_date = "in the next few days";
-      }
-
       const result = await sendResendTemplate(resendKey, {
         to: email,
         templateId: config.templateId,

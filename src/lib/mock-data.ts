@@ -781,9 +781,9 @@ export const INITIAL_HOUSEHOLD = {
   name: "The Harper Family",
   sharedPool: 74,
   rewardTarget: 100,
-  subscriptionStatus: "trialing" as const,
-  // 14-day free trial by default (§5 default scaffolding).
-  trialEndsAt: Date.now() + 1000 * 60 * 60 * 24 * 14,
+  subscriptionStatus: "active" as const,
+  // PointPals is free — no trial window.
+  trialEndsAt: null,
   onboarded: true,
   splitJarsEnabled: false,
   splitRatio: 50,

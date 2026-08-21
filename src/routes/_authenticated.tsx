@@ -49,12 +49,11 @@ function AuthLayout() {
   // Allow household-requiring routes (/welcome-back, /join, /settings) to
   // render even when needsHousehold is true. Only block if we're on a route
   // that actually needs a household (like the dashboard). Settings is here so
-  // free/trial users can always reach account controls and invites.
+  // signed-in users can always reach account controls and invites.
   const safeWithoutHousehold = pathname === "/welcome-back" || pathname === "/join" || pathname === "/settings";
 
-  // Route guards (§5): redirect based on account state.
-  // Free users are no longer redirected — they can browse read-only while
-  // award-points, marble-jar and rewards are gated behind the subscription.
+  // Route guards: redirect based on account state. PointPals is free, so there
+  // is no paywall redirect — every signed-in user gets full access.
   // Don't redirect away from the safe-without-household routes above.
   useEffect(() => {
     if (!hydrated) return;

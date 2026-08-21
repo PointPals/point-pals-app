@@ -4,13 +4,13 @@
  * Apple and Google both look for this on apps that kids could plausibly
  * encounter (even if marketed to parents).  A simple arithmetic problem is
  * the standard pattern — it's not a security measure, it's a store-policy
- * signal that says "we only let adults reach purchase flows."
+ * signal that says "we only let adults reach sensitive parent-only flows."
  *
  * Usage:
- *   const [showPaywall, setShowPaywall] = useState(false);
+ *   const [confirmed, setConfirmed] = useState(false);
  *   return (
- *     <ParentalGate onPassed={() => setShowPaywall(true)}>
- *       <button>Subscribe</button>
+ *     <ParentalGate onPassed={() => setConfirmed(true)}>
+ *       <button>Dangerous parent action</button>
  *     </ParentalGate>
  *   );
  *

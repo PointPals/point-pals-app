@@ -54,16 +54,10 @@ function DeleteAccount() {
           <li>All chores, skills, and point history</li>
           <li>All memory feed content — photos, videos, voice notes, and comments</li>
           <li>Your login credentials and authentication records</li>
-          <li>Billing and subscription records (processed by Stripe — see below)</li>
         </ul>
 
         <H2>What may be retained</H2>
         <ul className="list-disc pl-5 space-y-1.5">
-          <li>
-            <strong>Stripe billing records</strong>: Payment processor records are retained per
-            Stripe's privacy policy and legal obligations. No full card numbers are stored by
-            PointPals.
-          </li>
           <li>
             <strong>Anonymised analytics aggregates</strong>: Aggregate, non-identifiable metrics
             may remain in analytics systems (PostHog) as part of general product reporting. These

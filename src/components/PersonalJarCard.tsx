@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useApp } from "@/lib/app-store";
 import { useSettings } from "@/lib/settings";
 import { MarbleJar } from "./MarbleJar";
@@ -27,6 +27,15 @@ export const PersonalJarCard = memo(function PersonalJarCard({
   const settings = useSettings();
   const [celebrating, setCelebrating] = useState(false);
   const [claimed, setClaimed] = useState(false);
+
+  // Feed the jar every event that actually moves this kid's personal pool —
+  // positives AND "needs-work" removals, but not corrections (those bypass the
+  // jar). Filtering to positives only made removals silently drift from the
+  // real total, so the jar wouldn't recalculate when points were taken away.
+  const jarEvents = useMemo(
+    () => history.filter((e) => e.kidId === kid.id && e.type !== "correction"),
+    [history, kid.id],
+  );
 
   // Inline "change reward" editor — mirrors the family jar's Change/Set flow.
   const [editing, setEditing] = useState(false);
@@ -94,7 +103,7 @@ export const PersonalJarCard = memo(function PersonalJarCard({
       <MarbleJar
         value={kid.personalPool}
         target={kid.personalTarget > 0 ? kid.personalTarget : 999}
-        events={history.filter((e) => e.kidId === kid.id && e.points > 0)}
+        events={jarEvents}
         kids={[kid]}
         size={size}
         reducedMotion={settings.reducedMotion}
