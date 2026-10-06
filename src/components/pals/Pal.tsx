@@ -1,20 +1,26 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { resolvePal, type PalDef, type PalMood } from "@/lib/pals";
+import { resolvePal, type PalDef, type PalId, type PalMood } from "@/lib/pals";
+import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { CHEEK, INK, SHADOW, WHITE_THREAD, mix } from "./palette";
 
 /**
- * <Pal> — vector render of a PointPals character.
+ * <Pal> — vector render of a PointPals character, drawn the way the plush is
+ * sewn (see docs/PLUSH-SPEC.md):
  *
- * Built in layers that mirror how the plush is sewn: appendages behind,
- * body (one base pattern + sheen/shade), belly patch with stitched edge and
- * embroidered motif, appendages in front, then the shared embroidered face.
- * Layers carry class hooks (pal-body, pal-eyes, pal-ear-l …) so CSS/GSAP can
- * breathe, blink and wiggle them.
+ *   back appendages (sewn into the top / side seams)
+ *   → body (front panel, matte minky shading, side-seam + base-gusset creases)
+ *   → arms + feet (shared nubs, sewn into the side seam / base gusset)
+ *   → belly appliqué (felt, top-stitched edge, embroidered motif)
+ *   → embroidered face (satin eyes + stitched highlight, cheeks, backstitch mouth)
  *
- * Accepts new ids ("lumi") and legacy companion ids ("sunny") alike.
+ * Class hooks for CSS/GSAP (API-frozen): .pal-body-group .pal-eyes .pal-ear-l
+ * .pal-ear-r .pal-crest .pal-sprout .pal-tail .pal-belly .pal-face, plus the
+ * one-shot .pal-hop. Accepts new ids ("lumi") and legacy ids ("sunny") alike.
  */
 
-const INK = "#2A2138";
+export type PalCrop = "full" | "bust";
+export type PalDetail = "auto" | "full" | "simple";
 
 export type PalProps = {
   /** Pal id — new ("orbit") or legacy ("pip"). Unknown ids hash from `seed`. */
@@ -23,14 +29,51 @@ export type PalProps = {
   seed?: string;
   size?: number | string;
   mood?: PalMood;
-  /** Idle life: breathing, blinking, appendage wiggle. Off for reduced motion. */
+  /** Idle life: breathing, blinking, appendage sway. Off for reduced motion. */
   animate?: boolean;
   /** Accessible name. Omit for decorative use (aria-hidden). */
   title?: string;
-  /** Draw the soft ground shadow. */
+  /** Draw the soft ground shadow (ignored for the bust crop). */
   shadow?: boolean;
+  /**
+   * "bust" frames the face + signature appendage — use it for avatars at
+   * 48px and below, where the full body makes the face too small to read.
+   */
+  crop?: PalCrop;
+  /**
+   * "simple" drops seams, stitching and fabric texture (tiny sizes). "full"
+   * forces the fabric texture on. "auto" picks from a numeric `size`.
+   */
+  detail?: PalDetail;
   className?: string;
   style?: CSSProperties;
+};
+
+type Ctx = {
+  pal: PalDef;
+  ids: Record<
+    "puff" | "form" | "edge" | "floor" | "clip" | "tex" | "satin" | "fuzz" | "rim" | "ground",
+    string
+  >;
+  /** Seams, stitching, fuzz. */
+  stitched: boolean;
+  /** Minky texture + satin-stitch sheen (big renders only). */
+  fine: boolean;
+  mood: PalMood;
+  c: Colors;
+};
+
+type Colors = {
+  body: string;
+  light: string;
+  back: string;
+  deep: string;
+  tint: string;
+  accent: string;
+  thread: string;
+  cheek: string;
+  /** Hue-shifted shadow (shade pushed toward aubergine) — never grey/mud. */
+  shadow: string;
 };
 
 export function Pal({
@@ -41,127 +84,474 @@ export function Pal({
   animate = false,
   title,
   shadow = true,
+  crop = "full",
+  detail = "auto",
   className,
   style,
 }: PalProps) {
   const pal = resolvePal(id, seed);
-  const uid = useId().replace(/:/g, "");
+  const { reducedMotion } = useSettings();
+  // Pal id is part of every defs id: if two separate React roots ever reuse a
+  // useId value, a clash can only point at an identical Pal's (identical) defs.
+  const uid = `${pal.id}-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const shape = SHAPES[pal.id];
-  const sheen = `pal-sheen-${uid}`;
-  const shade = `pal-shade-${uid}`;
+  const numeric = typeof size === "number" ? size : null;
+  const simple = detail === "simple" || (detail === "auto" && numeric !== null && numeric <= 56);
+  const fine = !simple && (detail === "full" || (numeric !== null && numeric >= 180));
+  const live = animate && !reducedMotion;
+  const bust = crop === "bust";
+
+  const ids = {
+    puff: `pp-${uid}-puff`,
+    form: `pp-${uid}-form`,
+    edge: `pp-${uid}-edge`,
+    floor: `pp-${uid}-floor`,
+    clip: `pp-${uid}-clip`,
+    tex: `pp-${uid}-tex`,
+    satin: `pp-${uid}-satin`,
+    fuzz: `pp-${uid}-fuzz`,
+    rim: `pp-${uid}-rim`,
+    ground: `pp-${uid}-ground`,
+  };
+  const c: Colors = {
+    body: pal.color,
+    light: mix(pal.color, "#FFFFFF", 0.24),
+    back: mix(pal.color, pal.shade, 0.42),
+    deep: pal.shade,
+    tint: pal.tint,
+    accent: pal.accent,
+    thread: mix(pal.shade, INK, 0.28),
+    cheek: CHEEK[pal.id],
+    shadow: SHADOW[pal.id],
+  };
+  const ctx: Ctx = { pal, ids, stitched: !simple, fine, mood, c };
+
+  // De-sync idle loops so a row of Pals never breathes in lock-step.
+  const phase = hash(`${pal.id}${seed ?? ""}`) % 1000;
+  const [bx, by, bs] = shape.bust;
 
   return (
     <svg
-      viewBox="0 0 200 200"
+      viewBox={bust ? `${bx - bs / 2} ${by - bs / 2} ${bs} ${bs}` : "0 0 200 200"}
       width={size}
       height={size}
       role={title ? "img" : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
       className={cn(
-        "pal select-none overflow-visible",
-        animate && "pal-animate",
+        "pal select-none",
+        bust ? "overflow-hidden" : "overflow-visible",
+        live && "pal-animate",
         `pal-${pal.id}`,
         className,
       )}
-      style={style}
+      style={{ ...({ "--pal-phase": `${phase / 1000}` } as CSSProperties), ...style }}
       data-pal={pal.id}
       data-mood={mood}
     >
       <defs>
-        <radialGradient id={sheen} cx="34%" cy="26%" r="62%">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0.62" />
-          <stop offset="55%" stopColor="#fff" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        {/* Appendage volume: soft key light top-left, aubergine wrap shadow at the rim. */}
+        <radialGradient id={ids.puff} cx="36%" cy="30%" r="78%">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.24" />
+          <stop offset="0.45" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0.78" stopColor={INK} stopOpacity="0" />
+          <stop offset="1" stopColor={INK} stopOpacity="0.2" />
         </radialGradient>
-        <radialGradient id={shade} cx="68%" cy="92%" r="70%">
-          <stop offset="0%" stopColor={INK} stopOpacity="0.22" />
-          <stop offset="70%" stopColor={INK} stopOpacity="0" />
+        <radialGradient id={ids.form} cx="38%" cy="26%" r="72%">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.26" />
+          <stop offset="0.5" stopColor="#fff" stopOpacity="0.06" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </radialGradient>
+        <radialGradient id={ids.edge} cx="47%" cy="38%" r="66%">
+          <stop offset="0.58" stopColor={c.shadow} stopOpacity="0" />
+          <stop offset="1" stopColor={c.shadow} stopOpacity="0.34" />
+        </radialGradient>
+        <linearGradient id={ids.floor} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.68" stopColor={c.shadow} stopOpacity="0" />
+          <stop offset="1" stopColor={c.shadow} stopOpacity="0.24" />
+        </linearGradient>
+        <linearGradient id={ids.fuzz} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={c.light} />
+          <stop offset="1" stopColor={mix(c.body, c.deep, 0.45)} />
+        </linearGradient>
+        <linearGradient id={ids.rim} x1="0" y1="0" x2="1" y2="0.35">
+          <stop offset="0.66" stopColor="#fff" stopOpacity="0" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0.24" />
+        </linearGradient>
+        <radialGradient id={ids.ground}>
+          <stop offset="0" stopColor={INK} stopOpacity="0.2" />
+          <stop offset="0.55" stopColor={INK} stopOpacity="0.1" />
+          <stop offset="1" stopColor={INK} stopOpacity="0" />
+        </radialGradient>
+        <clipPath id={ids.clip}>
+          <path d={shape.body} />
+        </clipPath>
+        {fine && (
+          <>
+            {/* Short-pile minky: fine noise, soft-light blended inside the body. */}
+            <filter id={ids.tex} x="0" y="0" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7" />
+              <feColorMatrix type="saturate" values="0" />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0" intercept="0.5" />
+              </feComponentTransfer>
+            </filter>
+            {/* Satin-stitch sheen for embroidered fills. */}
+            <pattern
+              id={ids.satin}
+              width="1.6"
+              height="1.6"
+              patternUnits="userSpaceOnUse"
+              patternTransform="rotate(-38)"
+            >
+              <rect width="1.6" height="0.45" fill="#fff" opacity="0.075" />
+            </pattern>
+          </>
+        )}
       </defs>
 
-      {shadow && (
-        <ellipse
-          className="pal-ground"
-          cx="100"
-          cy="190"
-          rx={shape.groundRx}
-          ry="6"
-          fill={INK}
-          opacity="0.12"
-        />
+      {shadow && !bust && (
+        <g className="pal-ground">
+          <ellipse
+            cx="100"
+            cy="188.5"
+            rx={shape.groundRx + 6}
+            ry="8"
+            fill={`url(#${ids.ground})`}
+          />
+        </g>
       )}
 
       <g className="pal-body-group">
-        {shape.back(pal)}
-        <path className="pal-body" d={shape.body} fill={pal.color} />
-        <path d={shape.body} fill={`url(#${shade})`} />
-        <path d={shape.body} fill={`url(#${sheen})`} />
-        <Belly pal={pal} cx={100} cy={shape.bellyY} rx={shape.bellyRx} ry={shape.bellyRy} />
-        {shape.front(pal)}
-        <Face pal={pal} y={shape.faceY} mood={mood} spread={shape.eyeSpread} />
+        {shape.back(ctx)}
+        <Body ctx={ctx} shape={shape} />
+        {shape.limbs !== false && <Limbs ctx={ctx} shape={shape} />}
+        <Belly ctx={ctx} {...shape.belly} />
+        {shape.front?.(ctx)}
+        <Face ctx={ctx} y={shape.faceY} spread={shape.eyeSpread} />
       </g>
     </svg>
   );
 }
 
+/* ───────────────────────── helpers ───────────────────────── */
+
+function hash(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+}
+
+/** Ellipse as a path (so every sewn piece can share the same <Puff>). */
+function ell(cx: number, cy: number, rx: number, ry: number) {
+  return `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${rx * 2} 0a${rx} ${ry} 0 1 0 ${-rx * 2} 0Z`;
+}
+
+/** One stuffed fabric piece: flat fabric colour + soft matte volume. */
+function Puff({
+  ctx,
+  d,
+  fill,
+  transform,
+  className,
+  style,
+}: {
+  ctx: Ctx;
+  d: string;
+  fill: string;
+  transform?: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <g transform={transform} className={className} style={style}>
+      <path d={d} fill={fill} />
+      <path d={d} fill={`url(#${ctx.ids.puff})`} />
+    </g>
+  );
+}
+
+/** A pressed seam: soft valley + crisp crease. Purely visual (no thread). */
+function Seam({ ctx, d, strength = 1 }: { ctx: Ctx; d: string; strength?: number }) {
+  if (!ctx.stitched) return null;
+  return (
+    <g fill="none" strokeLinecap="round">
+      <path d={d} stroke={INK} strokeOpacity={0.07 * strength} strokeWidth="3.6" />
+      <path d={d} stroke={INK} strokeOpacity={0.2 * strength} strokeWidth="0.9" />
+      <path
+        d={d}
+        stroke="#fff"
+        strokeOpacity={0.16 * strength}
+        strokeWidth="0.8"
+        transform="translate(0.9 0.7)"
+      />
+    </g>
+  );
+}
+
+/** Visible top-stitch (thread) — belly edge, leaf veins, gill veins. */
+function Stitch({
+  ctx,
+  d,
+  color,
+  width = 1.3,
+  opacity = 0.85,
+}: {
+  ctx: Ctx;
+  d: string;
+  color: string;
+  width?: number;
+  opacity?: number;
+}) {
+  if (!ctx.stitched) return null;
+  return (
+    <path
+      d={d}
+      fill="none"
+      stroke={color}
+      strokeOpacity={opacity}
+      strokeWidth={width}
+      strokeDasharray={`${width * 2} ${width * 1.7}`}
+      strokeLinecap="round"
+    />
+  );
+}
+
+/** Satin sheen over an embroidered fill (fine detail only). */
+function Satin({ ctx, children }: { ctx: Ctx; children: ReactNode }) {
+  if (!ctx.fine) return null;
+  return <g fill={`url(#${ctx.ids.satin})`}>{children}</g>;
+}
+
+/* ───────────────────────── body ───────────────────────── */
+
+function Body({ ctx, shape }: { ctx: Ctx; shape: Shape }) {
+  const { ids, c } = ctx;
+  const [cx, cy] = shape.center;
+  return (
+    <g className="pal-body">
+      {ctx.fine && (
+        // Minky fuzz: two broken outlines of pile tufts at different pitches, so
+        // the silhouette softens without reading as a beaded border.
+        <g fill="none" stroke={`url(#${ids.fuzz})`} strokeLinecap="round">
+          <path d={shape.body} strokeWidth="1.3" strokeDasharray="0.01 1.9" />
+          <path
+            d={shape.body}
+            strokeWidth="0.9"
+            strokeDasharray="0.01 1.13"
+            strokeDashoffset="0.6"
+          />
+        </g>
+      )}
+      <path d={shape.body} fill={c.body} />
+      <path d={shape.body} fill={`url(#${ids.form})`} />
+      <path d={shape.body} fill={`url(#${ids.edge})`} />
+      <path d={shape.body} fill={`url(#${ids.floor})`} />
+      <g clipPath={`url(#${ids.clip})`}>
+        {ctx.fine && (
+          <rect
+            x="0"
+            y="0"
+            width="200"
+            height="200"
+            filter={`url(#${ids.tex})`}
+            opacity="0.22"
+            style={{ mixBlendMode: "soft-light" }}
+          />
+        )}
+        {/* Side seam rolls just inside the silhouette; base gusset along the bottom. */}
+        <g transform={`translate(${cx} ${cy}) scale(${shape.seamScale}) translate(${-cx} ${-cy})`}>
+          <Seam ctx={ctx} d={shape.body} strength={0.38} />
+        </g>
+        <Seam ctx={ctx} d={shape.gusset} />
+        {/* Rim light from behind — keeps the Pal lifted off dark backgrounds. */}
+        <path
+          d={shape.body}
+          fill="none"
+          stroke={`url(#${ids.rim})`}
+          strokeWidth="3.6"
+          transform="translate(-1.4 0.6)"
+        />
+      </g>
+    </g>
+  );
+}
+
+/* Shared arm + foot nubs (one pattern piece each, sewn into side seam / base). */
+function Limbs({ ctx, shape }: { ctx: Ctx; shape: Shape }) {
+  const { c } = ctx;
+  const [ax, ay, aAngle] = shape.arm;
+  const [fx, fy] = shape.foot;
+  const sole = mix(c.body, c.tint, 0.38);
+  return (
+    <g className="pal-limbs">
+      {[-1, 1].map((side) => {
+        const x = 100 + side * ax;
+        return (
+          <g key={`a${side}`} className={side < 0 ? "pal-arm-l" : "pal-arm-r"}>
+            <g transform={`rotate(${side * aAngle} ${x} ${ay - 8})`}>
+              <Puff ctx={ctx} d={ell(x, ay, 7.6, 11.5)} fill={c.body} />
+              <Seam
+                ctx={ctx}
+                d={`M${x - 5.5} ${ay - 7.5} Q${x} ${ay - 11.5} ${x + 5.5} ${ay - 7.5}`}
+                strength={0.8}
+              />
+            </g>
+          </g>
+        );
+      })}
+      {[-1, 1].map((side) => {
+        const x = 100 + side * fx;
+        return (
+          <g key={`f${side}`}>
+            <Puff ctx={ctx} d={ell(x, fy, 13.5, 9)} fill={c.body} />
+            <ellipse cx={x} cy={fy + 1.4} rx="8" ry="5.2" fill={sole} />
+            <Stitch
+              ctx={ctx}
+              d={ell(x, fy + 1.4, 8, 5.2)}
+              color={c.thread}
+              width={0.9}
+              opacity={0.35}
+            />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 /* ───────────────────────── shared face (embroidered) ───────────────────────── */
 
-function Face({ pal, y, mood, spread }: { pal: PalDef; y: number; mood: PalMood; spread: number }) {
+function Face({ ctx, y, spread }: { ctx: Ctx; y: number; spread: number }) {
+  const { mood, c } = ctx;
   const lx = 100 - spread;
   const rx = 100 + spread;
-  const cheek = pal.id === "lumi" || pal.id === "ripple" ? "#FF9EC4" : "#FF8FA3";
+  const cheekY = y + 11;
+  const cheekX = spread + 11;
+  const tongue = "#F27D93";
+
   return (
     <g className="pal-face">
-      {/* cheeks — embroidered satin ovals */}
-      <ellipse cx={lx - 13} cy={y + 13} rx="9" ry="5.5" fill={cheek} opacity="0.5" />
-      <ellipse cx={rx + 13} cy={y + 13} rx="9" ry="5.5" fill={cheek} opacity="0.5" />
+      {/* cheeks — satin-stitch ovals */}
+      {[100 - cheekX, 100 + cheekX].map((x) => (
+        <g key={x}>
+          <ellipse
+            cx={x}
+            cy={cheekY}
+            rx={mood === "happy" ? 7.4 : 6.6}
+            ry={mood === "happy" ? 4.4 : 3.9}
+            fill={c.cheek}
+          />
+          <Satin ctx={ctx}>
+            <ellipse cx={x} cy={cheekY} rx="6.6" ry="3.9" />
+          </Satin>
+        </g>
+      ))}
 
       {mood === "happy" ? (
-        <g className="pal-eyes" fill="none" stroke={INK} strokeWidth="4.2" strokeLinecap="round">
-          <path d={`M${lx - 7} ${y + 2} Q${lx} ${y - 7} ${lx + 7} ${y + 2}`} />
-          <path d={`M${rx - 7} ${y + 2} Q${rx} ${y - 7} ${rx + 7} ${y + 2}`} />
+        <g className="pal-eyes" fill="none" stroke={INK} strokeWidth="3.9" strokeLinecap="round">
+          <path d={`M${lx - 6.6} ${y + 2.4} Q${lx} ${y - 6.4} ${lx + 6.6} ${y + 2.4}`} />
+          <path d={`M${rx - 6.6} ${y + 2.4} Q${rx} ${y - 6.4} ${rx + 6.6} ${y + 2.4}`} />
         </g>
       ) : mood === "sleepy" ? (
-        <g className="pal-eyes" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round">
-          <path d={`M${lx - 7} ${y} Q${lx} ${y + 6} ${lx + 7} ${y}`} />
-          <path d={`M${rx - 7} ${y} Q${rx} ${y + 6} ${rx + 7} ${y}`} />
-        </g>
-      ) : (
-        <g className="pal-eyes">
-          {[lx, rx].map((x) => (
+        <g className="pal-eyes" fill="none" stroke={INK} strokeLinecap="round">
+          {[lx, rx].map((x, i) => (
             <g key={x}>
-              <ellipse
-                cx={x}
-                cy={y}
-                rx={mood === "wow" ? 9 : 7.5}
-                ry={mood === "wow" ? 11 : 10}
-                fill={INK}
+              <path
+                d={`M${x - 6.6} ${y + 0.5} Q${x} ${y + 6} ${x + 6.6} ${y + 0.5}`}
+                strokeWidth="3.6"
               />
-              <circle cx={x - 2.6} cy={y - 3.8} r="2.8" fill="#fff" />
-              <circle cx={x + 2.4} cy={y + 3.6} r="1.2" fill="#fff" opacity="0.85" />
+              {/* two stitched lashes at the outer corner */}
+              <path
+                d={
+                  i === 0
+                    ? `M${x - 6.4} ${y + 1.6} l-3.2 2.4 M${x - 4.6} ${y + 3.8} l-2.2 3`
+                    : `M${x + 6.4} ${y + 1.6} l3.2 2.4 M${x + 4.6} ${y + 3.8} l2.2 3`
+                }
+                strokeWidth="1.7"
+              />
             </g>
           ))}
         </g>
+      ) : (
+        <g className="pal-eyes">
+          {[lx, rx].map((x) => {
+            const wow = mood === "wow";
+            const erx = wow ? 7.8 : 6.6;
+            const ery = wow ? 9.6 : 8.6;
+            return (
+              <g key={x}>
+                <ellipse cx={x} cy={y} rx={erx} ry={ery} fill={INK} />
+                <Satin ctx={ctx}>
+                  <ellipse cx={x} cy={y} rx={erx} ry={ery} />
+                </Satin>
+                {/* stitched highlight: a satin teardrop + a single French-knot dot */}
+                <ellipse
+                  cx={x - erx * 0.34}
+                  cy={y - ery * 0.36}
+                  rx={wow ? 2.9 : 2.4}
+                  ry={wow ? 3.5 : 2.9}
+                  fill={WHITE_THREAD}
+                  transform={`rotate(-20 ${x - erx * 0.34} ${y - ery * 0.36})`}
+                />
+                <circle
+                  cx={x + erx * 0.34}
+                  cy={y + ery * 0.42}
+                  r={wow ? 1.35 : 1.1}
+                  fill={WHITE_THREAD}
+                  opacity="0.9"
+                />
+              </g>
+            );
+          })}
+        </g>
       )}
 
-      {/* mouth */}
+      {/* brows — only when the mood needs them */}
+      {mood === "wow" && (
+        <g fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round">
+          <path d={`M${lx - 5} ${y - 14.5} Q${lx} ${y - 17.5} ${lx + 5} ${y - 15}`} />
+          <path d={`M${rx - 5} ${y - 15} Q${rx} ${y - 17.5} ${rx + 5} ${y - 14.5}`} />
+        </g>
+      )}
+
+      {/* mouth — backstitch, or a satin fill when open */}
       {mood === "wow" ? (
-        <ellipse cx="100" cy={y + 16} rx="4.5" ry="5.5" fill={INK} />
+        <g>
+          <ellipse cx="100" cy={y + 13.5} rx="4.4" ry="5.2" fill={INK} />
+          <ellipse cx="100" cy={y + 16.2} rx="2.6" ry="1.8" fill={tongue} />
+        </g>
       ) : mood === "happy" ? (
+        <g>
+          <path
+            d={`M91.5 ${y + 9.5} Q100 ${y + 11} 108.5 ${y + 9.5} Q108 ${y + 20} 100 ${y + 20} Q92 ${y + 20} 91.5 ${y + 9.5} Z`}
+            fill={INK}
+            stroke={INK}
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+          <path
+            d={`M95.2 ${y + 17.4} Q100 ${y + 13.8} 104.8 ${y + 17.4} Q102.8 ${y + 19.4} 100 ${y + 19.4} Q97.2 ${y + 19.4} 95.2 ${y + 17.4} Z`}
+            fill={tongue}
+          />
+        </g>
+      ) : mood === "sleepy" ? (
         <path
-          d={`M92 ${y + 12} Q100 ${y + 22} 108 ${y + 12} Z`}
-          fill={INK}
+          d={`M96.5 ${y + 12.5} Q100 ${y + 14.8} 103.5 ${y + 12.5}`}
+          fill="none"
           stroke={INK}
-          strokeWidth="2"
-          strokeLinejoin="round"
+          strokeWidth="2.4"
+          strokeLinecap="round"
         />
       ) : (
         <path
-          d={`M93 ${y + 13} Q100 ${y + 19} 107 ${y + 13}`}
+          d={`M94.5 ${y + 10.8} Q100 ${y + 16.2} 105.5 ${y + 10.8}`}
           fill="none"
           stroke={INK}
-          strokeWidth="3"
+          strokeWidth="2.6"
           strokeLinecap="round"
         />
       )}
@@ -169,109 +559,140 @@ function Face({ pal, y, mood, spread }: { pal: PalDef; y: number; mood: PalMood;
   );
 }
 
-/* ───────────────────────── belly patch + motif ───────────────────────── */
+/* ───────────────────────── belly appliqué + motif ───────────────────────── */
 
 function Belly({
-  pal,
+  ctx,
   cx,
   cy,
   rx,
   ry,
 }: {
-  pal: PalDef;
+  ctx: Ctx;
   cx: number;
   cy: number;
   rx: number;
   ry: number;
 }) {
+  const { pal, c } = ctx;
   return (
     <g className="pal-belly">
-      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={pal.tint} />
-      {/* stitched edge */}
-      <ellipse
-        cx={cx}
-        cy={cy}
-        rx={rx - 3.5}
-        ry={ry - 3.5}
-        fill="none"
-        stroke={pal.shade}
-        strokeOpacity="0.45"
-        strokeWidth="1.6"
-        strokeDasharray="3.2 4"
-        strokeLinecap="round"
+      {/* felt thickness */}
+      <ellipse cx={cx} cy={cy + 1.3} rx={rx} ry={ry} fill={INK} opacity="0.1" />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={c.tint} />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={`url(#${ctx.ids.puff})`} opacity="0.55" />
+      <Stitch
+        ctx={ctx}
+        d={ell(cx, cy, rx - 3.2, ry - 3.2)}
+        color={c.thread}
+        width={1.2}
+        opacity={0.6}
       />
-      <g transform={`translate(${cx} ${cy})`}>{MOTIFS[pal.id](pal)}</g>
+      <g transform={`translate(${cx} ${cy}) scale(${Math.min(rx / 30, ry / 23)})`}>
+        {MOTIFS[pal.id](ctx)}
+      </g>
     </g>
   );
 }
 
-const MOTIFS: Record<PalDef["id"], (p: PalDef) => ReactNode> = {
-  lumi: (p) => (
-    <g>
-      <path
-        d="M0 9 C -10 2 -14 -3 -14 -8 C -14 -13 -10 -16 -6 -16 C -3 -16 -1 -14 0 -12 C 1 -14 3 -16 6 -16 C 10 -16 14 -13 14 -8 C 14 -3 10 2 0 9 Z"
-        fill={p.accent}
-        transform="translate(0 3)"
-      />
-      <g stroke={p.accent} strokeWidth="2.4" strokeLinecap="round" opacity="0.8">
-        <path d="M0 -19 V -23" />
-        <path d="M-15 -15 L-18 -18" />
-        <path d="M15 -15 L18 -18" />
+const MOTIFS: Record<PalDef["id"], (ctx: Ctx) => ReactNode> = {
+  lumi: (ctx) => {
+    const heart =
+      "M0 10 C -9 4 -14 -1 -14 -6.5 C -14 -11.5 -10.5 -14.5 -6.5 -14.5 C -3.5 -14.5 -1.2 -12.6 0 -10.4 C 1.2 -12.6 3.5 -14.5 6.5 -14.5 C 10.5 -14.5 14 -11.5 14 -6.5 C 14 -1 9 4 0 10 Z";
+    return (
+      <g>
+        <g transform="translate(0 3)">
+          <path d={heart} fill={ctx.c.accent} />
+          <Satin ctx={ctx}>
+            <path d={heart} />
+          </Satin>
+        </g>
+        <g stroke="#F5B841" strokeWidth="2.4" strokeLinecap="round">
+          <path d="M0 -16 V -20.5" />
+          <path d="M-13.5 -12.5 L-16.8 -15.8" />
+          <path d="M13.5 -12.5 L16.8 -15.8" />
+        </g>
       </g>
-    </g>
-  ),
-  tumble: () => (
+    );
+  },
+  tumble: (ctx) => (
     <g>
-      <circle cx="-9" cy="3" r="7" fill="#5B7CFA" />
-      <circle cx="9" cy="3" r="7" fill="#3DBE8B" />
-      <circle cx="0" cy="-8" r="7" fill="#FF7F5C" />
-      {[
-        [-11, 1],
-        [7, 1],
-        [-2, -10],
-      ].map(([x, y]) => (
-        <circle key={`${x}${y}`} cx={x} cy={y} r="2" fill="#fff" opacity="0.8" />
+      {(
+        [
+          [-8.5, 3.5, "#5B7CFA"],
+          [8.5, 3.5, "#3DBE8B"],
+          [0, -7.5, "#F2846B"],
+        ] as const
+      ).map(([x, y, col]) => (
+        <g key={col}>
+          <circle cx={x} cy={y} r="7.4" fill={col} />
+          <Satin ctx={ctx}>
+            <circle cx={x} cy={y} r="7.4" />
+          </Satin>
+          <circle cx={x - 2.4} cy={y - 2.4} r="1.9" fill={WHITE_THREAD} />
+        </g>
       ))}
     </g>
   ),
-  ember: (p) => (
+  ember: (ctx) => {
+    const outer =
+      "M0 -16 C 6 -8 12 -4 12 4 C 12 11 6 15 0 15 C -6 15 -12 11 -12 4 C -12 -2 -7 -5 -5 -10 C -3 -6 -2 -4 0 -3 C 1 -7 0 -12 0 -16 Z";
+    return (
+      <g>
+        <path d={outer} fill={ctx.c.accent} />
+        <path
+          d="M0 1 C 3.5 4.5 5.5 7 5.5 10 C 5.5 13 3 14.4 0 14.4 C -3 14.4 -5.5 13 -5.5 10 C -5.5 7 -2.5 4.5 0 1 Z"
+          fill={ctx.c.body}
+        />
+        <Satin ctx={ctx}>
+          <path d={outer} />
+        </Satin>
+      </g>
+    );
+  },
+  orbit: (ctx) => (
     <g>
       <path
-        d="M0 -16 C 6 -8 12 -4 12 4 C 12 11 6 15 0 15 C -6 15 -12 11 -12 4 C -12 -2 -7 -5 -5 -10 C -3 -6 -2 -4 0 -3 C 1 -7 0 -12 0 -16 Z"
-        fill={p.accent}
-      />
-      <path
-        d="M0 2 C 3 5 5 7 5 10 C 5 13 3 14 0 14 C -3 14 -5 13 -5 10 C -5 7 -2 5 0 2 Z"
-        fill={p.color}
-        opacity="0.85"
-      />
-    </g>
-  ),
-  orbit: (p) => (
-    <g>
-      <circle r="10" fill={p.accent} />
-      <circle cx="-3" cy="-3" r="3" fill="#fff" opacity="0.6" />
-      <ellipse
-        rx="17"
-        ry="5.5"
+        d="M-16.6 2.4 A 17.5 5.6 -16 0 1 15.4 -7.6"
         fill="none"
-        stroke={p.shade}
+        stroke={ctx.c.deep}
         strokeWidth="2.6"
-        transform="rotate(-18)"
+        strokeLinecap="round"
+        opacity="0.9"
       />
+      <circle r="9.6" fill={ctx.c.accent} />
+      <Satin ctx={ctx}>
+        <circle r="9.6" />
+      </Satin>
+      <path
+        d="M16.6 -2.4 A 17.5 5.6 -16 0 1 -15.4 7.6"
+        fill="none"
+        stroke={ctx.c.deep}
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      <circle cx="-3.2" cy="-3.4" r="2.2" fill={WHITE_THREAD} />
     </g>
   ),
-  moss: (p) => (
-    <g transform="rotate(-20)">
-      <path d="M0 -16 C 10 -10 12 2 0 15 C -12 2 -10 -10 0 -16 Z" fill={p.shade} />
-      <path d="M0 -12 V 12" stroke={p.tint} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M0 -2 L 5 -6 M0 4 L -5 0" stroke={p.tint} strokeWidth="1.4" strokeLinecap="round" />
-    </g>
-  ),
-  ripple: (p) => (
-    <g fill="none" stroke={p.shade} strokeWidth="3" strokeLinecap="round">
-      <path d="M-15 -4 q 5 -6 10 0 t 10 0 t 10 0" />
-      <path d="M-15 6 q 5 -6 10 0 t 10 0 t 10 0" stroke={p.accent} />
+  moss: (ctx) => {
+    const leaf = "M0 -16 C 10 -10 12 2 0 15 C -12 2 -10 -10 0 -16 Z";
+    return (
+      <g transform="rotate(-18)">
+        <path d={leaf} fill={ctx.c.deep} />
+        <Satin ctx={ctx}>
+          <path d={leaf} />
+        </Satin>
+        <g stroke={ctx.c.tint} strokeWidth="1.7" strokeLinecap="round" fill="none">
+          <path d="M0 -11 V 11" />
+          <path d="M0 -2 L 5 -6.5 M0 4.5 L -5 0" />
+        </g>
+      </g>
+    );
+  },
+  ripple: (ctx) => (
+    <g fill="none" strokeWidth="3" strokeLinecap="round">
+      <path d="M-15 -4 q 5 -6 10 0 t 10 0 t 10 0" stroke={ctx.c.deep} />
+      <path d="M-15 5.5 q 5 -6 10 0 t 10 0 t 10 0" stroke={ctx.c.accent} />
     </g>
   ),
 };
@@ -280,240 +701,350 @@ const MOTIFS: Record<PalDef["id"], (p: PalDef) => ReactNode> = {
 
 type Shape = {
   body: string;
+  /** Visual centre of the body (for the side-seam inset). */
+  center: [number, number];
+  seamScale: number;
+  /** Base-gusset crease along the bottom. */
+  gusset: string;
   faceY: number;
   eyeSpread: number;
-  bellyY: number;
-  bellyRx: number;
-  bellyRy: number;
+  belly: { cx: number; cy: number; rx: number; ry: number };
+  /** [x offset from centre, y, angle] for the shared arm nub. */
+  arm: [number, number, number];
+  /** [x offset from centre, y] for the shared foot nub. */
+  foot: [number, number];
+  limbs?: false;
   groundRx: number;
-  back: (p: PalDef) => ReactNode;
-  front: (p: PalDef) => ReactNode;
+  /** Bust crop: [centre x, centre y, square size]. */
+  bust: [number, number, number];
+  back: (ctx: Ctx) => ReactNode;
+  front?: (ctx: Ctx) => ReactNode;
 };
 
-const none = () => null;
+type Part = "l" | "r" | "crest" | "sprout" | "tail";
 
-const SHAPES: Record<PalDef["id"], Shape> = {
-  // Kindness — soft pear with long floppy ears.
+/**
+ * Mood poses, in degrees. Applied on an inner group so the hooked outer group
+ * (.pal-ear-l etc.) stays free for CSS idle life and GSAP.
+ */
+const POSES: Partial<Record<PalId, Partial<Record<PalMood, Partial<Record<Part, number>>>>>> = {
+  lumi: { sleepy: { l: -16, r: 10 }, wow: { l: 5, r: -7 }, happy: { l: -4, r: 4 } },
+  tumble: { sleepy: { l: -7, r: 7 }, wow: { l: 4, r: -4 } },
+  ember: { sleepy: { tail: 16 }, wow: { tail: -12 }, happy: { tail: -8 } },
+  orbit: { sleepy: { l: -24, r: 24 }, wow: { l: 7, r: -7 }, happy: { l: -5, r: 5 } },
+  moss: { sleepy: { sprout: 18 }, wow: { sprout: -5 }, happy: { sprout: -7 } },
+  ripple: { sleepy: { l: -13, r: 13, tail: 10 }, wow: { l: 9, r: -9 }, happy: { l: 4, r: -4 } },
+};
+
+function Hook({
+  ctx,
+  part,
+  origin,
+  children,
+}: {
+  ctx: Ctx;
+  part: Part;
+  origin: [number, number];
+  children: ReactNode;
+}) {
+  const cls = {
+    l: "pal-ear-l",
+    r: "pal-ear-r",
+    crest: "pal-crest",
+    sprout: "pal-sprout",
+    tail: "pal-tail",
+  }[part];
+  const deg = POSES[ctx.pal.id]?.[ctx.mood]?.[part] ?? 0;
+  const [ox, oy] = origin;
+  return (
+    <g className={cls} style={{ transformOrigin: `${ox}px ${oy}px` }}>
+      {deg ? <g transform={`rotate(${deg} ${ox} ${oy})`}>{children}</g> : children}
+    </g>
+  );
+}
+
+const SHAPES: Record<PalId, Shape> = {
+  // Kindness — soft pear; two long ears, the right one bent and flopped.
   lumi: {
-    body: "M100 64 C 138 64 160 98 162 132 C 164 166 138 186 100 186 C 62 186 36 166 38 132 C 40 98 62 64 100 64 Z",
-    faceY: 106,
-    eyeSpread: 21,
-    bellyY: 150,
-    bellyRx: 30,
-    bellyRy: 25,
-    groundRx: 52,
-    back: (p) => (
+    body: "M100 66 C 135 66 158 98 161 132 C 164 165 146 184 114 185 L 86 185 C 54 184 36 165 39 132 C 42 98 65 66 100 66 Z",
+    center: [100, 128],
+    seamScale: 0.955,
+    gusset: "M62 178 Q100 186 138 178",
+    faceY: 108,
+    eyeSpread: 20,
+    belly: { cx: 100, cy: 150, rx: 27, ry: 22 },
+    arm: [47, 142, 30],
+    foot: [27, 181],
+    groundRx: 56,
+    bust: [100, 92, 132],
+    back: (ctx) => (
       <g>
-        <g className="pal-ear-l" style={{ transformOrigin: "78px 74px" }}>
-          <path
-            d="M80 76 C 66 70 46 44 48 22 C 50 6 66 6 74 20 C 82 34 88 56 86 72 Z"
-            fill={p.color}
+        <Hook ctx={ctx} part="l" origin={[86, 76]}>
+          <Puff
+            ctx={ctx}
+            d="M80 80 C 68 66 52 40 54 19 C 55 6 69 2 76 14 C 85 30 93 52 95 74 Z"
+            fill={ctx.c.back}
           />
           <path
-            d="M78 66 C 68 60 56 42 57 26 C 58 16 66 16 70 25 C 76 37 80 52 79 64 Z"
-            fill={p.tint}
+            d="M82 70 C 72 58 62 40 62 24 C 62 15 69 13 73 21 C 79 33 85 50 87 66 Z"
+            fill={ctx.c.tint}
           />
-        </g>
-        <g className="pal-ear-r" style={{ transformOrigin: "122px 74px" }}>
+          <Seam ctx={ctx} d="M80 79 Q 87 73 95 74" />
+        </Hook>
+        <Hook ctx={ctx} part="r" origin={[114, 76]}>
+          {/* one sewn piece, lightly stuffed below the knee so the top half flops */}
+          <Puff
+            ctx={ctx}
+            d="M105 77 C 105 60 109 44 118 34 C 126 25 138 21 149 25 C 160 29 169 42 172 54 C 174 63 167 68 161 63 C 153 56 146 50 139 48 C 135 56 128 68 121 80 Z"
+            fill={ctx.c.back}
+          />
           <path
-            d="M120 76 C 134 70 154 44 152 22 C 150 6 134 6 126 20 C 118 34 112 56 114 72 Z"
-            fill={p.color}
+            d="M111 70 C 112 58 115 49 121 42 C 125 41 130 43 133 46 C 130 54 125 62 118 72 Z"
+            fill={ctx.c.tint}
           />
-          <path
-            d="M122 66 C 132 60 144 42 143 26 C 142 16 134 16 130 25 C 124 37 120 52 121 64 Z"
-            fill={p.tint}
+          {/* flopped half shows the back of the ear, catching the light */}
+          <Puff
+            ctx={ctx}
+            d="M118 34 C 126 25 138 21 149 25 C 160 29 169 42 172 54 C 174 63 167 68 161 63 C 153 56 146 50 139 48 C 132 44 125 40 118 34 Z"
+            fill={ctx.c.body}
           />
-        </g>
-      </g>
-    ),
-    front: (p) => (
-      <g fill={p.shade} opacity="0.55">
-        <ellipse cx="76" cy="182" rx="14" ry="6" />
-        <ellipse cx="124" cy="182" rx="14" ry="6" />
+          <Seam ctx={ctx} d="M119 35 C 126 40 132 44 139 48" strength={1.1} />
+          <Seam ctx={ctx} d="M105 76 Q 112 74 121 80" />
+        </Hook>
       </g>
     ),
   },
-  // Teamwork — wide dumpling, round bear ears, stubby arms.
+
+  // Teamwork — wide bear-dumpling with round felt-lined ears.
   tumble: {
-    body: "M100 72 C 150 72 174 104 174 138 C 174 170 144 186 100 186 C 56 186 26 170 26 138 C 26 104 50 72 100 72 Z",
-    faceY: 116,
-    eyeSpread: 24,
-    bellyY: 156,
-    bellyRx: 34,
-    bellyRy: 22,
-    groundRx: 64,
-    back: (p) => (
+    body: "M100 74 C 150 74 175 104 175 138 C 175 170 152 185 122 185 L 78 185 C 48 185 25 170 25 138 C 25 104 50 74 100 74 Z",
+    center: [100, 132],
+    seamScale: 0.96,
+    gusset: "M52 178 Q100 187 148 178",
+    faceY: 117,
+    eyeSpread: 23,
+    belly: { cx: 100, cy: 156, rx: 31, ry: 20 },
+    arm: [64, 148, 28],
+    foot: [34, 181],
+    groundRx: 68,
+    bust: [100, 106, 140],
+    back: (ctx) => (
       <g>
-        <g className="pal-ear-l" style={{ transformOrigin: "60px 88px" }}>
-          <circle cx="58" cy="82" r="17" fill={p.color} />
-          <circle cx="58" cy="82" r="9" fill={p.tint} />
-        </g>
-        <g className="pal-ear-r" style={{ transformOrigin: "140px 88px" }}>
-          <circle cx="142" cy="82" r="17" fill={p.color} />
-          <circle cx="142" cy="82" r="9" fill={p.tint} />
-        </g>
-      </g>
-    ),
-    front: (p) => (
-      <g fill={p.shade} opacity="0.9">
-        <ellipse
-          className="pal-arm-l"
-          cx="34"
-          cy="146"
-          rx="9"
-          ry="13"
-          transform="rotate(18 34 146)"
-        />
-        <ellipse
-          className="pal-arm-r"
-          cx="166"
-          cy="146"
-          rx="9"
-          ry="13"
-          transform="rotate(-18 166 146)"
-        />
+        {([-1, 1] as const).map((side) => {
+          const x = 100 + side * 45;
+          return (
+            <Hook key={side} ctx={ctx} part={side < 0 ? "l" : "r"} origin={[100 + side * 40, 90]}>
+              <Puff ctx={ctx} d={ell(x, 79, 18.5, 17.5)} fill={ctx.c.back} />
+              <ellipse cx={x} cy={79} rx="10" ry="9.4" fill={ctx.c.tint} />
+              <ellipse
+                cx={x}
+                cy={79}
+                rx="10"
+                ry="9.4"
+                fill={`url(#${ctx.ids.puff})`}
+                opacity="0.5"
+              />
+              <Stitch
+                ctx={ctx}
+                d={ell(x, 79, 7.6, 7)}
+                color={ctx.c.thread}
+                width={1}
+                opacity={0.45}
+              />
+            </Hook>
+          );
+        })}
       </g>
     ),
   },
-  // Courage — upright egg, soft three-bump crest, short tail.
+
+  // Courage — upright egg; one three-lobed soft crest + a stubby tail.
   ember: {
-    body: "M100 54 C 140 54 160 100 160 134 C 160 166 134 186 100 186 C 66 186 40 166 40 134 C 40 100 60 54 100 54 Z",
-    faceY: 104,
-    eyeSpread: 21,
-    bellyY: 150,
-    bellyRx: 29,
-    bellyRy: 26,
-    groundRx: 54,
-    back: (p) => (
+    body: "M100 56 C 140 56 160 100 160 134 C 160 165 142 184 114 185 L 86 185 C 58 184 40 165 40 134 C 40 100 60 56 100 56 Z",
+    center: [100, 124],
+    seamScale: 0.955,
+    gusset: "M62 178 Q100 186 138 178",
+    faceY: 106,
+    eyeSpread: 20,
+    belly: { cx: 100, cy: 150, rx: 27, ry: 23 },
+    arm: [47, 142, 28],
+    foot: [27, 181],
+    groundRx: 56,
+    bust: [100, 92, 136],
+    back: (ctx) => (
       <g>
-        <path
-          className="pal-tail"
-          d="M148 166 C 164 166 176 158 182 146 C 184 160 174 178 152 182 Z"
-          fill={p.shade}
-          style={{ transformOrigin: "150px 172px" }}
-        />
-        <g className="pal-crest" fill={p.shade} style={{ transformOrigin: "100px 62px" }}>
-          <path d="M70 70 C 66 56 74 46 84 48 C 90 50 92 58 90 64 Z" />
-          <path d="M88 60 C 86 42 96 32 106 36 C 114 40 114 50 110 58 Z" />
-          <path d="M108 60 C 112 46 124 42 132 50 C 136 56 134 64 128 68 Z" />
-        </g>
-      </g>
-    ),
-    front: (p) => (
-      <g fill={p.shade} opacity="0.6">
-        <ellipse cx="78" cy="183" rx="13" ry="5.5" />
-        <ellipse cx="122" cy="183" rx="13" ry="5.5" />
+        <Hook ctx={ctx} part="tail" origin={[150, 170]}>
+          <Puff
+            ctx={ctx}
+            d="M140 158 C 156 162 171 158 180 146 C 186 138 193 142 190 153 C 186 170 166 183 138 183 Z"
+            fill={ctx.c.back}
+          />
+        </Hook>
+        <Hook ctx={ctx} part="crest" origin={[100, 64]}>
+          <Puff
+            ctx={ctx}
+            d="M70 76 C 63 64 66 50 77 47 C 84 45 89 50 90 55 C 88 41 94 30 104 30 C 114 30 118 40 115 51 C 119 43 129 41 135 47 C 141 54 139 66 132 74 Z"
+            fill={ctx.c.deep}
+          />
+          <Seam ctx={ctx} d="M89 56 Q 92 62 92 68 M115 52 Q 112 60 113 68" strength={0.9} />
+        </Hook>
       </g>
     ),
   },
-  // Curiosity — round ball, two bobble antennae.
+
+  // Curiosity — round ball; two stuffed-tube antennae with fabric bobbles.
   orbit: {
-    body: "M100 62 C 136 62 162 90 162 124 C 162 160 136 186 100 186 C 64 186 38 160 38 124 C 38 90 64 62 100 62 Z",
-    faceY: 112,
-    eyeSpread: 22,
-    bellyY: 154,
-    bellyRx: 29,
-    bellyRy: 23,
-    groundRx: 54,
-    back: (p) => (
+    body: "M100 64 C 136 64 162 92 162 126 C 162 160 140 185 112 185 L 88 185 C 60 185 38 160 38 126 C 38 92 64 64 100 64 Z",
+    center: [100, 124],
+    seamScale: 0.955,
+    gusset: "M62 179 Q100 187 138 179",
+    faceY: 113,
+    eyeSpread: 21,
+    belly: { cx: 100, cy: 154, rx: 26, ry: 20 },
+    arm: [50, 144, 28],
+    foot: [26, 181],
+    groundRx: 56,
+    bust: [100, 92, 148],
+    back: (ctx) => (
       <g>
-        <g className="pal-ear-l" style={{ transformOrigin: "82px 68px" }}>
-          <path
-            d="M84 68 C 80 50 70 38 62 28"
-            fill="none"
-            stroke={p.shade}
-            strokeWidth="7"
-            strokeLinecap="round"
-          />
-          <circle cx="60" cy="25" r="11" fill={p.accent} />
-          <circle cx="56.5" cy="21.5" r="3.4" fill="#fff" opacity="0.7" />
-        </g>
-        <g className="pal-ear-r" style={{ transformOrigin: "118px 68px" }}>
-          <path
-            d="M116 68 C 120 50 130 38 138 28"
-            fill="none"
-            stroke={p.shade}
-            strokeWidth="7"
-            strokeLinecap="round"
-          />
-          <circle cx="140" cy="25" r="11" fill={p.accent} />
-          <circle cx="136.5" cy="21.5" r="3.4" fill="#fff" opacity="0.7" />
-        </g>
+        {([-1, 1] as const).map((side) => {
+          const bx = 100 + side * 39;
+          return (
+            <Hook key={side} ctx={ctx} part={side < 0 ? "l" : "r"} origin={[100 + side * 16, 70]}>
+              {/* stuffed tube, 10.5 units (~16 mm at Hero scale) wide */}
+              <path
+                d={`M${100 + side * 16} 72 C ${100 + side * 18} 54 ${100 + side * 28} 40 ${bx} 31`}
+                fill="none"
+                stroke={ctx.c.back}
+                strokeWidth="10.5"
+                strokeLinecap="round"
+              />
+              <path
+                d={`M${100 + side * 13.5} 68 C ${100 + side * 15.5} 54 ${100 + side * 25} 42 ${bx - side * 2.5} 33`}
+                fill="none"
+                stroke="#fff"
+                strokeOpacity="0.16"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <Puff ctx={ctx} d={ell(bx + side * 2, 24, 14, 13.5)} fill={ctx.c.accent} />
+              {/* bobble = gathered fabric ball; pucker where it meets the tube */}
+              <Seam
+                ctx={ctx}
+                d={`M${bx - side * 4} 34.5 Q ${bx - side * 0.5} 37.5 ${bx + side * 3.5} 35.5`}
+                strength={0.9}
+              />
+            </Hook>
+          );
+        })}
       </g>
     ),
-    front: none,
   },
-  // Little habits — gumdrop with a two-leaf sprout.
+
+  // Little habits — gumdrop with a stuffed two-leaf sprout.
   moss: {
-    body: "M100 58 C 124 58 168 108 168 140 C 168 170 138 186 100 186 C 62 186 32 170 32 140 C 32 108 76 58 100 58 Z",
-    faceY: 114,
-    eyeSpread: 22,
-    bellyY: 156,
-    bellyRx: 31,
-    bellyRy: 22,
-    groundRx: 60,
-    back: (p) => (
-      <g className="pal-sprout" style={{ transformOrigin: "100px 60px" }}>
+    body: "M100 60 C 126 60 168 108 168 140 C 168 168 148 185 120 185 L 80 185 C 52 185 32 168 32 140 C 32 108 74 60 100 60 Z",
+    center: [100, 130],
+    seamScale: 0.96,
+    gusset: "M56 179 Q100 187 144 179",
+    faceY: 115,
+    eyeSpread: 21,
+    belly: { cx: 100, cy: 156, rx: 28, ry: 20 },
+    arm: [54, 148, 28],
+    foot: [30, 181],
+    groundRx: 62,
+    bust: [100, 94, 150],
+    back: (ctx) => (
+      <Hook ctx={ctx} part="sprout" origin={[100, 62]}>
         <path
-          d="M100 62 C 100 50 101 42 103 34"
+          d="M100 66 C 100 54 101 46 103 38"
           fill="none"
-          stroke={p.shade}
-          strokeWidth="6"
+          stroke={ctx.c.deep}
+          strokeWidth="10"
           strokeLinecap="round"
         />
-        <path d="M102 38 C 90 22 70 22 62 30 C 72 42 92 44 102 38 Z" fill={p.shade} />
-        <path d="M103 36 C 112 18 134 14 144 22 C 136 36 116 42 103 36 Z" fill={p.color} />
-        <path
-          d="M104 35 C 116 27 128 23 138 23"
-          fill="none"
-          stroke={p.tint}
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          opacity="0.8"
+        <Puff ctx={ctx} d="M103 40 C 91 23 69 21 59 30 C 69 45 91 49 103 40 Z" fill={ctx.c.deep} />
+        <Stitch
+          ctx={ctx}
+          d="M99 39 C 88 34 76 31 66 31"
+          color={ctx.c.tint}
+          width={1.1}
+          opacity={0.7}
         />
-      </g>
-    ),
-    front: (p) => (
-      <g fill={p.shade} opacity="0.55">
-        <ellipse cx="76" cy="183" rx="14" ry="5.5" />
-        <ellipse cx="124" cy="183" rx="14" ry="5.5" />
-      </g>
+        <Puff
+          ctx={ctx}
+          d="M103 38 C 112 18 136 13 147 22 C 138 37 117 44 103 38 Z"
+          fill={ctx.c.body}
+        />
+        <Stitch
+          ctx={ctx}
+          d="M107 36 C 118 29 129 25 140 23.5"
+          color={ctx.c.tint}
+          width={1.1}
+          opacity={0.8}
+        />
+      </Hook>
     ),
   },
-  // Calm — low, wide axolotl with frilly gills.
+
+  // Calm — low, wide axolotl; one three-lobed gill fan each side + a fin tail.
   ripple: {
-    body: "M100 82 C 148 82 172 112 172 142 C 172 170 142 186 100 186 C 58 186 28 170 28 142 C 28 112 52 82 100 82 Z",
-    faceY: 124,
-    eyeSpread: 24,
-    bellyY: 160,
-    bellyRx: 32,
-    bellyRy: 19,
-    groundRx: 64,
-    back: (p) => (
-      <g>
-        <path
-          className="pal-tail"
-          d="M160 168 C 178 172 192 164 196 150 C 200 168 188 186 160 184 Z"
-          fill={p.shade}
-          style={{ transformOrigin: "160px 176px" }}
-        />
-        <g className="pal-ear-l" fill={p.accent} style={{ transformOrigin: "44px 112px" }}>
-          <ellipse cx="30" cy="92" rx="7" ry="15" transform="rotate(-40 30 92)" />
-          <ellipse cx="22" cy="110" rx="7" ry="15" transform="rotate(-80 22 110)" />
-          <ellipse cx="26" cy="128" rx="6.5" ry="13" transform="rotate(-118 26 128)" />
+    body: "M100 84 C 148 84 172 112 172 142 C 172 170 150 185 122 185 L 78 185 C 50 185 28 170 28 142 C 28 112 52 84 100 84 Z",
+    center: [100, 136],
+    seamScale: 0.96,
+    gusset: "M52 179 Q100 187 148 179",
+    faceY: 122,
+    eyeSpread: 23,
+    belly: { cx: 100, cy: 164, rx: 25, ry: 14.5 },
+    arm: [62, 154, 28],
+    foot: [34, 182],
+    groundRx: 66,
+    bust: [100, 120, 150],
+    back: (ctx) => {
+      const vein = mix(ctx.c.accent, INK, 0.3);
+      return (
+        <g>
+          <Hook ctx={ctx} part="tail" origin={[160, 176]}>
+            <Puff
+              ctx={ctx}
+              d="M148 162 C 164 167 179 163 188 151 C 191 146 198 147 197 155 C 195 171 178 184 148 185 Z"
+              fill={ctx.c.back}
+            />
+          </Hook>
+          {([-1, 1] as const).map((side) => (
+            <Hook key={side} ctx={ctx} part={side < 0 ? "l" : "r"} origin={[100 + side * 56, 114]}>
+              <g transform={side < 0 ? undefined : "translate(200 0) scale(-1 1)"}>
+                <Puff
+                  ctx={ctx}
+                  d="M50 106 C 40 98 32 86 24 82 C 15 78 10 86 15 93 C 19 98 28 100 36 104 C 26 103 14 104 10 111 C 7 118 14 123 21 120 C 28 117 34 115 42 116 C 33 120 23 127 22 134 C 21 141 29 143 34 138 C 40 131 44 126 50 124 Z"
+                  fill={ctx.c.accent}
+                />
+                <Stitch
+                  ctx={ctx}
+                  d="M46 106 C 38 99 30 92 22 88"
+                  color={vein}
+                  width={1}
+                  opacity={0.55}
+                />
+                <Stitch
+                  ctx={ctx}
+                  d="M45 113 C 35 112 24 112 16 113"
+                  color={vein}
+                  width={1}
+                  opacity={0.55}
+                />
+                <Stitch
+                  ctx={ctx}
+                  d="M46 120 C 38 125 32 130 28 136"
+                  color={vein}
+                  width={1}
+                  opacity={0.55}
+                />
+              </g>
+            </Hook>
+          ))}
         </g>
-        <g className="pal-ear-r" fill={p.accent} style={{ transformOrigin: "156px 112px" }}>
-          <ellipse cx="170" cy="92" rx="7" ry="15" transform="rotate(40 170 92)" />
-          <ellipse cx="178" cy="110" rx="7" ry="15" transform="rotate(80 178 110)" />
-          <ellipse cx="174" cy="128" rx="6.5" ry="13" transform="rotate(118 174 128)" />
-        </g>
-      </g>
-    ),
-    front: (p) => (
-      <g fill={p.shade} opacity="0.6">
-        <ellipse cx="70" cy="183" rx="15" ry="5.5" />
-        <ellipse cx="130" cy="183" rx="15" ry="5.5" />
-      </g>
-    ),
+      );
+    },
   },
 };

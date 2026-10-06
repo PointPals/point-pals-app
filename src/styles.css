@@ -752,42 +752,107 @@
   }
 }
 
-/* ── Pals: idle life (breathe, blink, wiggle). Hooks live in <Pal>. ── */
+/* ── Pals: idle life (breathe, blink, sway). Hooks live in <Pal>. ──────────
+ * Every loop is offset by --pal-phase (0–1, set per Pal from its id + seed)
+ * so a row of Pals never moves in lock-step. <Pal animate> only adds
+ * .pal-animate when neither the OS nor the app's reducedMotion setting asks
+ * for stillness; the media query below is a second guard. */
 @keyframes pal-breathe {
   0%,
   100% {
     transform: scale(1, 1);
   }
-  50% {
-    transform: scale(0.985, 1.03);
+  45% {
+    transform: scale(0.992, 1.022);
+  }
+}
+@keyframes pal-bob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  40% {
+    transform: translateY(-2.2%) scale(0.99, 1.02);
+  }
+  70% {
+    transform: translateY(0) scale(1.012, 0.99);
+  }
+}
+@keyframes pal-ground-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  45% {
+    transform: scale(0.97, 1);
   }
 }
 @keyframes pal-blink {
   0%,
-  92%,
+  93%,
   100% {
     transform: scaleY(1);
   }
   95% {
-    transform: scaleY(0.1);
+    transform: scaleY(0.08);
   }
 }
-@keyframes pal-wiggle-l {
+/* Slow sway with one little ear-twitch per cycle. */
+@keyframes pal-sway-l {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  32% {
+    transform: rotate(-3.5deg);
+  }
+  64% {
+    transform: rotate(1deg);
+  }
+  84% {
+    transform: rotate(0deg);
+  }
+  88% {
+    transform: rotate(-9deg);
+  }
+  92% {
+    transform: rotate(2deg);
+  }
+  95% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes pal-sway-r {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  32% {
+    transform: rotate(3.5deg);
+  }
+  64% {
+    transform: rotate(-1deg);
+  }
+  84% {
+    transform: rotate(0deg);
+  }
+  88% {
+    transform: rotate(9deg);
+  }
+  92% {
+    transform: rotate(-2deg);
+  }
+  95% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes pal-wag {
   0%,
   100% {
     transform: rotate(0deg);
   }
   50% {
-    transform: rotate(-6deg);
-  }
-}
-@keyframes pal-wiggle-r {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(6deg);
+    transform: rotate(7deg);
   }
 }
 @keyframes pal-hop {
@@ -808,21 +873,46 @@
 .pal-animate .pal-body-group {
   transform-box: fill-box;
   transform-origin: 50% 100%;
-  animation: pal-breathe 3.8s ease-in-out infinite;
+  animation: pal-breathe 4.2s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -4.2s);
+}
+.pal-animate[data-mood="happy"] .pal-body-group {
+  animation: pal-bob 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -1.9s);
+}
+.pal-animate[data-mood="sleepy"] .pal-body-group {
+  animation-duration: 6s;
+  animation-delay: calc(var(--pal-phase, 0) * -6s);
+}
+.pal-animate .pal-ground {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: pal-ground-breathe 4.2s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -4.2s);
 }
 .pal-animate .pal-eyes {
   transform-box: fill-box;
   transform-origin: 50% 50%;
-  animation: pal-blink 5.2s ease-in-out infinite;
+  animation: pal-blink 6.4s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -6.4s);
+}
+.pal-animate[data-mood="happy"] .pal-eyes,
+.pal-animate[data-mood="sleepy"] .pal-eyes {
+  animation: none;
 }
 .pal-animate .pal-ear-l,
 .pal-animate .pal-crest,
 .pal-animate .pal-sprout {
-  animation: pal-wiggle-l 4.6s ease-in-out infinite;
+  animation: pal-sway-l 7.2s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -7.2s);
 }
-.pal-animate .pal-ear-r,
+.pal-animate .pal-ear-r {
+  animation: pal-sway-r 7.9s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -7.9s - 1.3s);
+}
 .pal-animate .pal-tail {
-  animation: pal-wiggle-r 4.6s ease-in-out infinite;
+  animation: pal-wag 3.4s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -3.4s);
 }
 .pal-hop {
   animation: pal-hop 620ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -830,6 +920,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .pal-animate .pal-body-group,
+  .pal-animate .pal-ground,
   .pal-animate .pal-eyes,
   .pal-animate .pal-ear-l,
   .pal-animate .pal-ear-r,
@@ -847,6 +938,96 @@
  * ────────────────────────────────────────────────────────────────────────── */
 
 /* === area:cast === */
+/* .pal-boop — one-shot "you tapped me!" reaction. Add the class to a <Pal>
+ * svg (or any ancestor) on tap, remove it on animationend. Squash-and-stretch,
+ * an ear/sprout flick and a happy squeeze of the eyes. */
+@keyframes pal-boop-body {
+  0% {
+    transform: scale(1, 1);
+  }
+  18% {
+    transform: scale(1.08, 0.9);
+  }
+  42% {
+    transform: scale(0.95, 1.07);
+  }
+  66% {
+    transform: scale(1.02, 0.98);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+@keyframes pal-boop-flick-l {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-14deg);
+  }
+  55% {
+    transform: rotate(6deg);
+  }
+  80% {
+    transform: rotate(-2deg);
+  }
+}
+@keyframes pal-boop-flick-r {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(14deg);
+  }
+  55% {
+    transform: rotate(-6deg);
+  }
+  80% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes pal-boop-squeeze {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  30%,
+  55% {
+    transform: scaleY(0.15);
+  }
+}
+.pal-boop .pal-body-group {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: pal-boop-body 620ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.pal-boop .pal-ear-l,
+.pal-boop .pal-crest,
+.pal-boop .pal-sprout {
+  animation: pal-boop-flick-l 700ms ease-out both;
+}
+.pal-boop .pal-ear-r,
+.pal-boop .pal-tail {
+  animation: pal-boop-flick-r 700ms ease-out both;
+}
+.pal-boop .pal-eyes {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: pal-boop-squeeze 420ms ease-in-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pal-boop .pal-body-group,
+  .pal-boop .pal-ear-l,
+  .pal-boop .pal-ear-r,
+  .pal-boop .pal-crest,
+  .pal-boop .pal-sprout,
+  .pal-boop .pal-tail,
+  .pal-boop .pal-eyes {
+    animation: none !important;
+  }
+}
 /* === end area:cast === */
 
 /* (spacer) */

@@ -6,6 +6,7 @@
  * built from a single sewable base pattern, and ONE signature appendage each
  * (ears / crest / antennae / sprout / gills) so every Pal reads instantly as a
  * silhouette — from across a room, on a 40 px avatar, or on a shop shelf.
+ * Factory brief: docs/PLUSH-SPEC.md (front-view references in docs/plush/).
  *
  * Back-compat: kids saved before the redesign store an old companion id
  * (sunny, pip, bramble, …) in `kids.avatar_key`. `resolvePalId()` maps every
@@ -59,7 +60,7 @@ export const PALS: PalDef[] = [
     accent: "#F27DAE",
     pastelKey: "lilac",
     motif: "Embroidered heart with three short glow rays",
-    silhouette: "Soft pear body with two long floppy ears",
+    silhouette: "Soft pear body with two long ears — one always flopped over",
     legacyIds: ["sunny"],
   },
   {
@@ -73,8 +74,8 @@ export const PALS: PalDef[] = [
     tint: "#FFF2D1",
     accent: "#5B7CFA",
     pastelKey: "butter",
-    motif: "Three linked marbles",
-    silhouette: "Wide round dumpling with little bear ears and stubby arms",
+    motif: "Three marbles in a huddle",
+    silhouette: "Wide, low dumpling with round felt-lined bear ears",
     legacyIds: ["marlow"],
   },
   {
@@ -88,8 +89,8 @@ export const PALS: PalDef[] = [
     tint: "#FFE4DA",
     accent: "#F5B841",
     pastelKey: "orange",
-    motif: "Little flame",
-    silhouette: "Upright egg with a three-bump soft crest and a short tail",
+    motif: "Little two-tone flame",
+    silhouette: "Upright egg with a three-lobed soft crest and a stubby tail",
     legacyIds: ["ridge", "bramble"],
   },
   {
@@ -104,7 +105,7 @@ export const PALS: PalDef[] = [
     accent: "#F5B841",
     pastelKey: "sky",
     motif: "Ringed planet",
-    silhouette: "Round ball body with two bobble antennae",
+    silhouette: "Round ball body with two stuffed antennae and fabric bobbles",
     legacyIds: ["pip", "ziggy"],
   },
   {
@@ -118,8 +119,8 @@ export const PALS: PalDef[] = [
     tint: "#DBF5E9",
     accent: "#F5B841",
     pastelKey: "sage",
-    motif: "Leaf with a centre vein",
-    silhouette: "Gumdrop body with a two-leaf sprout on top",
+    motif: "Leaf with a stitched centre vein",
+    silhouette: "Gumdrop body with a stuffed two-leaf sprout on top",
     legacyIds: ["fern"],
   },
   {
@@ -134,7 +135,7 @@ export const PALS: PalDef[] = [
     accent: "#F27DAE",
     pastelKey: "foam",
     motif: "Two rolling waves",
-    silhouette: "Low, wide axolotl body with frilly gill fronds each side",
+    silhouette: "Low, wide axolotl body with a three-lobed gill fan each side",
     legacyIds: ["coda"],
   },
 ];
