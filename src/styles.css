@@ -840,3 +840,36 @@
     animation: none !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Area sections — each area appends its own keyframes/utilities ONLY between
+ * its markers (keeps parallel work merge-clean).
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* === area:cast === */
+/* === end area:cast === */
+
+/* (spacer) */
+
+/* === area:landing === */
+/* === end area:landing === */
+
+/* (spacer) */
+
+/* === area:shell === */
+/* === end area:shell === */
+
+/* (spacer) */
+
+/* === area:award === */
+/* === end area:award === */
+
+/* (spacer) */
+
+/* === area:public === */
+/* === end area:public === */
+
+/* (spacer) */
+
+/* === area:secondary === */
+/* === end area:secondary === */
