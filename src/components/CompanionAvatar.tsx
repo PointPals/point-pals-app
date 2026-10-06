@@ -1,127 +1,37 @@
 import type { PastelKey } from "@/lib/mock-data";
-import { PASTEL_HEX } from "@/lib/mock-data";
-import { companionImageUrl, companionArtUrl } from "@/lib/companion-assets";
+import { Pal } from "@/components/pals/Pal";
 
-// Each kid is shown as their chosen companion avatar (§2). The real product
-// swaps in AI-generated mascot art from Supabase Storage; until that bucket is
-// reachable this renders a warm, deterministic vector face so every kid still
-// has a distinct, friendly companion (no emoji, no broken image).
-//
-// `companionImageUrl(seed)` is the single swap point: return a real URL there
-// and this component uses it automatically, falling back to the vector face.
-
-const ACCENT: Record<PastelKey, string> = {
-  sky: "#6E9BC6",
-  butter: "#D3B347",
-  sage: "#7FAe74",
-  blush: "#CE8593",
-  lilac: "#9E82CF",
-  sand: "#C39A5F",
-  foam: "#5FBCB7",
-  orange: "#D48D3C",
-};
-
-// tiny deterministic hash → stable per-kid features
-function hash(seed: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return Math.abs(h);
-}
-
+// Each kid is shown as their chosen Pal (§2). `companionId` may be a new Pal
+// id ("orbit") or a legacy companion id saved before the cast redesign
+// ("pip") — <Pal> resolves both, and falls back to a stable per-kid Pal from
+// `seed` when nothing was picked. `color` is kept for call-site compatibility;
+// the circle behind the avatar (owned by the caller) still uses the kid colour.
 export function CompanionAvatar({
   seed,
-  color,
   size = 60,
   companionId,
+  mood,
+  animate = false,
 }: {
   seed: string;
-  color: PastelKey;
+  color?: PastelKey;
   size?: number;
   companionId?: string;
+  mood?: "idle" | "happy" | "wow" | "sleepy";
+  animate?: boolean;
 }) {
-  const url = (companionId && companionArtUrl(companionId)) || companionImageUrl(seed);
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt=""
-        aria-hidden
-        width={size}
-        height={size}
-        // object-contain (not cover) keeps the aspect ratio; the p-[14%] inset
-        // shrinks the mascot so its widest parts (arms, ears, feet) sit fully
-        // inside the round mask instead of touching/clipping at the circle edge.
-        // The circle already has the kid's pastel background behind it.
-        className="w-full h-full object-contain p-[14%] select-none pointer-events-none"
-        draggable={false}
-      />
-    );
-  }
-
-  const h = hash(seed);
-  const eyeGap = 9 + (h % 4); // 9..12
-  const cheeky = (h >> 3) % 2 === 0;
-  const ears = (h >> 5) % 3; // 0 round, 1 pointy, 2 none
-  const accent = ACCENT[color];
-  const body = PASTEL_HEX[color];
-
   return (
-    <svg viewBox="0 0 60 60" width={size} height={size} className="select-none pointer-events-none">
-      {/* ears */}
-      {ears === 0 && (
-        <>
-          <circle cx="18" cy="14" r="7" fill={body} stroke={accent} strokeWidth="1.5" />
-          <circle cx="42" cy="14" r="7" fill={body} stroke={accent} strokeWidth="1.5" />
-        </>
-      )}
-      {ears === 1 && (
-        <>
-          <path
-            d="M14 18 L18 4 L26 16 Z"
-            fill={body}
-            stroke={accent}
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M46 18 L42 4 L34 16 Z"
-            fill={body}
-            stroke={accent}
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-        </>
-      )}
-
-      {/* head */}
-      <circle cx="30" cy="32" r="19" fill={body} />
-      <ellipse cx="30" cy="44" rx="14" ry="9" fill="#ffffff" opacity="0.25" />
-
-      {/* cheeks */}
-      {cheeky && (
-        <>
-          <circle cx="19" cy="36" r="3.4" fill={accent} opacity="0.35" />
-          <circle cx="41" cy="36" r="3.4" fill={accent} opacity="0.35" />
-        </>
-      )}
-
-      {/* eyes */}
-      <circle cx={30 - eyeGap} cy="30" r="3.2" fill="#3C2F26" />
-      <circle cx={30 + eyeGap} cy="30" r="3.2" fill="#3C2F26" />
-      <circle cx={30 - eyeGap - 1} cy="29" r="1.1" fill="#fff" />
-      <circle cx={30 + eyeGap - 1} cy="29" r="1.1" fill="#fff" />
-
-      {/* smile */}
-      <path
-        d={`M ${30 - 5} 38 Q 30 ${cheeky ? 43 : 41} ${30 + 5} 38`}
-        stroke="#3C2F26"
-        strokeWidth="1.6"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </svg>
+    <Pal
+      id={companionId}
+      seed={seed}
+      size="100%"
+      mood={mood}
+      animate={animate}
+      shadow={false}
+      // The Pal art fills a 200-unit box with appendages near the edges; a
+      // small inset keeps ears/antennae inside the round avatar mask.
+      className="h-full w-full p-[6%] pointer-events-none"
+      style={{ maxWidth: size, maxHeight: size }}
+    />
   );
 }
