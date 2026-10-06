@@ -83,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Chores that don't feel like a fight. A research-backed system that turns everyday responsibilities into rewards your whole family earns and celebrates together. Built for Kiwi families. Made in NZ.",
       },
-      { name: "theme-color", content: "#FBF7EC" },
+      { name: "theme-color", content: "#FBF6EE" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "PointPals" },

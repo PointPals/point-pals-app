@@ -1,6 +1,8 @@
 // Mock data for PointPals frontend prototype.
 // Everything lives client-side (useState) — swap for Supabase later.
 
+import { PALS, type PalId } from "./pals";
+
 export type PastelKey = "sky" | "butter" | "sage" | "blush" | "lilac" | "sand" | "foam" | "orange";
 
 export const PASTEL_HEX: Record<PastelKey, string> = {
@@ -129,7 +131,7 @@ export const INITIAL_KIDS: Kid[] = [
     color: "blush",
     currentPoints: 34,
     allTimePoints: 145,
-    companionId: "sunny",
+    companionId: "lumi",
     personalPool: 0,
     personalTarget: 0,
   },
@@ -139,7 +141,7 @@ export const INITIAL_KIDS: Kid[] = [
     color: "sky",
     currentPoints: 22,
     allTimePoints: 98,
-    companionId: "pip",
+    companionId: "orbit",
     personalPool: 0,
     personalTarget: 0,
   },
@@ -149,7 +151,7 @@ export const INITIAL_KIDS: Kid[] = [
     color: "sage",
     currentPoints: 18,
     allTimePoints: 72,
-    companionId: "fern",
+    companionId: "moss",
     personalPool: 0,
     personalTarget: 0,
   },
@@ -693,88 +695,35 @@ export const INITIAL_SKILLS: Skill[] = [
   },
 ];
 
-export const COMPANIONS: Companion[] = [
-  {
-    id: "sunny",
-    name: "Sunny",
-    trait: "Kindness",
-    color: "butter",
-    symbol: "☀️",
-    motif: "Glowing heart with rays",
-    quote: "The smallest kindness leaves the biggest glow.",
-    bodyShape: "dumpling",
-  },
-  {
-    id: "pip",
-    name: "Pip",
-    trait: "Learning",
-    color: "sky",
-    symbol: "📖",
-    motif: "Open book",
-    quote: "You don't have to know it yet. You just have to open the book.",
-    bodyShape: "egg",
-  },
-  {
-    id: "bramble",
-    name: "Bramble",
-    trait: "Goals",
-    color: "sage",
-    symbol: "⭐",
-    motif: "Gold star",
-    quote: "Every done thing is a star you made yourself.",
-    bodyShape: "pear",
-  },
-  {
-    id: "ziggy",
-    name: "Ziggy",
-    trait: "Creativity",
-    color: "sand",
-    symbol: "🎨",
-    motif: "Purple swirl",
-    quote: "The swirl never stops until something wonderful comes out.",
-    bodyShape: "egg",
-  },
-  {
-    id: "ridge",
-    name: "Ridge",
-    trait: "Perseverance",
-    color: "sky",
-    symbol: "⛰️",
-    motif: "Mountain range",
-    quote: "You don't climb the mountain all at once. You just take the next step.",
-    bodyShape: "dumpling",
-  },
-  {
-    id: "coda",
-    name: "Coda",
-    trait: "Independence",
-    color: "lilac",
-    symbol: "👣",
-    motif: "Golden footprint",
-    quote: "One brave step is all it takes to begin.",
-    bodyShape: "pear",
-  },
-  {
-    id: "fern",
-    name: "Fern",
-    trait: "Daily habits",
-    color: "foam",
-    symbol: "🌿",
-    motif: "Leaf",
-    quote: "Every leaf was once just a bud. Every habit was once just a start.",
-    bodyShape: "dumpling",
-  },
-  {
-    id: "marlow",
-    name: "Marlow",
-    trait: "Teamwork",
-    color: "blush",
-    symbol: "🤝",
-    motif: "Clasped hands",
-    quote: "The jar fills faster when everyone adds to it.",
-    bodyShape: "dumpling",
-  },
-];
+const PAL_SYMBOL: Record<PalId, string> = {
+  lumi: "💜",
+  tumble: "🤝",
+  ember: "🔥",
+  orbit: "🪐",
+  moss: "🌱",
+  ripple: "🌊",
+};
+const PAL_BODY: Record<PalId, Companion["bodyShape"]> = {
+  lumi: "pear",
+  tumble: "dumpling",
+  ember: "egg",
+  orbit: "dumpling",
+  moss: "pear",
+  ripple: "dumpling",
+};
+
+// The cast lives in lib/pals.ts (v2 plush line). COMPANIONS is the legacy
+// shape still read by the picker, printable chart and marketing pages.
+export const COMPANIONS: Companion[] = PALS.map((p) => ({
+  id: p.id,
+  name: p.name,
+  trait: p.value,
+  color: p.pastelKey,
+  symbol: PAL_SYMBOL[p.id],
+  motif: p.motif,
+  quote: p.tagline,
+  bodyShape: PAL_BODY[p.id],
+}));
 
 export const INITIAL_HOUSEHOLD = {
   id: "local",
