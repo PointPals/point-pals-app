@@ -14,14 +14,20 @@
  */
 
 import type { PastelKey } from "./mock-data";
-import { PALS } from "./pals";
 
 /**
  * Canonical tint key for each companion ID.
  */
-export const COMPANION_TINT_MAP: Partial<Record<string, PastelKey>> = Object.fromEntries(
-  PALS.flatMap((p) => [p.id, ...p.legacyIds].map((id) => [id, p.pastelKey] as const)),
-);
+export const COMPANION_TINT_MAP: Partial<Record<string, PastelKey>> = {
+  sunny: "butter",
+  pip: "sky",
+  bramble: "sage",
+  ziggy: "lilac",
+  ridge: "foam",
+  coda: "lilac",
+  fern: "sage",
+  marlow: "blush",
+};
 
 /**
  * Quick visual reference — hex colours for the tint key so callers
