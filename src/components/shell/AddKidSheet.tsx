@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { Drawer } from "vaul";
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useApp } from "@/lib/app-store";
-import { COMPANIONS, PASTEL_HEX, type PastelKey } from "@/lib/mock-data";
-import { CompanionAvatar } from "@/components/CompanionAvatar";
-import { CompanionPicker } from "@/components/CompanionPicker";
+import { COMPANIONS, type PastelKey } from "@/lib/mock-data";
 import { haptic, playChime, primeAudio } from "@/lib/feedback";
-import { cn } from "@/lib/utils";
-
-const PALETTE: PastelKey[] = ["sky", "butter", "sage", "blush", "lilac", "sand", "foam", "orange"];
+import { KidFields } from "@/components/shell/KidFields";
+import { suggestKidLook } from "@/lib/kid-look";
 
 /**
  * "Add a child" — opened by the + tile on Home, right where the parent is
@@ -32,13 +29,9 @@ export function AddKidSheet({
   useEffect(() => {
     if (!open) return;
     setName("");
-    const usedColors = new Set(kids.map((k) => k.color));
-    const usedPals = new Set(kids.map((k) => k.companionId));
-    setColor(PALETTE.find((c) => !usedColors.has(c)) ?? PALETTE[kids.length % PALETTE.length]);
-    setCompanion(
-      COMPANIONS.find((c) => !usedPals.has(c.id))?.id ??
-        COMPANIONS[kids.length % COMPANIONS.length].id,
-    );
+    const look = suggestKidLook(kids);
+    setColor(look.color);
+    setCompanion(look.companionId);
   }, [open, kids]);
 
   const trimmed = name.trim();
@@ -86,55 +79,15 @@ export function AddKidSheet({
               submit();
             }}
           >
-            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-4 pt-5">
-              <div className="flex items-center gap-4">
-                <div
-                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full shadow-clay-sm transition-colors duration-300"
-                  style={{ backgroundColor: PASTEL_HEX[color] }}
-                >
-                  <CompanionAvatar seed="preview" color={color} size={80} companionId={companion} />
-                </div>
-                <label className="block min-w-0 flex-1">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Name
-                  </span>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Nova"
-                    maxLength={40}
-                    autoComplete="off"
-                    enterKeyHint="done"
-                    className="mt-1.5 w-full rounded-2xl border border-input bg-background px-4 py-3 text-lg font-semibold text-ink placeholder:font-normal placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </label>
-              </div>
-
-              <fieldset>
-                <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Their colour
-                </legend>
-                <div className="mt-2.5 flex flex-wrap gap-2.5">
-                  {PALETTE.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setColor(c)}
-                      aria-label={c}
-                      aria-pressed={color === c}
-                      className={cn(
-                        "tap grid h-11 w-11 place-items-center rounded-full shadow-clay-sm transition",
-                        color === c && "ring-2 ring-ink ring-offset-2 ring-offset-card",
-                      )}
-                      style={{ backgroundColor: PASTEL_HEX[c] }}
-                    >
-                      {color === c && <Check className="h-4 w-4 text-ink" aria-hidden />}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <CompanionPicker value={companion} onChange={setCompanion} label="Their character" />
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-5">
+              <KidFields
+                name={name}
+                onNameChange={setName}
+                color={color}
+                onColorChange={setColor}
+                companionId={companion}
+                onCompanionChange={setCompanion}
+              />
             </div>
 
             <div className="border-t border-border/70 px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">

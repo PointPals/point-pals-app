@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles, Users, Loader2, CheckCircle } from "lucide-react";
+import { ArrowRight, Loader2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
+import { AuthShell } from "@/components/public/AuthShell";
 
 const PENDING_CODE_KEY = "pointpals.pending.invite.code";
 
@@ -44,7 +45,10 @@ function WelcomeBackPage() {
       });
 
       if (error || !(result as { ok?: boolean })?.ok) {
-        setErr((result as { error?: string })?.error ?? "Could not accept invite. The code may be expired or invalid.");
+        setErr(
+          (result as { error?: string })?.error ??
+            "Could not accept invite. The code may be expired or invalid.",
+        );
         setAccepting(false);
         return;
       }
@@ -59,12 +63,12 @@ function WelcomeBackPage() {
 
   if (accepting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Accepting invite…</p>
+      <AuthShell peek={false} headerAction={<span />}>
+        <div className="space-y-3 text-center" role="status">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-ink" />
+          <p className="text-sm text-muted-foreground">Joining your family…</p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
@@ -86,81 +90,102 @@ function WelcomeBackPage() {
     navigate({ to: "/onboarding" });
   };
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/welcome" });
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="font-display text-3xl font-bold">Welcome to PointPals</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Set up your family, or join one you've been invited to.
+    <AuthShell
+      headline="Your family jar starts here."
+      blurb="Set up a new family in under a minute, or join the one a partner, grandparent or caregiver already started."
+      headerAction={
+        <button
+          type="button"
+          onClick={signOut}
+          className="min-h-11 inline-flex items-center text-sm font-semibold text-ink-soft hover:text-ink"
+        >
+          Sign out
+        </button>
+      }
+    >
+      <h1 className="font-display text-[2.4rem] font-semibold leading-[1.02] tracking-[-0.03em] text-ink">
+        Welcome to PointPals
+      </h1>
+      <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">
+        Start your own family, or join one you’ve been invited to.
+      </p>
+
+      <form
+        className="card-soft auth-card mt-6 space-y-4 p-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!busy && consent) createFamily();
+        }}
+      >
+        <h2 className="font-display text-xl font-semibold text-ink">Start a new family</h2>
+        <label className="block">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Family name
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="The Rivers Family"
+            maxLength={60}
+            autoComplete="off"
+            className="mt-1.5 w-full rounded-2xl border border-input bg-background px-4 py-3 text-base font-semibold text-ink placeholder:font-normal placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-ink"
+          />
+          <span className="text-sm leading-relaxed text-ink-soft">
+            I confirm that I am the parent or legal guardian of the children whose information will
+            be stored in this account.
+          </span>
+        </label>
+        <button
+          type="submit"
+          disabled={busy || !consent}
+          className="tap inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-base font-semibold text-cream shadow-clay-sm transition disabled:opacity-40"
+        >
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          )}
+          Create family
+        </button>
+        {err && (
+          <p className="text-sm text-destructive" role="alert">
+            {err}
+          </p>
+        )}
+      </form>
+
+      <div className="mt-4 flex items-center gap-4 rounded-[1.5rem] border border-border/70 bg-card/60 p-5">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-ink">
+          <Users className="h-5 w-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-ink">Got an invite code?</h2>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            From a parent, grandparent or caregiver.
           </p>
         </div>
-
-        <div className="card-soft p-6 space-y-4">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4" /> Start a new family
-          </div>
-          <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Family name
-            </span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="The Rivers Family"
-              className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5"
-            />
-          </label>
-          <label className="flex items-start gap-3 mt-2">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-input accent-foreground"
-            />
-            <span className="text-sm text-muted-foreground leading-relaxed">
-              I confirm that I am the parent or legal guardian of the children whose
-              information will be stored in this account.
-            </span>
-          </label>
-          <button
-            onClick={createFamily}
-            disabled={busy || !consent}
-            className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Create family
-          </button>
-          {err && <p className="text-sm text-destructive">{err}</p>}
-        </div>
-
-        <div className="card-soft p-6 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Users className="h-4 w-4" /> Join with an invite code
-          </div>
-          <p className="text-xs text-muted-foreground">
-            If a parent, grandparent, or caregiver sent you a code, enter it on the join page.
-          </p>
-          <button
-            onClick={() => navigate({ to: "/join" })}
-            className="w-full rounded-full border border-input bg-card font-semibold py-3 hover:bg-muted transition"
-          >
-            Enter invite code
-          </button>
-        </div>
-
-        <div className="text-center">
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/welcome" });
-            }}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Sign out
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/join" })}
+          className="tap min-h-11 shrink-0 rounded-full border border-input bg-card px-4 text-sm font-semibold text-ink hover:bg-muted"
+        >
+          Join
+        </button>
       </div>
-    </div>
+    </AuthShell>
   );
 }
