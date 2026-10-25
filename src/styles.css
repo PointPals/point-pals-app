@@ -431,13 +431,10 @@
 
   /* Clay depth: a lit top edge, a shaded bottom edge, and a soft drop. */
   --clay-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.9),
-    inset 0 -3px 0 oklch(0.235 0.045 300 / 0.05),
-    0 1px 2px oklch(0.235 0.045 300 / 0.06),
-    0 14px 34px -14px oklch(0.235 0.045 300 / 0.22);
+    inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -3px 0 oklch(0.235 0.045 300 / 0.05),
+    0 1px 2px oklch(0.235 0.045 300 / 0.06), 0 14px 34px -14px oklch(0.235 0.045 300 / 0.22);
   --clay-shadow-sm:
-    inset 0 1px 0 oklch(1 0 0 / 0.85),
-    inset 0 -2px 0 oklch(0.235 0.045 300 / 0.05),
+    inset 0 1px 0 oklch(1 0 0 / 0.85), inset 0 -2px 0 oklch(0.235 0.045 300 / 0.05),
     0 6px 16px -8px oklch(0.235 0.045 300 / 0.2);
   --lift-shadow: 0 30px 70px -28px oklch(0.235 0.045 300 / 0.38);
   --glow-shadow: 0 0 0 1px oklch(1 0 0 / 0.6), 0 18px 50px -12px oklch(0.82 0.15 78 / 0.55);
@@ -488,7 +485,9 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    font-variation-settings: "SOFT" 100, "WONK" 0;
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 0;
     letter-spacing: -0.02em;
     font-optical-sizing: auto;
   }
@@ -526,7 +525,11 @@
   background:
     radial-gradient(circle at 32% 28%, oklch(1 0 0 / 0.95) 0 8%, transparent 26%),
     radial-gradient(circle at 70% 78%, oklch(0 0 0 / 0.18), transparent 55%),
-    radial-gradient(circle at 40% 35%, color-mix(in oklab, var(--marble, var(--marble-saffron)) 70%, white), var(--marble, var(--marble-saffron)) 62%);
+    radial-gradient(
+      circle at 40% 35%,
+      color-mix(in oklab, var(--marble, var(--marble-saffron)) 70%, white),
+      var(--marble, var(--marble-saffron)) 62%
+    );
   box-shadow:
     inset -4px -6px 12px oklch(0 0 0 / 0.12),
     0 10px 22px -10px color-mix(in oklab, var(--marble, var(--marble-saffron)) 80%, black);
@@ -730,8 +733,12 @@
 
 /* Shimmering glimmer sweep across the hero "game" word. */
 @keyframes pp-game-glimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -100% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 .game-glimmer {
   animation: pp-game-glimmer 3.2s ease-in-out infinite;
@@ -1182,13 +1189,16 @@
   width: min(82vw, 22rem);
   scroll-snap-align: center;
   background:
-    radial-gradient(110% 62% at 50% 22%, color-mix(in oklab, var(--pal) 24%, white), transparent 72%),
+    radial-gradient(
+      110% 62% at 50% 22%,
+      color-mix(in oklab, var(--pal) 24%, white),
+      transparent 72%
+    ),
     linear-gradient(180deg, var(--pal-tint), color-mix(in oklab, var(--pal-tint) 72%, var(--pal)));
 }
 .lp-pal-card.lp-pal-outro {
   background:
-    radial-gradient(90% 50% at 50% 10%, oklch(0.55 0.16 300 / 0.45), transparent 70%),
-    var(--ink);
+    radial-gradient(90% 50% at 50% 10%, oklch(0.55 0.16 300 / 0.45), transparent 70%), var(--ink);
 }
 .lp-pal-ghost {
   display: block;
@@ -1196,7 +1206,11 @@
   color: color-mix(in oklab, var(--pal) 20%, transparent);
 }
 .lp-pal-halo {
-  background: radial-gradient(circle, color-mix(in oklab, var(--pal) 30%, white) 0%, transparent 68%);
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--pal) 30%, white) 0%,
+    transparent 68%
+  );
 }
 .lp-pals-progress {
   display: none;
@@ -1256,7 +1270,11 @@
 /* ── 04 · Kids' mode ── */
 .lp-kid {
   background:
-    radial-gradient(50% 45% at 72% 52%, color-mix(in oklab, var(--pastel-lilac) 75%, transparent), transparent 72%),
+    radial-gradient(
+      50% 45% at 72% 52%,
+      color-mix(in oklab, var(--pastel-lilac) 75%, transparent),
+      transparent 72%
+    ),
     linear-gradient(
       180deg,
       var(--cream),
@@ -1335,13 +1353,17 @@
 .lp-cel {
   background:
     radial-gradient(45% 40% at 72% 38%, oklch(0.93 0.09 82 / 0.85), transparent 72%),
-    radial-gradient(60% 50% at 20% 90%, oklch(0.93 0.05 10 / 0.5), transparent 70%),
-    var(--cream);
+    radial-gradient(60% 50% at 20% 90%, oklch(0.93 0.05 10 / 0.5), transparent 70%), var(--cream);
 }
 .lp-cel-flare {
   opacity: 0.55;
   background:
-    radial-gradient(closest-side, oklch(0.9 0.12 82 / 0.95), oklch(0.9 0.12 82 / 0.25) 55%, transparent),
+    radial-gradient(
+      closest-side,
+      oklch(0.9 0.12 82 / 0.95),
+      oklch(0.9 0.12 82 / 0.25) 55%,
+      transparent
+    ),
     radial-gradient(40% 40% at 40% 40%, oklch(0.88 0.08 355 / 0.4), transparent 70%);
 }
 .lp-cel-burst {
@@ -1436,6 +1458,42 @@
 /* (spacer) */
 
 /* === area:public === */
+/* Auth screens: one consistent, premium field style without touching each
+ * form's markup (inputs keep their own logic and classes). */
+.auth-shell .auth-card,
+.auth-shell .card-soft {
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--lift-shadow), var(--clay-shadow-sm);
+}
+.auth-shell input[type="email"],
+.auth-shell input[type="password"],
+.auth-shell input[type="text"],
+.auth-shell input:not([type]) {
+  min-height: 3rem;
+  border-radius: 1rem;
+  border-color: var(--color-input);
+  background: var(--color-background);
+  padding-inline: 1rem;
+  font-size: 1rem;
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+.auth-shell input:focus-visible,
+.auth-shell input:focus {
+  outline: none;
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-ring) 22%, transparent);
+}
+.auth-shell h1 {
+  font-size: 2.1rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+.auth-shell button[type="submit"] {
+  min-height: 3.25rem;
+}
 /* === end area:public === */
 
 /* (spacer) */
