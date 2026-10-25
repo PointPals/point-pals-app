@@ -54,18 +54,6 @@ export async function fetchSeasonInfo(householdId: string): Promise<SeasonInfo |
   };
 }
 
-/** Settings opt-out: turn the seasonal refresh on/off for a household. */
-export async function setSeasonRefreshEnabled(
-  householdId: string,
-  enabled: boolean,
-): Promise<boolean> {
-  const { error } = await db
-    .from("households")
-    .update({ memory_retention_enabled: enabled })
-    .eq("id", householdId);
-  return !error;
-}
-
 // ── Montage rendering ──────────────────────────────────────────────────────
 
 export type MontageResult =

@@ -81,7 +81,7 @@ const FAQ_SCHEMA: { q: string; a: string }[] = [
   },
   {
     q: "How long are memories kept?",
-    a: "The memory feed runs in 90-day seasons. When a season ends, its photos, videos, and voice notes are permanently deleted — a privacy feature, not a storage limit. You get an email a few days beforehand, you can download the season as a video montage first, and you can switch the seasonal refresh off in Settings.",
+    a: "The memory feed runs in 90-day seasons. When a season ends, its photos, videos, and voice notes are permanently deleted — a privacy feature, not a storage limit. You get an email a few days beforehand, and we make your family a season recap video (oldest moment first) to download and keep.",
   },
 ];
 
@@ -461,12 +461,12 @@ const SECTIONS: FaqSection[] = [
             <ul className="list-disc pl-5 space-y-1">
               <li>We email you a few days before a season ends.</li>
               <li>
-                You can download the whole season as a <strong>video montage</strong> from the
-                Memories page — a keepsake of everything your family did.
+                We make your family a <strong>season recap video</strong>, in date order, and email
+                you the download link — a keepsake of everything you did together.
               </li>
               <li>
-                Prefer to keep the feed forever? Switch off the seasonal refresh in Settings → Your
-                data.
+                You can download every memory from Settings → Your data at any time before the
+                season ends.
               </li>
             </ul>
             <p>

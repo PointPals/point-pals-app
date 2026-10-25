@@ -72,7 +72,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { submitContactForm } from "@/lib/emails.functions";
-import { fetchSeasonInfo, setSeasonRefreshEnabled } from "@/lib/montage";
+import { fetchSeasonInfo } from "@/lib/montage";
 import { exportMemoriesZip } from "@/lib/montage";
 
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
@@ -96,8 +96,8 @@ function SettingsPage() {
   const { role, userId, isAdmin } = useHouseholdRole(household.id);
   const isLive = !!userId; // signed in against Supabase household
 
-  // Seasonal memory refresh (retention opt-out). null = not loaded / demo mode.
-  const [seasonRefresh, setSeasonRefresh] = useState<boolean | null>(null);
+  // Memory season info. null = not loaded / demo mode.
+  const [seasonDaysLeft, setSeasonDaysLeft] = useState<number | null>(null);
   const [seasonDays, setSeasonDays] = useState(90);
   const [memoryCount, setMemoryCount] = useState(0);
   const [exporting, setExporting] = useState(false);
@@ -110,7 +110,7 @@ function SettingsPage() {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
       if (s) {
-        setSeasonRefresh(s.enabled);
+        setSeasonDaysLeft(s.daysLeft);
         setSeasonDays(s.retentionDays);
       }
     });
@@ -123,12 +123,6 @@ function SettingsPage() {
         if (count !== null) setMemoryCount(count);
       });
   }, [isLive, household.id]);
-  async function saveSeasonRefresh(enabled: boolean) {
-    setSeasonRefresh(enabled); // optimistic
-    const ok = await setSeasonRefreshEnabled(household.id, enabled);
-    if (!ok) setSeasonRefresh(!enabled);
-    else trackParent("memory_season_refresh_toggled", { enabled });
-  }
   async function handleExportMemories() {
     setExporting(true);
     setExportError(null);
@@ -814,16 +808,22 @@ function SettingsPage() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-            {isLive && seasonRefresh !== null && (
+            {isLive && seasonDaysLeft !== null && (
               <div className="border-t border-border/60 -mx-4 mt-1">
                 {/* Memory count + season info */}
-                <div className="px-4 pt-4 pb-2">
-                  <p className="text-xs text-muted-foreground">
-                    {seasonRefresh
-                      ? `Your memories cycle every ${seasonDays} days. When the season ends, the feed is cleared and a video montage is emailed to you.`
-                      : `Seasonal refresh is off — memories stay forever. No montage video will be created.`}
+                <div className="px-4 pt-4 pb-4">
+                  <p className="flex items-start gap-2 text-sm font-semibold text-ink">
+                    <RefreshCw className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    Memories are kept for {seasonDays} days
                   </p>
-                  {seasonRefresh && memoryCount > 0 && (
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    For your family’s privacy, photos, videos and voice notes are cleared at the end
+                    of each {seasonDays}-day season. A few days before, we email you and make your
+                    season recap video, oldest moment first.
+                    {seasonDaysLeft > 0 &&
+                      ` This season ends in ${seasonDaysLeft} ${seasonDaysLeft === 1 ? "day" : "days"}.`}
+                  </p>
+                  {memoryCount > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         onClick={() => void handleExportMemories()}
@@ -850,13 +850,6 @@ function SettingsPage() {
                   )}
                   {exportError && <p className="mt-2 text-xs text-destructive">{exportError}</p>}
                 </div>
-                <ToggleRow
-                  icon={<RefreshCw className="h-4 w-4" />}
-                  label="Seasonal memory refresh"
-                  desc={`Memories are kept for one ${seasonDays}-day season, then cleared — you get an email and a downloadable montage first. Turn off to keep the feed forever.`}
-                  checked={seasonRefresh}
-                  onChange={(v) => void saveSeasonRefresh(v)}
-                />
               </div>
             )}
           </div>

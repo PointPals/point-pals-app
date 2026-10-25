@@ -3,9 +3,14 @@
 // the Shotstack render API, storing the result in the private "exports"
 // bucket and handing back short-lived signed URLs.
 //
-// POST /render-montage   (caller: signed-in household member)
+// POST /render-montage   (caller: signed-in household member, or the
+//                         retention cron jobs via the x-cron-secret header)
 //   { householdId: "uuid", action: "start" }            → { jobId, status }
 //   { householdId: "uuid", action: "status", jobId }    → { status, url? }
+//
+// The cron path lets notify-memory-expiry start every family's season recap
+// automatically before the purge, and purge-expired-memories finish it (so
+// nobody has to keep the app open while it renders).
 //
 // Privacy: only time-limited signed URLs ever leave this function — the
 // render service never sees the raw bucket, and the finished video is pulled
@@ -101,21 +106,27 @@ const admin = createClient(
 );
 
 const IMAGE_SECONDS = 3;
-// Video clips play for up to 30s so longer uploads aren't cut off mid-scene.
-// TODO: store actual video duration on upload metadata for precise trimming.
-const VIDEO_SECONDS = 30;
+// Videos play for their real length (recorded at upload) up to a cap, so a
+// recap stays a highlight reel. Older uploads have no duration on record; a
+// short default keeps them from leaving long black gaps.
+const VIDEO_MAX_SECONDS = 10;
+const VIDEO_DEFAULT_SECONDS = 6;
 const TITLE_SECONDS = 3;
 const MAX_CLIPS = 60; // keeps renders/downloads a sane size
 const SIGNED_ASSET_TTL = 24 * 60 * 60; // renders can queue — give sources a day
 const SIGNED_DOWNLOAD_TTL = 60 * 60;
+// The emailed link has to survive until the parent opens their inbox.
+const EMAIL_DOWNLOAD_TTL = 7 * 24 * 60 * 60;
 const MONTAGES_PER_SEASON = 5;
+const CREAM = "#FBF6EE";
+const INK = "#231B33";
 
 function shotstackBase(): string {
   const env = Deno.env.get("SHOTSTACK_ENV") ?? "v1";
   return `https://api.shotstack.io/edit/${env}`;
 }
 
-type MediaItem = { path: string; kind: "image" | "video" };
+type MediaItem = { path: string; kind: "image" | "video"; duration?: number };
 
 type PostRow = {
   id: string;
@@ -134,6 +145,39 @@ function postMedia(p: PostRow): MediaItem[] {
   return [];
 }
 
+/** Pick `max` items spread evenly across the list, keeping their order — so a
+ * busy season's recap covers all three months, not just the first few weeks. */
+function spreadEvenly<T>(items: T[], max: number): T[] {
+  if (items.length <= max) return items;
+  const out: T[] = [];
+  const step = (items.length - 1) / (max - 1);
+  for (let i = 0; i < max; i++) out.push(items[Math.round(i * step)]);
+  return out;
+}
+
+function videoSeconds(duration?: number): number {
+  if (typeof duration !== "number" || !isFinite(duration) || duration <= 0) {
+    return VIDEO_DEFAULT_SECONDS;
+  }
+  return Math.max(1, Math.min(VIDEO_MAX_SECONDS, Math.round(duration * 10) / 10));
+}
+
+/** "The Harper Family", "Harper" → "The Harper family" — never "The The … Family family". */
+function familyTitle(name: string): string {
+  const n = (name ?? "").trim();
+  if (!n) return "Our family";
+  if (/\bfamily$/i.test(n)) return n;
+  return /^the\s/i.test(n) ? `${n} family` : `The ${n} family`;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function formatNzDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
@@ -148,24 +192,32 @@ Deno.serve(async (req) => {
     const { householdId, action, jobId } = await req.json();
     if (!householdId) return json({ ok: false, error: "householdId is required" }, 400);
 
-    // ── AUTH: signed-in member of this household ────────────────────────
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-    const { data: { user }, error: authErr } = await admin.auth.getUser(token);
-    if (authErr || !user) return json({ ok: false, error: "Unauthorized" }, 401);
+    // ── AUTH: the retention cron jobs (shared secret), or a signed-in
+    //    member of this household ───────────────────────────────────────
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const isCron = !!cronSecret && req.headers.get("x-cron-secret") === cronSecret;
 
-    const { data: member } = await admin
-      .from("household_members")
-      .select("role")
-      .eq("household_id", householdId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (!member) return json({ ok: false, error: "Not a member of this household" }, 403);
+    let userId: string | null = null;
+    if (!isCron) {
+      const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+      const { data: { user }, error: authErr } = await admin.auth.getUser(token);
+      if (authErr || !user) return json({ ok: false, error: "Unauthorized" }, 401);
+
+      const { data: member } = await admin
+        .from("household_members")
+        .select("role")
+        .eq("household_id", householdId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!member) return json({ ok: false, error: "Not a member of this household" }, 403);
+      userId = user.id;
+    }
 
     if (action === "status") {
       if (!jobId) return json({ ok: false, error: "jobId is required" }, 400);
       return await handleStatus(householdId, jobId);
     }
-    return await handleStart(householdId, user.id);
+    return await handleStart(householdId, userId);
   } catch (err) {
     return json({ ok: false, error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
@@ -173,7 +225,7 @@ Deno.serve(async (req) => {
 
 // ── START: build the edit and submit the render ──────────────────────────
 
-async function handleStart(householdId: string, userId: string): Promise<Response> {
+async function handleStart(householdId: string, userId: string | null): Promise<Response> {
   const apiKey = Deno.env.get("SHOTSTACK_API_KEY");
   if (!apiKey) {
     return json({ ok: false, error: "not_configured" }, 501);
@@ -225,17 +277,16 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     .order("created_at", { ascending: true });
   if (postErr) return json({ ok: false, error: postErr.message }, 500);
 
-  // Build items list from posts, keeping the caption alongside each media item.
-  type ItemWithCaption = { path: string; kind: "image" | "video"; caption?: string };
-  const items: ItemWithCaption[] = [];
-  for (const p of posts ?? []) {
-    const media = postMedia(p as PostRow);
-    for (const m of media) {
-      items.push({ path: m.path, kind: m.kind, caption: (p as any).caption ?? undefined });
-      if (items.length >= MAX_CLIPS) break;
+  // Every media item in date order, caption alongside; then thin it out
+  // evenly so the recap runs from the first week of the season to the last.
+  type ItemWithCaption = MediaItem & { caption?: string };
+  const allItems: ItemWithCaption[] = [];
+  for (const p of (posts ?? []) as PostRow[]) {
+    for (const m of postMedia(p)) {
+      allItems.push({ ...m, caption: p.caption ?? undefined });
     }
-    if (items.length >= MAX_CLIPS) break;
   }
+  const items = spreadEvenly(allItems, MAX_CLIPS);
   if (items.length === 0) {
     return json({ ok: false, error: "no_memories" }, 400);
   }
@@ -259,10 +310,11 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
 
   videoClips.push({
     asset: {
-      type: "title",
-      text: `The ${hh.name} family\n${seasonStartLabel} – ${seasonEndLabel}`,
-      style: "chunk",
-      size: "small",
+      type: "html",
+      html: `<div class="t"><p class="f">${escapeHtml(familyTitle(hh.name))}</p><p class="d">${escapeHtml(`${seasonStartLabel} – ${seasonEndLabel}`)}</p></div>`,
+      css: `.t{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:${CREAM};text-align:center}.f{font-family:Georgia,serif;font-size:96px;font-weight:bold;color:${INK};margin:0}.d{font-family:Helvetica,Arial,sans-serif;font-size:40px;color:#6B6380;margin:24px 0 0}`,
+      width: 1920,
+      height: 1080,
     },
     start: cursor,
     length: TITLE_SECONDS,
@@ -288,7 +340,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
       .createSignedUrl(item.path, SIGNED_ASSET_TTL);
     if (signErr || !signed?.signedUrl) continue;
 
-    const dur = item.kind === "video" ? VIDEO_SECONDS : IMAGE_SECONDS;
+    const dur = item.kind === "video" ? videoSeconds(item.duration) : IMAGE_SECONDS;
 
     if (item.kind === "video") {
       videoClips.push({
@@ -297,8 +349,6 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
         length: dur,
         transition: { in: "fade", out: "fade" },
       });
-      // When the actual video is shorter than dur, Shotstack naturally stops
-      // at the end-of-file — the cursor still advances by dur for alignment.
     } else {
       videoClips.push({
         asset: { type: "image", src: signed.signedUrl },
@@ -314,11 +364,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
     const captionText = item.caption
       ? item.caption.replace(/\n/g, " ").substring(0, 120)
       : "";
-    const safeText = captionText
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    const safeText = escapeHtml(captionText);
     const html = safeText
       ? `<div style="font-family:system-ui,sans-serif;font-size:16px;color:#fff;background:rgba(0,0,0,.6);padding:8px 16px;border-radius:8px;width:fit-content;max-width:92%;margin:24px auto 0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${safeText}</div>`
       : "";
@@ -343,7 +389,7 @@ async function handleStart(householdId: string, userId: string): Promise<Respons
   }
 
   const timeline: Record<string, unknown> = {
-    background: "#000000",
+    background: CREAM,
     tracks: [
       { clips: videoClips },
       { clips: captionClips },
@@ -449,7 +495,7 @@ async function sendMontageReadyEmail(
 
     const { data: signed } = await admin.storage
       .from("exports")
-      .createSignedUrl(outputPath, SIGNED_DOWNLOAD_TTL);
+      .createSignedUrl(outputPath, EMAIL_DOWNLOAD_TTL);
     if (!signed?.signedUrl) {
       console.warn("Could not sign export URL for email — skipping");
       return;
@@ -460,7 +506,7 @@ async function sendMontageReadyEmail(
     const result = await sendResendTemplate(resendKey, {
       to: email,
       from: FROM_ADDRESS,
-      subject: `Your ${hh.name} family season montage is ready \uD83C\uDFAC`,
+      subject: `${familyTitle(hh.name)}: your season recap is ready \uD83C\uDFAC`,
       templateId: "0988eb46-0a1b-4564-8f59-d4b241a336d9",
       variables: {
         first_name: firstName,
@@ -470,7 +516,7 @@ async function sendMontageReadyEmail(
         memory_plural: memoryPlural,
         has_videos: "false",
         download_url: signed.signedUrl,
-        expires_in_hours: String(Math.floor(SIGNED_DOWNLOAD_TTL / 3600)),
+        expires_in_hours: String(Math.floor(EMAIL_DOWNLOAD_TTL / 3600)),
         season_limit: String(MONTAGES_PER_SEASON),
         memories_url: `${APP_URL}/memories`,
         unsubscribe_url: "https://pointpals.co.nz/settings",
@@ -556,8 +602,9 @@ async function handleStatus(householdId: string, jobId: string): Promise<Respons
       .update({ status: "done", output_path: outputPath })
       .eq("id", job.id);
 
-    // Fire-and-forget: send email notification (logged internally)
-    void sendMontageReadyEmail(householdId, jobId, outputPath);
+    // Awaited: a fire-and-forget promise can be cut off when the function
+    // returns. The helper logs and swallows its own errors.
+    await sendMontageReadyEmail(householdId, jobId, outputPath);
   }
 
   const { data: signed } = await admin.storage

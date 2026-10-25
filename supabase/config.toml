@@ -18,3 +18,8 @@ verify_jwt = false
 
 [functions.purge-expired-memories]
 verify_jwt = false
+
+# render-montage checks the caller itself: a signed-in household member's JWT
+# (via auth.getUser) or, from the retention cron jobs, the x-cron-secret header.
+[functions.render-montage]
+verify_jwt = false

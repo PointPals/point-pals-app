@@ -76,16 +76,19 @@ function Privacy() {
         <ul className="list-disc pl-5 space-y-1.5">
           <li>
             <strong>You're warned first</strong>: a few days before a season ends we email the
-            household so nothing disappears by surprise. The clean-up never runs for a household
-            that hasn't been notified.
+            household and the Memories page counts down, so nothing disappears by surprise. If an
+            email can't be delivered, the clean-up still runs a week after the season ends —
+            retention applies to every family.
           </li>
           <li>
-            <strong>You can keep it</strong>: before the refresh you can download the season as a
-            video montage from the Memories page, and memories are included in the JSON export.
+            <strong>You get a keepsake</strong>: we make a season recap video, in date order, before
+            the refresh and email you the download link. You can also download all memories from
+            Settings → Your data at any time.
           </li>
           <li>
-            <strong>You can opt out</strong>: turn off the seasonal refresh in Settings → Your data
-            if you'd rather keep the feed indefinitely.
+            <strong>Copies expire too</strong>: recap videos are deleted 90 days after they're made,
+            memory download files after 1 day, and screenshots sent with a support request after 90
+            days.
           </li>
         </ul>
 
