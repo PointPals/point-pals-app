@@ -209,7 +209,7 @@ export function TappablePal({
         if (e.pointerType === "mouse" && !talking) setHappy(false);
       }}
       className={cn(
-        "lp-pal-btn group relative block cursor-pointer touch-manipulation rounded-[40%] outline-none",
+        "lp-pal-btn group relative block w-full cursor-pointer touch-manipulation rounded-[40%] outline-none",
         className,
       )}
     >

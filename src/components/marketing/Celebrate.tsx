@@ -196,17 +196,17 @@ export function Celebrate() {
 
             <div aria-hidden className="absolute bottom-[5%] left-[1%] w-[27%]">
               <div className={cn(party && "lp-cel-jump")} style={{ animationDelay: "0ms" }}>
-                <Pal id="tumble" size="100%" mood={party ? "happy" : "idle"} animate />
+                <Pal id="marlow" size="100%" mood={party ? "happy" : "idle"} animate />
               </div>
             </div>
             <div aria-hidden className="absolute bottom-[38%] left-[6%] w-[19%]">
               <div className={cn(party && "lp-cel-jump")} style={{ animationDelay: "160ms" }}>
-                <Pal id="ember" size="100%" mood={party ? "wow" : "idle"} animate />
+                <Pal id="ridge" size="100%" mood={party ? "wow" : "idle"} animate />
               </div>
             </div>
             <div aria-hidden className="absolute bottom-[4%] right-[2%] w-[22%]">
               <div className={cn(party && "lp-cel-jump")} style={{ animationDelay: "320ms" }}>
-                <Pal id="moss" size="100%" mood={party ? "happy" : "idle"} animate />
+                <Pal id="fern" size="100%" mood={party ? "happy" : "idle"} animate />
               </div>
             </div>
 
@@ -224,7 +224,7 @@ export function Celebrate() {
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <span className="flex -space-x-2">
-                  {(["lumi", "orbit", "moss"] as const).map((id) => (
+                  {(["sunny", "pip", "fern"] as const).map((id) => (
                     <span
                       key={id}
                       className="grid h-7 w-7 place-items-center rounded-full ring-2 ring-card"
@@ -295,7 +295,7 @@ function Graduation() {
                 </div>
               ) : (
                 <div className="relative w-[44%]">
-                  <Pal id="moss" size="100%" mood="happy" />
+                  <Pal id="fern" size="100%" mood="happy" />
                   <span className="absolute -right-1 top-1 grid h-8 w-8 place-items-center rounded-full bg-jade text-ink shadow-clay-sm">
                     <Check aria-hidden className="h-4 w-4" strokeWidth={3} />
                   </span>

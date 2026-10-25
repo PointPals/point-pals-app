@@ -249,7 +249,7 @@ export function HandItOver() {
   );
 }
 
-const nova = PAL_BY_ID.lumi;
+const nova = PAL_BY_ID.sunny;
 
 function ScreenA() {
   return (
@@ -268,7 +268,7 @@ function ScreenA() {
         style={{ background: nova.tint }}
       >
         <span className="block w-[36cqw]">
-          <Pal id="lumi" size="100%" mood="idle" />
+          <Pal id="sunny" size="100%" mood="idle" />
         </span>
         <p className="mt-[2cqw] text-[3.6cqw] font-semibold text-ink">34 marbles this month</p>
       </div>
@@ -298,7 +298,7 @@ function ScreenB() {
       <StatusBar />
       <div className="flex items-end gap-[2cqw] px-[5cqw] pt-[5cqw]">
         <span className="lp-bob block w-[27cqw] shrink-0">
-          <Pal id="lumi" size="100%" mood="happy" />
+          <Pal id="sunny" size="100%" mood="happy" />
         </span>
         <p className="relative mb-[6cqw] rounded-[4cqw] rounded-bl-[1cqw] bg-white px-[3.4cqw] py-[2.6cqw] font-display text-[4.6cqw] font-semibold leading-tight shadow-clay-sm">
           Hi Nova! What did you do?
@@ -349,7 +349,7 @@ function ScreenC() {
             className="grid h-[14cqw] w-[14cqw] place-items-center rounded-full"
             style={{ background: nova.tint }}
           >
-            <Pal id="lumi" size="84%" mood="happy" shadow={false} />
+            <Pal id="sunny" size="84%" mood="happy" shadow={false} />
           </span>
           <span>
             <span className="block text-[3.4cqw] text-ink-soft">Nova says</span>

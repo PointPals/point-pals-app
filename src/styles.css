@@ -752,107 +752,56 @@
   }
 }
 
-/* ── Pals: idle life (breathe, blink, sway). Hooks live in <Pal>. ──────────
- * Every loop is offset by --pal-phase (0–1, set per Pal from its id + seed)
- * so a row of Pals never moves in lock-step. <Pal animate> only adds
- * .pal-animate when neither the OS nor the app's reducedMotion setting asks
- * for stillness; the media query below is a second guard. */
+/* ── Pals: life for the character art. Hooks live in <Pal>. ──────────────
+ * Idle: a soft breath (squash from the feet). Moods change the loop: happy
+ * bobs, wow lifts, sleepy sways slowly. `.pal-hop` is a one-shot tap reaction
+ * any caller can add. --pal-phase offsets each Pal so rows never sync. */
 @keyframes pal-breathe {
   0%,
   100% {
     transform: scale(1, 1);
   }
-  45% {
-    transform: scale(0.992, 1.022);
+  50% {
+    transform: scale(1.012, 0.985);
   }
 }
-@keyframes pal-bob {
+@keyframes pal-happy-bob {
   0%,
   100% {
-    transform: translateY(0) scale(1, 1);
+    transform: translateY(0) rotate(0deg);
   }
-  40% {
-    transform: translateY(-2.2%) scale(0.99, 1.02);
+  30% {
+    transform: translateY(-5%) rotate(-2deg);
   }
-  70% {
-    transform: translateY(0) scale(1.012, 0.99);
+  60% {
+    transform: translateY(0) rotate(1.5deg);
+  }
+}
+@keyframes pal-wow {
+  0%,
+  100% {
+    transform: translateY(-3%) scale(1.04);
+  }
+  50% {
+    transform: translateY(-5%) scale(1.05);
+  }
+}
+@keyframes pal-sleepy {
+  0%,
+  100% {
+    transform: rotate(-2.5deg) scale(1, 1);
+  }
+  50% {
+    transform: rotate(2.5deg) scale(1.01, 0.98);
   }
 }
 @keyframes pal-ground-breathe {
   0%,
   100% {
-    transform: scale(1, 1);
-  }
-  45% {
-    transform: scale(0.97, 1);
-  }
-}
-@keyframes pal-blink {
-  0%,
-  93%,
-  100% {
-    transform: scaleY(1);
-  }
-  95% {
-    transform: scaleY(0.08);
-  }
-}
-/* Slow sway with one little ear-twitch per cycle. */
-@keyframes pal-sway-l {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  32% {
-    transform: rotate(-3.5deg);
-  }
-  64% {
-    transform: rotate(1deg);
-  }
-  84% {
-    transform: rotate(0deg);
-  }
-  88% {
-    transform: rotate(-9deg);
-  }
-  92% {
-    transform: rotate(2deg);
-  }
-  95% {
-    transform: rotate(0deg);
-  }
-}
-@keyframes pal-sway-r {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  32% {
-    transform: rotate(3.5deg);
-  }
-  64% {
-    transform: rotate(-1deg);
-  }
-  84% {
-    transform: rotate(0deg);
-  }
-  88% {
-    transform: rotate(9deg);
-  }
-  92% {
-    transform: rotate(-2deg);
-  }
-  95% {
-    transform: rotate(0deg);
-  }
-}
-@keyframes pal-wag {
-  0%,
-  100% {
-    transform: rotate(0deg);
+    transform: translateX(-50%) scale(1);
   }
   50% {
-    transform: rotate(7deg);
+    transform: translateX(-50%) scale(0.94);
   }
 }
 @keyframes pal-hop {
@@ -860,59 +809,40 @@
   100% {
     transform: translateY(0) scale(1, 1);
   }
-  30% {
-    transform: translateY(0) scale(1.06, 0.92);
+  25% {
+    transform: translateY(0) scale(1.08, 0.9);
   }
   55% {
-    transform: translateY(-14%) scale(0.96, 1.05);
+    transform: translateY(-16%) scale(0.95, 1.06);
   }
   80% {
-    transform: translateY(0) scale(1.04, 0.95);
+    transform: translateY(0) scale(1.05, 0.95);
   }
 }
+.pal .pal-body-group {
+  transform-origin: 50% 96%;
+}
 .pal-animate .pal-body-group {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: pal-breathe 4.2s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -4.2s);
-}
-.pal-animate[data-mood="happy"] .pal-body-group {
-  animation: pal-bob 1.9s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -1.9s);
-}
-.pal-animate[data-mood="sleepy"] .pal-body-group {
-  animation-duration: 6s;
-  animation-delay: calc(var(--pal-phase, 0) * -6s);
+  animation: pal-breathe 3.8s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -3.8s);
 }
 .pal-animate .pal-ground {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-  animation: pal-ground-breathe 4.2s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -4.2s);
+  animation: pal-ground-breathe 3.8s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -3.8s);
 }
-.pal-animate .pal-eyes {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-  animation: pal-blink 6.4s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -6.4s);
+.pal-animate.pal-mood-happy .pal-body-group {
+  animation: pal-happy-bob 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -1.6s);
 }
-.pal-animate[data-mood="happy"] .pal-eyes,
-.pal-animate[data-mood="sleepy"] .pal-eyes {
-  animation: none;
+.pal-mood-wow .pal-body-group {
+  transform: translateY(-3%) scale(1.04);
 }
-.pal-animate .pal-ear-l,
-.pal-animate .pal-crest,
-.pal-animate .pal-sprout {
-  animation: pal-sway-l 7.2s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -7.2s);
+.pal-animate.pal-mood-wow .pal-body-group {
+  animation: pal-wow 1.2s ease-in-out infinite;
 }
-.pal-animate .pal-ear-r {
-  animation: pal-sway-r 7.9s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -7.9s - 1.3s);
-}
-.pal-animate .pal-tail {
-  animation: pal-wag 3.4s ease-in-out infinite;
-  animation-delay: calc(var(--pal-phase, 0) * -3.4s);
+.pal-animate.pal-mood-sleepy .pal-body-group {
+  animation: pal-sleepy 5.5s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -5.5s);
 }
 .pal-hop {
   animation: pal-hop 620ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -921,113 +851,12 @@
 @media (prefers-reduced-motion: reduce) {
   .pal-animate .pal-body-group,
   .pal-animate .pal-ground,
-  .pal-animate .pal-eyes,
-  .pal-animate .pal-ear-l,
-  .pal-animate .pal-ear-r,
-  .pal-animate .pal-crest,
-  .pal-animate .pal-sprout,
-  .pal-animate .pal-tail,
   .pal-hop {
     animation: none !important;
   }
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
- * Area sections — each area appends its own keyframes/utilities ONLY between
- * its markers (keeps parallel work merge-clean).
- * ────────────────────────────────────────────────────────────────────────── */
-
 /* === area:cast === */
-/* .pal-boop — one-shot "you tapped me!" reaction. Add the class to a <Pal>
- * svg (or any ancestor) on tap, remove it on animationend. Squash-and-stretch,
- * an ear/sprout flick and a happy squeeze of the eyes. */
-@keyframes pal-boop-body {
-  0% {
-    transform: scale(1, 1);
-  }
-  18% {
-    transform: scale(1.08, 0.9);
-  }
-  42% {
-    transform: scale(0.95, 1.07);
-  }
-  66% {
-    transform: scale(1.02, 0.98);
-  }
-  100% {
-    transform: scale(1, 1);
-  }
-}
-@keyframes pal-boop-flick-l {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-14deg);
-  }
-  55% {
-    transform: rotate(6deg);
-  }
-  80% {
-    transform: rotate(-2deg);
-  }
-}
-@keyframes pal-boop-flick-r {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(14deg);
-  }
-  55% {
-    transform: rotate(-6deg);
-  }
-  80% {
-    transform: rotate(2deg);
-  }
-}
-@keyframes pal-boop-squeeze {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  30%,
-  55% {
-    transform: scaleY(0.15);
-  }
-}
-.pal-boop .pal-body-group {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: pal-boop-body 620ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
-}
-.pal-boop .pal-ear-l,
-.pal-boop .pal-crest,
-.pal-boop .pal-sprout {
-  animation: pal-boop-flick-l 700ms ease-out both;
-}
-.pal-boop .pal-ear-r,
-.pal-boop .pal-tail {
-  animation: pal-boop-flick-r 700ms ease-out both;
-}
-.pal-boop .pal-eyes {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-  animation: pal-boop-squeeze 420ms ease-in-out both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .pal-boop .pal-body-group,
-  .pal-boop .pal-ear-l,
-  .pal-boop .pal-ear-r,
-  .pal-boop .pal-crest,
-  .pal-boop .pal-sprout,
-  .pal-boop .pal-tail,
-  .pal-boop .pal-eyes {
-    animation: none !important;
-  }
-}
 /* === end area:cast === */
 
 /* (spacer) */

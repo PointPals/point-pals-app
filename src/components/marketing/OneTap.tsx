@@ -14,9 +14,9 @@ const FILL = 74;
 const SEED = 23;
 
 const KIDS = [
-  { name: "Nova", pal: "lumi", points: 34 },
-  { name: "Milo", pal: "orbit", points: 22 },
-  { name: "Wren", pal: "moss", points: 18 },
+  { name: "Nova", pal: "sunny", points: 34 },
+  { name: "Milo", pal: "pip", points: 22 },
+  { name: "Wren", pal: "fern", points: 18 },
 ] as const;
 
 const STEPS = [

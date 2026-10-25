@@ -9,11 +9,11 @@ import { Eyebrow, PrimaryCta, secondaryCtaClass } from "./ui";
 
 // Pals peeking over the bottom edge of the CTA card, left → right.
 const PEEKERS = [
-  { id: "orbit", w: "w-[15%]", left: "4%", delay: 0 },
-  { id: "tumble", w: "w-[19%]", left: "20%", delay: 0.08 },
-  { id: "lumi", w: "w-[15%]", left: "41%", delay: 0.16 },
-  { id: "ripple", w: "w-[20%]", left: "57%", delay: 0.24 },
-  { id: "ember", w: "w-[15%]", left: "79%", delay: 0.32 },
+  { id: "pip", w: "w-[15%]", left: "4%", delay: 0 },
+  { id: "marlow", w: "w-[19%]", left: "20%", delay: 0.08 },
+  { id: "sunny", w: "w-[15%]", left: "41%", delay: 0.16 },
+  { id: "coda", w: "w-[20%]", left: "57%", delay: 0.24 },
+  { id: "ridge", w: "w-[15%]", left: "79%", delay: 0.32 },
 ] as const;
 
 function AppleGlyph() {

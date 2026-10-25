@@ -13,18 +13,18 @@ const WAITLIST =
     "Hi PointPals,\n\nPlease add me to the plush waitlist.\n\nMy family's favourite Pal is: \n\nThanks!",
   );
 
-// Shelf order: tallest silhouettes at the ends, the wide pair in the middle.
-const ORDER = ["lumi", "ember", "tumble", "ripple", "moss", "orbit"] as const;
+// Shelf order — alternating colours so neighbours never blend.
+const ORDER = ["sunny", "pip", "marlow", "fern", "coda", "bramble", "ridge", "ziggy"] as const;
 const BY_ID = Object.fromEntries(PALS.map((p) => [p.id, p]));
 
 const DETAILS = [
-  { icon: Ruler, text: "25 cm sit-down plush, plus a 12 cm bag-clip Pal" },
+  { icon: Ruler, text: "A huggable sit-down size, plus a little bag-clip Pal" },
   { icon: Sparkles, text: "Embroidered faces — no hard eyes or buttons" },
-  { icon: ShieldCheck, text: "Designed to meet AS/NZS ISO 8124 and EN 71 toy-safety standards" },
+  { icon: ShieldCheck, text: "Being made to toy-safety standards (AS/NZS ISO 8124, EN 71)" },
 ];
 
 /**
- * Chapter 07 — the plush teaser. A gallery-lit night shelf: the six Pals rise
+ * Chapter 07 — the plush teaser. A gallery-lit night shelf: the Pals rise
  * into their spotlights one by one (tap any of them), then the details a
  * parent asks about first and a single waitlist ask.
  */
@@ -93,14 +93,14 @@ export function Plush() {
             </SplitReveal>
           </div>
           <p className="max-w-lg text-lg leading-relaxed text-cream/75 sm:text-xl lg:pb-3">
-            Every Pal was designed from day one as a real, huggable plush — soft enough for bedtime,
-            sturdy enough for the school bag. The collection is in the works.
+            Your family’s favourite Pals as real, huggable plush — soft enough for bedtime, sturdy
+            enough for the school bag. The collection is in the works.
           </p>
         </div>
 
         {/* The shelf */}
         <div className="lp-plush-shelf relative mt-16 sm:mt-20">
-          <div className="grid grid-cols-3 gap-x-3 gap-y-10 sm:grid-cols-6 sm:gap-x-4">
+          <div className="grid grid-cols-4 gap-x-3 gap-y-10 lg:grid-cols-8 sm:gap-x-4">
             {ORDER.map((id) => {
               const p = BY_ID[id];
               return (

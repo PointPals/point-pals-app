@@ -96,16 +96,16 @@ export function MeetPals() {
               Meet the Pals
             </Eyebrow>
             <h2 id="lp-pals-title" className="lp-display-l mt-5 max-w-[12ch] text-ink">
-              Six friends worth noticing.
+              Eight friends worth noticing.
             </h2>
             <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-soft">
-              Each Pal stands for something families want more of &mdash; kindness, teamwork,
-              courage, curiosity, little habits and calm. Your child picks the one that feels like
-              them.
+              Each Pal stands for something families want more of &mdash; kindness, learning, goals,
+              creativity, perseverance, independence, daily habits and teamwork. Your child picks
+              the one that feels like them.
             </p>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft">
-              Drawn from day one as a real plush line: one sewable body, embroidered faces, and a
-              single signature ear, crest or sprout each.
+              Soft, round and made to be hugged &mdash; every Pal has a signature detail on its
+              chest that tells you what it&rsquo;s cheering for.
             </p>
             <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-ink">
               <Hand aria-hidden className="h-4 w-4" />
@@ -115,7 +115,7 @@ export function MeetPals() {
             </p>
           </header>
 
-          <ul className="lp-pals-track" aria-label="The six Pals">
+          <ul className="lp-pals-track" aria-label="The Pals">
             {PALS.map((p, i) => (
               <li
                 key={p.id}
@@ -149,7 +149,7 @@ export function MeetPals() {
                     aria-hidden
                     className="font-display text-sm font-semibold text-ink/50 tabular-nums"
                   >
-                    0{i + 1} / 06
+                    {String(i + 1).padStart(2, "0")} / {String(PALS.length).padStart(2, "0")}
                   </span>
                 </div>
 
@@ -173,8 +173,8 @@ export function MeetPals() {
                 </p>
                 <p className="lp-pal-bio mt-3 text-sm leading-relaxed text-ink-soft">{p.bio}</p>
                 <p className="mt-4 border-t border-dashed border-ink/20 pt-3 text-xs leading-relaxed text-ink-soft">
-                  <span className="font-semibold text-ink">Plush notes · </span>
-                  {p.silhouette}. {p.motif}.
+                  <span className="font-semibold text-ink">Look for · </span>
+                  {p.motif}.
                 </p>
               </li>
             ))}

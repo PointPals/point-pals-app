@@ -1,7 +1,7 @@
 import { PALS, type PalId } from "@/lib/pals";
 
 /**
- * Marble palette for the marketing page — the six Pals' jewel colours plus
+ * Marble palette for the marketing page — the Pals' colours plus
  * rose. Each entry carries a light / base / deep triple so SVG marbles can be
  * shaded like glass without runtime colour maths.
  */

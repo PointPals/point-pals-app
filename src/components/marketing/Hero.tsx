@@ -26,7 +26,7 @@ type HeroPal = {
 
 const HERO_PALS: HeroPal[] = [
   {
-    id: "lumi",
+    id: "sunny",
     style: { left: "9%", bottom: "38%", width: "28%" },
     layer: "back",
     depth: 0.5,
@@ -34,7 +34,7 @@ const HERO_PALS: HeroPal[] = [
     bubble: "Kindness!",
   },
   {
-    id: "ember",
+    id: "ridge",
     style: { right: "9%", bottom: "42%", width: "23%" },
     layer: "back",
     depth: 0.6,
@@ -42,7 +42,7 @@ const HERO_PALS: HeroPal[] = [
     bubble: "Be brave!",
   },
   {
-    id: "orbit",
+    id: "pip",
     style: { right: "12%", top: "2%", width: "18%" },
     layer: "back",
     depth: 1.2,
@@ -50,7 +50,7 @@ const HERO_PALS: HeroPal[] = [
     bubble: "Why? How?",
   },
   {
-    id: "tumble",
+    id: "marlow",
     style: { left: "-1%", bottom: "4%", width: "31%" },
     layer: "front",
     depth: -0.3,
@@ -58,7 +58,7 @@ const HERO_PALS: HeroPal[] = [
     bubble: "Together!",
   },
   {
-    id: "moss",
+    id: "fern",
     style: { left: "27%", bottom: "-1%", width: "19%" },
     layer: "front",
     depth: -0.5,
@@ -66,7 +66,7 @@ const HERO_PALS: HeroPal[] = [
     bubble: "Little steps!",
   },
   {
-    id: "ripple",
+    id: "coda",
     style: { right: "-2%", bottom: "3%", width: "29%" },
     layer: "front",
     depth: -0.2,
