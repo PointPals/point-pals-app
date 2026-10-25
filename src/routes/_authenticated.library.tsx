@@ -379,7 +379,7 @@ export const Route = createFileRoute("/_authenticated/library")({
   component: LibraryPage,
   head: () => ({
     meta: [
-      { title: "Points — PointPals" },
+      { title: "Chores — PointPals" },
       {
         name: "description",
         content: "Manage chores, positive skills, needs-work behaviours, and the family roster.",

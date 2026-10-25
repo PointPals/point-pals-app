@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
@@ -201,7 +201,18 @@ function JoinPage() {
   };
 
   return (
-    <AuthShell>
+    <AuthShell
+      headerAction={
+        signedIn ? (
+          <Link
+            to="/"
+            className="min-h-11 inline-flex items-center text-sm font-semibold text-ink-soft hover:text-ink"
+          >
+            ← Back to app
+          </Link>
+        ) : undefined
+      }
+    >
       <div className="max-w-sm w-full text-center space-y-6">
         <h1 className="font-display text-3xl font-bold">Join a household</h1>
         <p className="text-sm text-muted-foreground">
