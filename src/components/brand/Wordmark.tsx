@@ -33,12 +33,16 @@ export function Wordmark({
         {/* dotless ı + marble tittle */}
         ı
         <span
-          className="marble absolute left-1/2 -translate-x-1/2"
+          className="marble absolute"
           style={{
             ["--marble" as string]: marble,
-            width: "0.26em",
-            height: "0.26em",
-            top: "-0.02em",
+            width: "0.25em",
+            height: "0.25em",
+            // Sits where the tittle would: centred on the stem, just above
+            // the x-height (tuned for Fraunces SOFT at leading-none).
+            left: "50%",
+            marginLeft: "-0.115em",
+            top: "0.13em",
           }}
         />
       </span>

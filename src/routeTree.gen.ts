@@ -9,89 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WelcomeRouteImport } from './routes/welcome'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignUpRouteImport } from './routes/sign-up'
-import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RefundsRouteImport } from './routes/refunds'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as JoinRouteImport } from './routes/join'
-import { Route as FaqRouteImport } from './routes/faq'
-import { Route as DeleteAccountRouteImport } from './routes/delete-account'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as BlogRouteImport } from './routes/blog'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as BlogRouteImport } from './routes/blog'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as JoinRouteImport } from './routes/join'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RefundsRouteImport } from './routes/refunds'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
-import { Route as KTokenRouteImport } from './routes/k.$token'
-import { Route as AuthenticatedWelcomeBackRouteImport } from './routes/_authenticated.welcome-back'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
-import { Route as AuthenticatedRewardsRouteImport } from './routes/_authenticated.rewards'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated.reports'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
-import { Route as AuthenticatedMemoriesRouteImport } from './routes/_authenticated.memories'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated.library'
+import { Route as AuthenticatedMemoriesRouteImport } from './routes/_authenticated.memories'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated.reports'
+import { Route as AuthenticatedRewardsRouteImport } from './routes/_authenticated.rewards'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedWelcomeBackRouteImport } from './routes/_authenticated.welcome-back'
+import { Route as KTokenRouteImport } from './routes/k.$token'
 import { Route as ApiPublicHooksEmailCronRouteImport } from './routes/api/public/hooks/email-cron'
 
-const WelcomeRoute = WelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignUpRoute = SignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RefundsRoute = RefundsRouteImport.update({
-  id: '/refunds',
-  path: '/refunds',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JoinRoute = JoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FaqRoute = FaqRouteImport.update({
-  id: '/faq',
-  path: '/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DeleteAccountRoute = DeleteAccountRouteImport.update({
-  id: '/delete-account',
-  path: '/delete-account',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -99,8 +43,64 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundsRoute = RefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -108,35 +108,9 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const KTokenRoute = KTokenRouteImport.update({
-  id: '/k/$token',
-  path: '/k/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedWelcomeBackRoute =
-  AuthenticatedWelcomeBackRouteImport.update({
-    id: '/welcome-back',
-    path: '/welcome-back',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedRewardsRoute = AuthenticatedRewardsRouteImport.update({
-  id: '/rewards',
-  path: '/rewards',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
+const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMemoriesRoute = AuthenticatedMemoriesRouteImport.update({
@@ -144,10 +118,36 @@ const AuthenticatedMemoriesRoute = AuthenticatedMemoriesRouteImport.update({
   path: '/memories',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRewardsRoute = AuthenticatedRewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedWelcomeBackRoute =
+  AuthenticatedWelcomeBackRouteImport.update({
+    id: '/welcome-back',
+    path: '/welcome-back',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const KTokenRoute = KTokenRouteImport.update({
+  id: '/k/$token',
+  path: '/k/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksEmailCronRoute = ApiPublicHooksEmailCronRouteImport.update({
   id: '/api/public/hooks/email-cron',
@@ -332,88 +332,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/welcome': {
-      id: '/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof WelcomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-up': {
-      id: '/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof SignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/refunds': {
-      id: '/refunds'
-      path: '/refunds'
-      fullPath: '/refunds'
-      preLoaderRoute: typeof RefundsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/join': {
-      id: '/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof JoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faq': {
-      id: '/faq'
-      path: '/faq'
-      fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/delete-account': {
-      id: '/delete-account'
-      path: '/delete-account'
-      fullPath: '/delete-account'
-      preLoaderRoute: typeof DeleteAccountRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -423,11 +346,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refunds': {
+      id: '/refunds'
+      path: '/refunds'
+      fullPath: '/refunds'
+      preLoaderRoute: typeof RefundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -437,46 +437,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/k/$token': {
-      id: '/k/$token'
-      path: '/k/$token'
-      fullPath: '/k/$token'
-      preLoaderRoute: typeof KTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/welcome-back': {
-      id: '/_authenticated/welcome-back'
-      path: '/welcome-back'
-      fullPath: '/welcome-back'
-      preLoaderRoute: typeof AuthenticatedWelcomeBackRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/rewards': {
-      id: '/_authenticated/rewards'
-      path: '/rewards'
-      fullPath: '/rewards'
-      preLoaderRoute: typeof AuthenticatedRewardsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+    '/_authenticated/library': {
+      id: '/_authenticated/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/memories': {
@@ -486,12 +451,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMemoriesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/library': {
-      id: '/_authenticated/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rewards': {
+      id: '/_authenticated/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof AuthenticatedRewardsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/welcome-back': {
+      id: '/_authenticated/welcome-back'
+      path: '/welcome-back'
+      fullPath: '/welcome-back'
+      preLoaderRoute: typeof AuthenticatedWelcomeBackRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/k/$token': {
+      id: '/k/$token'
+      path: '/k/$token'
+      fullPath: '/k/$token'
+      preLoaderRoute: typeof KTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/email-cron': {
       id: '/api/public/hooks/email-cron'
