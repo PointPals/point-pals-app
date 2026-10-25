@@ -1386,6 +1386,28 @@
 /* (spacer) */
 
 /* === area:shell === */
+/* Kid cards on Home: each character floats gently on its own beat. */
+@keyframes kid-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.kid-float {
+  animation: kid-float 3.6s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+.kid-card:active .kid-float {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kid-float {
+    animation: none;
+  }
+}
 /* === end area:shell === */
 
 /* (spacer) */

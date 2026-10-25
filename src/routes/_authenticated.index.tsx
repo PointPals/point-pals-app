@@ -1,16 +1,17 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useApp, type AwardBatch } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { primeAudio, triggerAwardFeedback, haptic } from "@/lib/feedback";
-import { KidBadge } from "@/components/KidBadge";
+import { KidCard } from "@/components/shell/KidCard";
+import { AddKidSheet } from "@/components/shell/AddKidSheet";
 import { AwardModal } from "@/components/AwardModal";
 import { FamilyJarCard } from "@/components/FamilyJarCard";
 import { PersonalJarCard } from "@/components/PersonalJarCard";
 import { EmptyState } from "@/components/EmptyState";
 import { RecentActivity } from "@/components/RecentActivity";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { Undo2 } from "lucide-react";
+import { Plus, Undo2 } from "lucide-react";
 
 // The app has no real auth/session system yet (§8 landing page is built without
 // one), so "has this device ever used the app" is approximated by the presence
@@ -29,6 +30,14 @@ export const Route = createFileRoute("/_authenticated/")({
   }),
 });
 
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5) return "Late night";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 // Home (§3) — deliberately minimal: the kid row (tap → award modal) and the
 // marble jar as the dominant visual. No chore/skill tiles live here; they're
 // exclusively inside the AwardModal. The old text feed moved to /memories.
@@ -38,6 +47,7 @@ function HomePage() {
   const { entered } = Route.useSearch();
   const navigate = useNavigate();
   const [activeKidId, setActiveKidId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState<{ batches: AwardBatch[]; text: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,19 +106,22 @@ function HomePage() {
     const STAGGER_MS = 260;
     const batches: AwardBatch[] = [];
     items.forEach((item, i) => {
-      window.setTimeout(() => {
-        triggerAwardFeedback(item.points >= 0 ? "positive" : "needs-work");
-        batches.push(awardPoints([kidId], item));
-        if (i === items.length - 1) {
-          const text =
-            items.length === 1
-              ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
-              : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
-          setToast({ batches, text });
-          if (toastTimer.current) clearTimeout(toastTimer.current);
-          toastTimer.current = setTimeout(() => setToast(null), 5000);
-        }
-      }, startDelay + i * STAGGER_MS);
+      window.setTimeout(
+        () => {
+          triggerAwardFeedback(item.points >= 0 ? "positive" : "needs-work");
+          batches.push(awardPoints([kidId], item));
+          if (i === items.length - 1) {
+            const text =
+              items.length === 1
+                ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
+                : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
+            setToast({ batches, text });
+            if (toastTimer.current) clearTimeout(toastTimer.current);
+            toastTimer.current = setTimeout(() => setToast(null), 5000);
+          }
+        },
+        startDelay + i * STAGGER_MS,
+      );
     });
   };
 
@@ -126,57 +139,73 @@ function HomePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Visually-hidden h1 anchors the page for screen readers and SEO —
        * the visual hero is the marble jar rather than a headline. */}
       <h1 className="sr-only">Our Family Jar</h1>
-      {/* Kid row — tap to open the award modal */}
-      <section aria-labelledby="kids-heading" className="pt-6">
-        <h2 id="kids-heading" className="sr-only">Kids</h2>
-        <div className="flex flex-wrap gap-4 justify-center sm:flex-nowrap sm:gap-5 sm:justify-start sm:pb-2 sm:-mx-1 sm:px-1">
-          {kids.map((kid) => (
-            <div key={kid.id} className="flex flex-col items-center gap-1.5">
-              <KidBadge
-                kid={kid}
-                size="lg"
-                points={household.splitJarsEnabled ? kid.personalPool : kid.currentPoints}
-                onClick={() => openKid(kid.id)}
-              />
-            </div>
-          ))}
-          {canEdit && (
-            <Link
-              to="/library"
-              className="tap w-[92px] h-[92px] rounded-full border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-2xl self-start hover:border-foreground hover:text-foreground transition shrink-0"
-              aria-label="Manage family"
-            >
-              +
-            </Link>
-          )}
-        </div>
-        <p className="text-center sm:text-left text-sm text-muted-foreground mt-1">
+      {/* Kids — tap a character to open the award sheet */}
+      <section aria-labelledby="kids-heading" className="pt-2">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          {greeting()}
+        </p>
+        <h2
+          id="kids-heading"
+          className="mt-1.5 font-display text-[2rem] font-semibold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[2.4rem]"
+        >
+          Who did something great?
+        </h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
           {canAward
-            ? "Tap a character to award points."
+            ? "Tap a character to give points — or hand the phone over and let them choose."
             : "View only — an admin or parent can give you awarding rights."}
         </p>
+        <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+          {kids.map((kid) => (
+            <li key={kid.id}>
+              <KidCard
+                kid={kid}
+                points={household.splitJarsEnabled ? kid.personalPool : kid.currentPoints}
+                onClick={() => openKid(kid.id)}
+                disabled={!canAward}
+              />
+            </li>
+          ))}
+          {canEdit && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="tap group flex h-full min-h-[11.5rem] w-full flex-col items-center justify-center gap-3 rounded-[1.75rem] border-2 border-dashed border-ink/15 bg-card/40 p-4 text-ink-soft transition hover:border-ink/35 hover:bg-card/70 hover:text-ink"
+              >
+                <span className="grid h-14 w-14 place-items-center rounded-full bg-card shadow-clay-sm transition-transform duration-300 ease-spring group-hover:scale-110">
+                  <Plus className="h-6 w-6" aria-hidden />
+                </span>
+                <span className="font-display text-lg font-semibold">Add a child</span>
+              </button>
+            </li>
+          )}
+        </ul>
       </section>
 
       {/* Jars — personal jars flank the family jar when split jars are on (§6) */}
       <section aria-labelledby="jars-heading" ref={jarsRef}>
-        <h2 id="jars-heading" className="sr-only">Jars</h2>
+        <h2 id="jars-heading" className="sr-only">
+          Jars
+        </h2>
         <div className="flex flex-col items-center gap-6">
           {/* Personal jars row — above the family jar when split jars enabled */}
-          {household.splitJarsEnabled && kids.filter((k) => (k.personalTarget ?? 0) > 0).length > 0 && (
-            <div className="flex flex-wrap justify-center gap-4 w-full">
-              {kids
-                .filter((k) => (k.personalTarget ?? 0) > 0)
-                .map((k) => (
-                  <div key={k.id} className="w-[130px]">
-                    <PersonalJarCard kid={k} size={100} showControls={false} />
-                  </div>
-                ))}
-            </div>
-          )}
+          {household.splitJarsEnabled &&
+            kids.filter((k) => (k.personalTarget ?? 0) > 0).length > 0 && (
+              <div className="flex flex-wrap justify-center gap-4 w-full">
+                {kids
+                  .filter((k) => (k.personalTarget ?? 0) > 0)
+                  .map((k) => (
+                    <div key={k.id} className="w-[130px]">
+                      <PersonalJarCard kid={k} size={100} showControls={false} />
+                    </div>
+                  ))}
+              </div>
+            )}
           {/* Family jar — hidden when individual-jars-only mode */}
           {household.sharedJarEnabled && <FamilyJarCard size={330} />}
         </div>
@@ -184,12 +213,16 @@ function HomePage() {
 
       {/* Collapsed recent-activity log — quick context, not the photo wall */}
       <section aria-labelledby="activity-heading">
-        <h2 id="activity-heading" className="sr-only">Recent Activity</h2>
+        <h2 id="activity-heading" className="sr-only">
+          Recent Activity
+        </h2>
         <RecentActivity />
       </section>
 
       {/* "Add to Home Screen" banner (shows only when installable, 2+ sessions) */}
       <InstallPrompt />
+
+      <AddKidSheet open={addOpen} onOpenChange={setAddOpen} />
 
       {/* Award modal (§2) */}
       {activeKid && (
