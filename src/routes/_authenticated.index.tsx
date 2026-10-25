@@ -231,14 +231,20 @@ function HomePage() {
 
       {/* Undo toast — above the modal so it's visible while awarding */}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 z-[70] animate-toast-in">
-          <div className="flex items-center gap-3 rounded-full bg-foreground text-background pl-5 pr-2 py-2 shadow-xl">
-            <span className="font-semibold text-sm whitespace-nowrap">{toast.text}</span>
+        // Centred by a full-width flex row (not translate) — the old
+        // translate-in animation dropped its -50% offset when it ended, so
+        // the toast jumped off-centre to the right.
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 md:bottom-8">
+          <div
+            role="status"
+            className="toast-rise pointer-events-auto flex max-w-full items-center gap-3 rounded-full bg-ink py-2 pl-5 pr-2 text-cream shadow-lift"
+          >
+            <span className="truncate text-sm font-semibold">{toast.text}</span>
             <button
               onClick={undo}
-              className="flex items-center gap-1.5 rounded-full bg-background/15 hover:bg-background/25 px-3 py-1.5 text-sm font-bold transition"
+              className="tap flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-cream/15 px-3.5 text-sm font-bold transition hover:bg-cream/25"
             >
-              <Undo2 className="w-4 h-4" /> Undo
+              <Undo2 className="h-4 w-4" aria-hidden /> Undo
             </button>
           </div>
         </div>
