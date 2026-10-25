@@ -1292,7 +1292,8 @@ function UploadIconPanel({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        // No `capture` attribute: it forces phones straight into the camera.
+        // Without it iOS/Android show the picker (Photo Library, Camera, Files).
         className="hidden"
         onChange={handleFile}
       />

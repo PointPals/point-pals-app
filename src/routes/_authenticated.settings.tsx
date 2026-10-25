@@ -1086,7 +1086,6 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif,image/heic"
-                capture="environment"
                 onChange={(e) => {
                   const file = e.target.files?.[0] ?? null;
                   setScreenshot(file);
