@@ -1,3 +1,4 @@
+import { SignOutButton } from "@/components/shell/SignOutButton";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-store";
@@ -304,9 +305,7 @@ function SettingsPage() {
     <div className="space-y-8 pb-8">
       <div>
         <h1 className="font-display text-3xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Parent controls and your data.
-        </p>
+        <p className="text-sm text-muted-foreground">Parent controls and your data.</p>
       </div>
 
       {/* Household */}
@@ -769,9 +768,7 @@ function SettingsPage() {
                       <p>
                         Type <strong>DELETE</strong> below to confirm.
                       </p>
-                      {deleteError && (
-                        <p className="text-xs text-destructive">{deleteError}</p>
-                      )}
+                      {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="px-6 pb-2">
@@ -805,9 +802,7 @@ function SettingsPage() {
                           await supabase.auth.signOut();
                           navigate({ to: "/welcome" });
                         } catch (err) {
-                          setDeleteError(
-                            err instanceof Error ? err.message : "Deletion failed"
-                          );
+                          setDeleteError(err instanceof Error ? err.message : "Deletion failed");
                           setDeleteConfirmText("");
                           setDeleting(false);
                         }
@@ -905,15 +900,7 @@ function SettingsPage() {
 
           <div className="space-y-3 border-t border-border/60 pt-4">
             <p className="text-sm text-muted-foreground">Sign out of PointPals on this device.</p>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/welcome" });
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
+            <SignOutButton className="tap inline-flex min-h-11 items-center gap-2 rounded-full border border-destructive/40 px-5 text-sm font-semibold text-destructive transition hover:bg-destructive/10" />
           </div>
         </div>
       </section>

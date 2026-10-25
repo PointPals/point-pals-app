@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
 import { Home, ListChecks, Camera, Settings, ChevronLeft } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
-import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
+import { useBackNav, isRootTab } from "@/lib/navigation";
 import { useSettings } from "@/lib/settings";
 import { KidView } from "@/components/KidView";
 import { Wordmark } from "@/components/brand/Wordmark";
@@ -217,11 +217,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           {showBack ? (
             <button
               onClick={goBack}
-              className="md:hidden tap flex min-h-11 items-center gap-1 -ml-1.5 text-ink"
-              aria-label="Go back"
+              className="md:hidden tap -ml-1 inline-flex min-h-11 items-center gap-0.5 rounded-full bg-card/80 pl-2 pr-4 text-sm font-semibold text-ink shadow-clay-sm"
             >
-              <ChevronLeft className="w-6 h-6" aria-hidden />
-              <span className="font-display text-2xl font-semibold">{pageTitle(pathname)}</span>
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+              Back
             </button>
           ) : (
             <Link to="/" className="block md:hidden min-w-0" aria-label="PointPals home">

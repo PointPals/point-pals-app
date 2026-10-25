@@ -418,9 +418,7 @@ const SECTIONS: FaqSection[] = [
               PointPals is completely free to use. There&rsquo;s no trial period, no subscription,
               and no payment details required — just create your family and start filling the jar.
             </p>
-            <p>
-              We don&rsquo;t have ads, upsells, or hidden fees.
-            </p>
+            <p>We don&rsquo;t have ads, upsells, or hidden fees.</p>
           </>
         ),
       },
@@ -595,13 +593,14 @@ function FaqPage() {
                     key={item.id}
                     type="button"
                     onClick={() => setOpenId(item.id)}
-                    className="group text-left flex flex-col justify-between bg-card rounded-[1.75rem] p-6 shadow-[0_16px_40px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[180px]"
-                    style={{
-                      borderBottom: `8px solid ${tint.border}`,
-                      borderRight: `8px solid ${tint.border}`,
-                    }}
+                    className="tap group relative overflow-hidden text-left flex flex-col justify-between bg-card rounded-[1.75rem] p-6 shadow-clay-sm ring-1 ring-ink/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-clay focus:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[180px]"
                     aria-label={`Read answer: ${item.question}`}
                   >
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-0 bottom-0 h-1.5"
+                      style={{ background: tint.border }}
+                    />
                     <div className="flex items-start gap-3">
                       <span
                         aria-hidden
@@ -614,10 +613,7 @@ function FaqPage() {
                         {item.question}
                       </h3>
                     </div>
-                    <span
-                      className="mt-6 inline-flex items-center gap-1 text-xs font-bold tracking-widest uppercase"
-                      style={{ color: tint.border }}
-                    >
+                    <span className="mt-6 inline-flex items-center gap-1 text-xs font-bold tracking-widest uppercase text-ink-soft transition-colors group-hover:text-ink">
                       Read answer →
                     </span>
                   </button>
