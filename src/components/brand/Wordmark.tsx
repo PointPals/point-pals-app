@@ -1,52 +1,34 @@
 import { cn } from "@/lib/utils";
 
+/** Trimmed artwork's width ÷ height — keeps the box reserved before it loads. */
+const RATIO = 3.194;
+
 /**
- * PointPals wordmark — set in Fraunces (SOFT), with the dot of the "i"
- * replaced by a glossy marble: the whole product in one glyph. Pure
- * HTML/CSS (no remote image), so it renders instantly, scales crisply and
- * inherits colour. `tone="cream"` for dark surfaces.
+ * PointPals logo — the marble jar with the Pals inside and the chocolate
+ * wordmark, a pink marble flying in as the dot of the "i". Sized in `em`, so
+ * callers set its size with a font-size class (`text-[1.8rem]`) exactly as
+ * they did for the old lettered wordmark. Transparent, so it sits on any of
+ * the light surfaces.
  */
 export function Wordmark({
   className,
-  tone = "ink",
-  marble = "var(--marble-saffron)",
   title = "PointPals",
 }: {
   className?: string;
-  tone?: "ink" | "cream";
-  marble?: string;
   title?: string;
 }) {
   return (
-    <span
-      role="img"
-      aria-label={title}
-      className={cn(
-        "inline-flex items-baseline font-display font-semibold leading-none tracking-[-0.035em] select-none",
-        tone === "cream" ? "text-cream" : "text-ink",
-        className,
-      )}
-      style={{ fontVariationSettings: '"SOFT" 100, "WONK" 1, "opsz" 72' }}
-    >
-      <span aria-hidden>Po</span>
-      <span aria-hidden className="relative inline-block">
-        {/* dotless ı + marble tittle */}
-        ı
-        <span
-          className="marble absolute"
-          style={{
-            ["--marble" as string]: marble,
-            width: "0.25em",
-            height: "0.25em",
-            // Sits where the tittle would: centred on the stem, just above
-            // the x-height (tuned for Fraunces SOFT at leading-none).
-            left: "50%",
-            marginLeft: "-0.115em",
-            top: "0.13em",
-          }}
-        />
-      </span>
-      <span aria-hidden>ntPals</span>
-    </span>
+    <img
+      src="/brand/pointpals-logo-480.webp"
+      srcSet="/brand/pointpals-logo-480.webp 480w, /brand/pointpals-logo-960.webp 960w, /brand/pointpals-logo-1600.webp 1600w"
+      sizes="(min-width: 640px) 300px, 240px"
+      alt={title}
+      width={480}
+      height={Math.round(480 / RATIO)}
+      decoding="async"
+      draggable={false}
+      className={cn("inline-block h-[1.9em] w-auto max-w-none select-none align-middle", className)}
+      style={{ aspectRatio: String(RATIO) }}
+    />
   );
 }

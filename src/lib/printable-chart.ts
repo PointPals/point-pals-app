@@ -351,10 +351,34 @@ function drawMiniJar(ctx: CanvasRenderingContext2D, x: number, y: number, h: num
   ctx.lineWidth = 4;
   roundRect(ctx, x + w * 0.04, y + neck, w * 0.92, h - neck, w * 0.22);
   ctx.stroke();
-  // lid
-  ctx.fillStyle = "#E3B95C";
-  roundRect(ctx, x, y, w, neck * 0.9, neck * 0.4);
+  // lid — light oak with a little grain, like the real jar
+  const lidH = neck * 0.9;
+  const oak = ctx.createLinearGradient(0, y, 0, y + lidH);
+  oak.addColorStop(0, "#F1DDBD");
+  oak.addColorStop(0.4, "#E2C196");
+  oak.addColorStop(1, "#C59C6B");
+  ctx.fillStyle = oak;
+  roundRect(ctx, x, y, w, lidH, lidH * 0.3);
   ctx.fill();
+  ctx.strokeStyle = "rgba(140,92,48,0.3)";
+  ctx.lineWidth = 2;
+  for (const fy of [0.35, 0.6, 0.82]) {
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.05, y + lidH * fy);
+    ctx.bezierCurveTo(
+      x + w * 0.35,
+      y + lidH * (fy - 0.08),
+      x + w * 0.6,
+      y + lidH * (fy + 0.08),
+      x + w * 0.95,
+      y + lidH * fy,
+    );
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(120,78,40,0.55)";
+  ctx.lineWidth = 2.5;
+  roundRect(ctx, x, y, w, lidH, lidH * 0.3);
+  ctx.stroke();
   // shine
   ctx.strokeStyle = "rgba(255,255,255,0.9)";
   ctx.lineWidth = 5;

@@ -143,9 +143,19 @@ export function GlassJar({
           <stop offset="82%" stopColor="#ffffff" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0.42" />
         </linearGradient>
+        {/* light oak, like the real jar's lid */}
         <linearGradient id={id("rim")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.98" />
-          <stop offset="100%" stopColor="#efe4d4" stopOpacity="0.85" />
+          <stop offset="0%" stopColor="#F1DDBD" />
+          <stop offset="35%" stopColor="#E2C196" />
+          <stop offset="80%" stopColor="#D2AB7B" />
+          <stop offset="100%" stopColor="#BD9363" />
+        </linearGradient>
+        <linearGradient id={id("rimTurn")} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#6e4623" stopOpacity="0.28" />
+          <stop offset="12%" stopColor="#6e4623" stopOpacity="0" />
+          <stop offset="45%" stopColor="#fff4de" stopOpacity="0.18" />
+          <stop offset="88%" stopColor="#6e4623" stopOpacity="0" />
+          <stop offset="100%" stopColor="#6e4623" stopOpacity="0.32" />
         </linearGradient>
         <radialGradient id={id("floor")} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#231b33" stopOpacity="0.26" />
@@ -204,23 +214,34 @@ export function GlassJar({
         <path d="M50 279 Q120 294 190 279" strokeWidth="2" strokeOpacity="0.55" />
       </g>
 
-      {/* rim */}
+      {/* lid — an oak disc a little wider than the neck, with a plug that
+          sits in it; marbles drop through its hole from above */}
+      <rect x="76" y="27" width="88" height="6" rx="1.5" fill="#B88C5C" />
+      <rect x="64" y="12" width="112" height="17" rx="4.5" fill={`url(#${id("rim")})`} />
+      <rect x="64" y="12" width="112" height="17" rx="4.5" fill={`url(#${id("rimTurn")})`} />
+      <g fill="none" stroke="#8c5c30" strokeWidth="0.7" strokeLinecap="round">
+        <path d="M66 16.5 C88 15.2 104 17.8 126 16.4 S160 15.4 174 16.8" strokeOpacity="0.2" />
+        <path d="M66 20 C84 21.4 110 18.6 132 20.2 S162 21.2 174 19.6" strokeOpacity="0.26" />
+        <path d="M66 23.4 C92 22.2 112 24.6 138 23.2 S164 22.6 174 23.8" strokeOpacity="0.18" />
+        <path d="M66 26.2 C90 27.2 118 25.4 142 26.6 S166 26.8 174 26" strokeOpacity="0.22" />
+      </g>
       <rect
-        x="70"
-        y="14"
-        width="100"
+        x="64"
+        y="12"
+        width="112"
         height="17"
-        rx="8.5"
-        fill={`url(#${id("rim")})`}
-        stroke="#231b33"
-        strokeOpacity="0.14"
+        rx="4.5"
+        fill="none"
+        stroke="#784e28"
+        strokeOpacity="0.4"
+        strokeWidth="0.8"
       />
       <path
-        d="M80 19.5 L132 19.5"
-        stroke="#fff"
-        strokeWidth="2.4"
+        d="M69 13.3 L171 13.3"
+        stroke="#fff7e6"
+        strokeWidth="1.4"
         strokeLinecap="round"
-        opacity="0.95"
+        opacity="0.85"
       />
     </svg>
   );

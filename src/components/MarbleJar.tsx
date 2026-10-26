@@ -566,39 +566,81 @@ export function MarbleJar({
 
       // front glass: rim, outline + shine highlight
       ctx.save();
-      // rim / lid — brushed gold band with warm highlights
+      // lid — light oak, like the real jar: a thick disc a little wider than
+      // the glass, with a narrower plug underneath that sits in the neck.
       const rimX = left - W * 0.03;
       const rimW = innerW + W * 0.06;
+      const discH = rimH * 0.76;
+      const discR = discH * 0.3;
+      // plug (drawn first so the disc's bottom edge overlaps it)
+      const plugX = left - W * 0.008;
+      const plugW = innerW + W * 0.016;
       ctx.beginPath();
-      ctx.roundRect(rimX, neckTop, rimW, rimH, rimH / 2);
-      const rim = ctx.createLinearGradient(rimX, neckTop, rimX + rimW, neckTop);
-      rim.addColorStop(0, "#B8862F"); // deep gold shadow
-      rim.addColorStop(0.25, "#E8C86A");
-      rim.addColorStop(0.5, "#FBF3C4"); // bright highlight
-      rim.addColorStop(0.75, "#D4A84A");
-      rim.addColorStop(1, "#8F6B23"); // deep gold shadow
-      ctx.fillStyle = rim;
+      ctx.roundRect(plugX, neckTop + discH * 0.8, plugW, rimH - discH * 0.8, rimH * 0.08);
+      const plug = ctx.createLinearGradient(0, neckTop + discH, 0, neckTop + rimH);
+      plug.addColorStop(0, "#AD8155");
+      plug.addColorStop(1, "#CBA477");
+      ctx.fillStyle = plug;
       ctx.fill();
-      // rim top highlight (thin bright band)
+      // disc: top face catches the light, the edge falls into shadow
       ctx.beginPath();
-      ctx.roundRect(rimX, neckTop, rimW, rimH * 0.35, rimH / 2);
-      const rimTop = ctx.createLinearGradient(0, neckTop, 0, neckTop + rimH * 0.35);
-      rimTop.addColorStop(0, "rgba(255,248,210,0.9)");
-      rimTop.addColorStop(1, "rgba(255,248,210,0)");
-      ctx.fillStyle = rimTop;
+      ctx.roundRect(rimX, neckTop, rimW, discH, discR);
+      const disc = ctx.createLinearGradient(0, neckTop, 0, neckTop + discH);
+      disc.addColorStop(0, "#F1DDBD");
+      disc.addColorStop(0.3, "#E2C196");
+      disc.addColorStop(0.8, "#D2AB7B");
+      disc.addColorStop(1, "#BD9363");
+      ctx.fillStyle = disc;
       ctx.fill();
-      // rim bottom shadow (subtle depth)
+      ctx.save();
+      ctx.clip();
+      // rounded-edge shading across the width
+      const turn = ctx.createLinearGradient(rimX, 0, rimX + rimW, 0);
+      turn.addColorStop(0, "rgba(110,70,35,0.28)");
+      turn.addColorStop(0.12, "rgba(110,70,35,0)");
+      turn.addColorStop(0.45, "rgba(255,244,222,0.16)");
+      turn.addColorStop(0.88, "rgba(110,70,35,0)");
+      turn.addColorStop(1, "rgba(110,70,35,0.32)");
+      ctx.fillStyle = turn;
+      ctx.fillRect(rimX, neckTop, rimW, discH);
+      // grain — fixed, gently wavy lines (no randomness, so it never shimmers)
+      ctx.lineWidth = Math.max(0.75, discH * 0.045);
+      ctx.lineCap = "round";
+      const grain: [number, number, number, number][] = [
+        // [y fraction, wave amplitude, phase, alpha]
+        [0.24, 0.05, 0.4, 0.16],
+        [0.4, 0.07, 2.1, 0.22],
+        [0.52, 0.04, 4.0, 0.14],
+        [0.66, 0.08, 1.2, 0.24],
+        [0.8, 0.05, 3.3, 0.18],
+      ];
+      for (const [fy, amp, phase, alpha] of grain) {
+        ctx.beginPath();
+        const steps = 24;
+        for (let i = 0; i <= steps; i++) {
+          const x = rimX + (rimW * i) / steps;
+          const y =
+            neckTop +
+            discH * fy +
+            Math.sin((i / steps) * Math.PI * 2.2 + phase) * discH * amp +
+            Math.sin((i / steps) * Math.PI * 7 + phase * 2) * discH * amp * 0.25;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(140,92,48,${alpha})`;
+        ctx.stroke();
+      }
+      ctx.restore();
+      // top edge highlight + outline
       ctx.beginPath();
-      ctx.rect(rimX, neckTop + rimH * 0.75, rimW, rimH * 0.25);
-      const rimBot = ctx.createLinearGradient(0, neckTop + rimH * 0.75, 0, neckTop + rimH);
-      rimBot.addColorStop(0, "rgba(90,60,20,0)");
-      rimBot.addColorStop(1, "rgba(90,60,20,0.35)");
-      ctx.fillStyle = rimBot;
-      ctx.fill();
-      // rim outline
+      ctx.moveTo(rimX + discR, neckTop + 1);
+      ctx.lineTo(rimX + rimW - discR, neckTop + 1);
+      ctx.strokeStyle = "rgba(255,247,230,0.85)";
+      ctx.lineWidth = Math.max(1, discH * 0.06);
+      ctx.stroke();
       ctx.beginPath();
-      ctx.roundRect(rimX, neckTop, rimW, rimH, rimH / 2);
-      ctx.strokeStyle = "rgba(120,85,20,0.5)";
+      ctx.roundRect(rimX, neckTop, rimW, discH, discR);
+      ctx.strokeStyle = "rgba(120,78,40,0.45)";
       ctx.lineWidth = 1;
       ctx.stroke();
 
