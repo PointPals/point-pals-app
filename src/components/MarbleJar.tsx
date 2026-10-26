@@ -117,9 +117,17 @@ function gapKidSequence(kids: Kid[]): Kid[] {
 // events push kid-coloured marbles; negatives pop them, preferring one of
 // that kid's own marbles first (§3 phase 1 — "who contributed").
 //
-// If the event log's implied pool falls short of `fallbackValue`, the gap is
-// filled with neutral-colour synthetic marbles so the jar always represents
-// the actual sharedPool — even after a browser storage clear or data reset.
+// The walk is deliberately NOT capped at the target: history keeps every
+// past reward cycle (claiming a reward zeroes the pool, not the log), so the
+// walk's running total is usually far above the target. Capping it made each
+// new award compute as "remove marbles" once old cycles passed the target,
+// so new marbles never got their kid's colour. Instead the whole log is
+// walked and the jar keeps the NEWEST marbles — the current cycle's.
+//
+// If the log can't account for the whole pool (history is capped at 200
+// events), the shortfall is drawn as filler marbles at the BOTTOM of the jar
+// with ids counted from the bottom, so a new award never renames them (which
+// used to dissolve a marble and drop a wrongly coloured one).
 function buildDesired(
   events: PointEvent[],
   kids: Kid[],
@@ -145,76 +153,53 @@ function buildDesired(
   for (const e of asc) {
     const beforeCount = Math.round(pool / perMarble);
     pool = Math.max(0, pool + e.points);
-    const afterCount = Math.min(
-      Math.round(pool / perMarble),
-      Math.round(target / perMarble),
-    );
-    let diff = afterCount - beforeCount;
+    let diff = Math.round(pool / perMarble) - beforeCount;
 
     const key = kidTintKey.get(e.kidId) ?? "lilac";
     const tint = MARBLE_TINT[key] ?? DEFAULT_TINT;
 
-    if (diff > 0) {
-      for (let i = 0; i < diff; i++) {
-        list.push({
-          id: `${e.id}-${i}`,
-          kidId: e.kidId,
-          color: tint[0],
-          hue: tint[1],
-        });
-      }
-    } else if (diff < 0) {
-      let toRemove = -diff;
-      while (toRemove > 0 && list.length > 0) {
-        let idx = -1;
-        for (let i = list.length - 1; i >= 0; i--) {
-          if (list[i].kidId === e.kidId) {
-            idx = i;
-            break;
-          }
+    for (let i = 0; i < diff; i++) {
+      list.push({ id: `${e.id}-${i}`, kidId: e.kidId, color: tint[0], hue: tint[1] });
+    }
+    while (diff < 0 && list.length > 0) {
+      let idx = -1;
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i].kidId === e.kidId) {
+          idx = i;
+          break;
         }
-        if (idx < 0) idx = list.length - 1;
-        list.splice(idx, 1);
-        toRemove--;
       }
+      if (idx < 0) idx = list.length - 1;
+      list.splice(idx, 1);
+      diff++;
     }
   }
 
-  // If the fallback value indicates the jar should have fewer marbles than the
-  // event log builds (e.g. after a reward cycle reset), trim the list so the jar
-  // empties truthfully. Trim from the START (oldest events) so newly-earned
-  // marbles (from the current reward cycle) survive — this keeps the visible
-  // marble colours aligned with personalPool / sharedPool.
-  // Prefer the caller's pool, but ignore a NaN/Infinity fallback so a bad split
-  // calc can't blank the jar — fall back to the event-derived pool instead.
+  // How many marbles the jar should show: the caller's pool (ignoring a
+  // NaN/Infinity so a bad split calc can't blank the jar), up to the target
+  // and the physical cap.
   const safeFallback = Number.isFinite(fallbackValue) ? (fallbackValue as number) : pool;
   const desiredCount = Math.min(
     Math.round(Math.max(0, safeFallback) / perMarble),
     Math.round(target / perMarble),
     cap,
   );
-  if (list.length > desiredCount) {
-    list.splice(0, list.length - desiredCount);
-  }
 
-  // Fill any remaining gap so the jar always has the right marble count even
-  // when the event history is sparse (after a reload / before events sync).
-  // Colour gap marbles by kid so the jar reflects who has points, not a neutral
-  // fallback: a personal jar → that child's colour; the family jar → the kids'
-  // colours distributed by their points (e.g. Leo blue + Ruby pink, not orange).
+  // Keep the newest marbles — the current reward cycle's.
+  const kept = list.slice(Math.max(0, list.length - desiredCount));
+
+  // Filler for any part of the pool the log doesn't cover, coloured by the
+  // kids' points (a personal jar → that child's colour; the family jar → the
+  // kids' colours in proportion), sitting under the known marbles.
+  const gapCount = desiredCount - kept.length;
   const gapSeq = gapKidSequence(kids);
-  let gapIdx = 0;
-  while (list.length < desiredCount) {
-    const gk = gapSeq.length ? gapSeq[gapIdx % gapSeq.length] : null;
+  const filler: { id: string; kidId: string; color: string; hue: string }[] = [];
+  for (let i = 0; i < gapCount; i++) {
+    const gk = gapSeq.length ? gapSeq[i % gapSeq.length] : null;
     const t = gk ? (MARBLE_TINT[gk.color] ?? DEFAULT_TINT) : (MARBLE_TINT.sand ?? DEFAULT_TINT);
-    list.push({ id: `gap-${list.length}`, kidId: gk ? gk.id : "gap", color: t[0], hue: t[1] });
-    gapIdx++;
+    filler.push({ id: `gap-${i}`, kidId: gk ? gk.id : "gap", color: t[0], hue: t[1] });
   }
-
-  // Cap: keep the newest `cap` marbles so an old jar full of ancient events
-  // doesn't stall the physics.
-  if (list.length > cap) list.splice(0, list.length - cap);
-  return list;
+  return [...filler, ...kept];
 }
 
 export function MarbleJar({
@@ -581,39 +566,81 @@ export function MarbleJar({
 
       // front glass: rim, outline + shine highlight
       ctx.save();
-      // rim / lid — brushed gold band with warm highlights
+      // lid — light oak, like the real jar: a thick disc a little wider than
+      // the glass, with a narrower plug underneath that sits in the neck.
       const rimX = left - W * 0.03;
       const rimW = innerW + W * 0.06;
+      const discH = rimH * 0.76;
+      const discR = discH * 0.3;
+      // plug (drawn first so the disc's bottom edge overlaps it)
+      const plugX = left - W * 0.008;
+      const plugW = innerW + W * 0.016;
       ctx.beginPath();
-      ctx.roundRect(rimX, neckTop, rimW, rimH, rimH / 2);
-      const rim = ctx.createLinearGradient(rimX, neckTop, rimX + rimW, neckTop);
-      rim.addColorStop(0, "#B8862F"); // deep gold shadow
-      rim.addColorStop(0.25, "#E8C86A");
-      rim.addColorStop(0.5, "#FBF3C4"); // bright highlight
-      rim.addColorStop(0.75, "#D4A84A");
-      rim.addColorStop(1, "#8F6B23"); // deep gold shadow
-      ctx.fillStyle = rim;
+      ctx.roundRect(plugX, neckTop + discH * 0.8, plugW, rimH - discH * 0.8, rimH * 0.08);
+      const plug = ctx.createLinearGradient(0, neckTop + discH, 0, neckTop + rimH);
+      plug.addColorStop(0, "#AD8155");
+      plug.addColorStop(1, "#CBA477");
+      ctx.fillStyle = plug;
       ctx.fill();
-      // rim top highlight (thin bright band)
+      // disc: top face catches the light, the edge falls into shadow
       ctx.beginPath();
-      ctx.roundRect(rimX, neckTop, rimW, rimH * 0.35, rimH / 2);
-      const rimTop = ctx.createLinearGradient(0, neckTop, 0, neckTop + rimH * 0.35);
-      rimTop.addColorStop(0, "rgba(255,248,210,0.9)");
-      rimTop.addColorStop(1, "rgba(255,248,210,0)");
-      ctx.fillStyle = rimTop;
+      ctx.roundRect(rimX, neckTop, rimW, discH, discR);
+      const disc = ctx.createLinearGradient(0, neckTop, 0, neckTop + discH);
+      disc.addColorStop(0, "#F1DDBD");
+      disc.addColorStop(0.3, "#E2C196");
+      disc.addColorStop(0.8, "#D2AB7B");
+      disc.addColorStop(1, "#BD9363");
+      ctx.fillStyle = disc;
       ctx.fill();
-      // rim bottom shadow (subtle depth)
+      ctx.save();
+      ctx.clip();
+      // rounded-edge shading across the width
+      const turn = ctx.createLinearGradient(rimX, 0, rimX + rimW, 0);
+      turn.addColorStop(0, "rgba(110,70,35,0.28)");
+      turn.addColorStop(0.12, "rgba(110,70,35,0)");
+      turn.addColorStop(0.45, "rgba(255,244,222,0.16)");
+      turn.addColorStop(0.88, "rgba(110,70,35,0)");
+      turn.addColorStop(1, "rgba(110,70,35,0.32)");
+      ctx.fillStyle = turn;
+      ctx.fillRect(rimX, neckTop, rimW, discH);
+      // grain — fixed, gently wavy lines (no randomness, so it never shimmers)
+      ctx.lineWidth = Math.max(0.75, discH * 0.045);
+      ctx.lineCap = "round";
+      const grain: [number, number, number, number][] = [
+        // [y fraction, wave amplitude, phase, alpha]
+        [0.24, 0.05, 0.4, 0.16],
+        [0.4, 0.07, 2.1, 0.22],
+        [0.52, 0.04, 4.0, 0.14],
+        [0.66, 0.08, 1.2, 0.24],
+        [0.8, 0.05, 3.3, 0.18],
+      ];
+      for (const [fy, amp, phase, alpha] of grain) {
+        ctx.beginPath();
+        const steps = 24;
+        for (let i = 0; i <= steps; i++) {
+          const x = rimX + (rimW * i) / steps;
+          const y =
+            neckTop +
+            discH * fy +
+            Math.sin((i / steps) * Math.PI * 2.2 + phase) * discH * amp +
+            Math.sin((i / steps) * Math.PI * 7 + phase * 2) * discH * amp * 0.25;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(140,92,48,${alpha})`;
+        ctx.stroke();
+      }
+      ctx.restore();
+      // top edge highlight + outline
       ctx.beginPath();
-      ctx.rect(rimX, neckTop + rimH * 0.75, rimW, rimH * 0.25);
-      const rimBot = ctx.createLinearGradient(0, neckTop + rimH * 0.75, 0, neckTop + rimH);
-      rimBot.addColorStop(0, "rgba(90,60,20,0)");
-      rimBot.addColorStop(1, "rgba(90,60,20,0.35)");
-      ctx.fillStyle = rimBot;
-      ctx.fill();
-      // rim outline
+      ctx.moveTo(rimX + discR, neckTop + 1);
+      ctx.lineTo(rimX + rimW - discR, neckTop + 1);
+      ctx.strokeStyle = "rgba(255,247,230,0.85)";
+      ctx.lineWidth = Math.max(1, discH * 0.06);
+      ctx.stroke();
       ctx.beginPath();
-      ctx.roundRect(rimX, neckTop, rimW, rimH, rimH / 2);
-      ctx.strokeStyle = "rgba(120,85,20,0.5)";
+      ctx.roundRect(rimX, neckTop, rimW, discH, discR);
+      ctx.strokeStyle = "rgba(120,78,40,0.45)";
       ctx.lineWidth = 1;
       ctx.stroke();
 

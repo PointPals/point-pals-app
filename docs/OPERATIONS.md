@@ -55,8 +55,14 @@ household has full access. The legacy `subscription_status` column and the old
 grants every feature to everyone. Deploy only the remaining functions:
 
 ```bash
-supabase functions deploy generate-icon
+supabase functions deploy generate-icon upload-icon get-icon-usage
 ```
+
+Both icon functions call a Gemini image model through
+`supabase/functions/_shared/gemini-image.ts`, which falls back to older model
+IDs when Google retires one (as it did with `gemini-2.5-flash-image` on
+2 Oct 2026). To move to a newer model, set the `GEMINI_IMAGE_MODEL` secret.
+Failures are logged to `public.icon_generation_errors`.
 
 ## 4. Analytics & error tracking (§7)
 

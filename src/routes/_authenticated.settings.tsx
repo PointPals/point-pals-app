@@ -5,6 +5,7 @@ import { useApp } from "@/lib/app-store";
 import { useSettings, setSetting } from "@/lib/settings";
 import { trackParent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
+import { functionErrorMessage } from "@/lib/function-error";
 import { primeAudio } from "@/lib/feedback";
 import { PASTEL_HEX, type Kid } from "@/lib/mock-data";
 import { useHouseholdRole, type HouseholdRole } from "@/lib/use-household-role";
@@ -478,9 +479,7 @@ function SettingsPage() {
                     setInviteCode(data.code ?? data.invite_code ?? "");
                     void loadMembersAndInvites();
                   } catch (err) {
-                    setInviteError(
-                      err instanceof Error ? err.message : "Failed to generate invite",
-                    );
+                    setInviteError(await functionErrorMessage(err, "Failed to generate invite"));
                   } finally {
                     setGenerating(false);
                   }

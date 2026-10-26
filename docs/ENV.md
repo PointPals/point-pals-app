@@ -31,7 +31,8 @@ edge functions (email, AI icons, montage, cron).
 | `SUPABASE_URL` | all | auto-provided by Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | all | auto-provided by Supabase |
 | `RESEND_API_KEY` | notify-nurture-sequence, notify-memory-expiry, generate-icon, upload-icon, render-montage | direct Resend API — **`LOVABLE_API_KEY` is no longer needed** |
-| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | generate-icon | Gemini image model |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | generate-icon, upload-icon | Gemini image model |
+| `GEMINI_IMAGE_MODEL` (optional) | generate-icon, upload-icon | Override the image model (default tries `gemini-3.1-flash-image`, then older IDs) — set this when Google retires a model |
 | `OPENAI_API_KEY` | transcribe-memory | Whisper transcription |
 | `CRON_SECRET` | notify-nurture-sequence, notify-memory-expiry, purge-expired-memories | shared secret guarding the cron endpoints (also stored in Supabase **Vault** under the same name — the `cron.schedule` jobs read it from there) |
 | `PUBLIC_SITE_URL` | notify-* | canonical site URL for links in emails/redirects |

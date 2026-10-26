@@ -225,7 +225,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           ) : (
             <Link to="/" className="block md:hidden min-w-0" aria-label="PointPals home">
-              <Wordmark className="text-[1.7rem]" />
+              <Wordmark className="text-[1.4rem]" />
               <div className="mt-1 max-w-[11rem] text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground truncate">
                 {household.name}
               </div>

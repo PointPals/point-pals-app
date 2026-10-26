@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
-import { LOGO_POINTS_URL } from "@/lib/image-urls";
-const logoUrl = LOGO_POINTS_URL;
+// The icon that will land on the home screen.
+const ICON_URL = "/app-icon.png?v=4";
 
 // "Add to Home Screen" banner (§2c). Appears — as a dismissible card above the
 // bottom nav, never a modal — once a user has opened the app 2+ times and the
@@ -106,10 +106,12 @@ export function InstallPrompt() {
       <div className="mx-auto max-w-md card-soft p-3 shadow-xl animate-toast-in">
         <div className="flex items-center gap-3">
           <img
-            src={logoUrl}
+            src={ICON_URL}
             alt=""
             aria-hidden
-            className="h-10 w-auto shrink-0 select-none"
+            width={44}
+            height={44}
+            className="h-11 w-11 shrink-0 select-none rounded-[0.8rem] shadow-clay-sm"
             draggable={false}
           />
           <div className="flex-1 min-w-0">

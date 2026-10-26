@@ -12,6 +12,7 @@ import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
 import { ICON_KEYS, iconUrl, storageUrl, iconTag, TAG_GROUPS, type TagGroup } from "@/lib/icons";
 import { useChoreOrder, orderChores, setChoreOrderIds } from "@/lib/chore-order";
 import { supabase } from "@/integrations/supabase/client";
+import { functionErrorMessage } from "@/lib/function-error";
 import {
   DndContext,
   PointerSensor,
@@ -1194,7 +1195,7 @@ function AiIconPanel({
       if (data.error) throw new Error(data.error);
       setResult(data.url ?? data.storagePath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generation failed");
+      setError(await functionErrorMessage(err, "Generation failed"));
     } finally {
       setGenerating(false);
     }
@@ -1334,7 +1335,7 @@ function UploadIconPanel({
       if (data.error) throw new Error(data.error);
       setResult(data.url ?? data.storagePath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(await functionErrorMessage(err, "Upload failed"));
     } finally {
       setUploading(false);
     }

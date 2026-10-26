@@ -23,7 +23,9 @@ const MUTED = "#6B6380";
 const CREAM = "#FBF6EE";
 const CTA = "#5E45D6"; // solid fallback for the plum → cobalt gradient
 const CTA_GRADIENT = "linear-gradient(135deg,#7A4FD3,#3F5BD9)";
-const MARBLES = ["#A57BF0", "#5B7CFA", "#39C3D8", "#3DBE8B", "#F5B841", "#FF7F5C", "#F27DAE"];
+// The jar's own marble colours (MARBLE_TINT in src/components/MarbleJar.tsx),
+// in rainbow order: lilac, sky, foam, sage, butter, sand, orange, blush.
+const MARBLES = ["#B79BE0", "#8FC7EA", "#84CFCB", "#9CD08C", "#F1D36A", "#E0B673", "#F0A858", "#EDA6B2"];
 const PAL_WASH = {
   sunny: "#F3E1A0",
   pip: "#B8D4EC",
@@ -97,8 +99,8 @@ function layout({ title, preheader, pal, heading, body, footerNote = "" }) {
     <td align="center" style="padding:32px 16px 40px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
         <tr>
-          <td style="padding:0 8px 20px;font-family:${SERIF};font-size:28px;font-weight:bold;letter-spacing:-0.5px;color:${INK};">
-            <a href="${SITE}" style="color:${INK};text-decoration:none;">PointPals<span style="color:#F5B841;">&#9679;</span></a>
+          <td style="padding:0 4px 16px;">
+            <a href="${SITE}" style="color:${INK};text-decoration:none;"><img src="${SITE}/brand/pointpals-logo-email.png" width="210" height="66" alt="PointPals" style="display:block;width:210px;height:66px;border:0;outline:none;font-family:${SERIF};font-size:28px;font-weight:bold;line-height:66px;color:${INK};"></a>
           </td>
         </tr>
         <tr>

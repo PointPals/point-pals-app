@@ -103,7 +103,9 @@ export function KidMode({
       style={{
         background:
           stage === "handback"
-            ? "var(--ink)"
+            ? // The CTA's plum → cobalt, with the kid's colour glowing in
+              // from the top — a clear "stop, pass it over" beat, no black.
+              `radial-gradient(90% 55% at 50% 0%, color-mix(in oklab, ${wash} 45%, transparent), transparent 70%), linear-gradient(160deg, oklch(0.52 0.2 302), oklch(0.5 0.19 266))`
             : `radial-gradient(120% 70% at 50% 0%, color-mix(in oklab, ${wash} 90%, white), color-mix(in oklab, ${wash} 30%, var(--cream)) 70%)`,
       }}
     >
