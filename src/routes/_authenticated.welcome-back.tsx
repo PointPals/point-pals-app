@@ -4,6 +4,7 @@ import { ArrowRight, Loader2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 import { AuthShell } from "@/components/public/AuthShell";
+import { signupSource } from "@/lib/attribution";
 
 const PENDING_CODE_KEY = "pointpals.pending.invite.code";
 
@@ -78,6 +79,8 @@ function WelcomeBackPage() {
     setBusy(true);
     setErr(null);
     const payload: Record<string, unknown> = { name: trimmed };
+    const source = signupSource();
+    if (source) payload.attribution_source = source;
     const { error } = await supabase.from("households").insert(payload);
     if (error) {
       setBusy(false);

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 
 import { initAuthDeepLinks } from "@/lib/native-auth";
+import { captureSource } from "@/lib/attribution";
 
 const PUBLIC_PATHS = new Set([
   "/welcome",
@@ -54,6 +55,7 @@ export function ClientBoot() {
 
   useEffect(() => {
     void initMonitoring();
+    captureSource(); // remember ?source= from whichever page a parent lands on
 
     // Adopt the OS reduced-motion preference unless the user already chose.
     try {

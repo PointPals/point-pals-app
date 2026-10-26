@@ -9,6 +9,7 @@ import { TileIcon } from "@/components/IconTile";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { haptic, primeAudio, triggerAwardFeedback } from "@/lib/feedback";
 import { hostPlace } from "@/lib/visit-card";
+import { captureSource } from "@/lib/attribution";
 import {
   decodeVisitReport,
   markImported,
@@ -47,6 +48,7 @@ function VisitPage() {
   const [state, setState] = useState<State>({ phase: "loading" });
 
   useEffect(() => {
+    captureSource("visit");
     const encoded = new URLSearchParams(window.location.hash.slice(1)).get("v") ?? "";
     const report = encoded ? decodeVisitReport(encoded) : null;
     setState(report ? { phase: "ready", encoded, report } : { phase: "invalid" });

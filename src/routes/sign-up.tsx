@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 import { oauthSignIn } from "@/lib/native-auth";
 import { AuthShell } from "@/components/public/AuthShell";
+import { signupSource } from "@/lib/attribution";
 import { AppleSignInButton } from "@/components/AppleSignInButton";
 
 function GoogleSignInButton() {
@@ -109,11 +110,8 @@ function SignUpPage() {
       setInfo("Check your email to confirm your account, then log in.");
       return;
     }
-    // Capture Etsy / campaign source from URL param (?source=etsy)
-    const sourceParam =
-      typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("source") || undefined
-        : undefined;
+    // Campaign source (?source=etsy) — from this URL or the first page they landed on.
+    const sourceParam = signupSource();
 
     const hhPayload: Record<string, unknown> = { name: name || "My Family" };
     if (sourceParam) hhPayload.attribution_source = sourceParam;
