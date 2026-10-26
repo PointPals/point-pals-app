@@ -21,6 +21,7 @@ const PUBLIC_PATHS = new Set([
   "/refunds",
   "/contact",
   "/k", // public read-only Kids' view share link (/k/<token>)
+  "/visit", // a visiting friend's report — opened by parents who may not use PointPals
 ]);
 
 // Paths that a signed-in user without a household is allowed to see. Anything
@@ -86,7 +87,6 @@ export function ClientBoot() {
     });
     return () => sub.subscription.unsubscribe();
   }, [pathname, navigate]);
-
 
   // Native OAuth: complete a Google/Apple sign-in when the provider bounces
   // back to the pointpals://callback deep link, then land on the dashboard.

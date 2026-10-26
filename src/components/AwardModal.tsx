@@ -24,10 +24,15 @@ export function AwardModal({
   kid,
   onAwardBatch,
   onClose,
+  visitor = false,
 }: {
   kid: Kid;
   onAwardBatch: (items: AwardItem[]) => void;
   onClose: () => void;
+  /** A friend who's visiting: every chore is open to them (assignments are
+   *  for your own kids), and there's no needs-work tab — that's a
+   *  conversation for their own family. */
+  visitor?: boolean;
 }) {
   const { chores, skills, household, updateChore } = useApp();
   const { canEdit } = useHouseholdRole(household.id);
@@ -48,9 +53,10 @@ export function AwardModal({
   // narrowed to other kids. Must stay in lockstep with the printable-chart
   // filter (KidChartCard) — the live tiles and the PDF must always agree.
   const eligibleChores = useMemo(
-    () => chores.filter((c) => appliesToKid(c, kid.id)),
-    [chores, kid.id],
+    () => (visitor ? chores : chores.filter((c) => appliesToKid(c, kid.id))),
+    [chores, kid.id, visitor],
   );
+  const tabs = visitor ? TABS.filter((t) => t.k !== "needs-work") : TABS;
   // Positive and needs-work behaviours are NOT assigned per child — every
   // positive/negative point is always awardable for whichever kid is selected,
   // no tagging required. (Chores above still respect per-kid assignment.)
@@ -188,7 +194,7 @@ export function AwardModal({
                 >
                   {kid.currentPoints}
                 </span>{" "}
-                points · what did they do?
+                {visitor ? "points today · visiting" : "points · what did they do?"}
               </div>
             </div>
             <button
@@ -233,9 +239,12 @@ export function AwardModal({
           <div
             role="tablist"
             aria-label="Kind of points"
-            className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1"
+            className={cn(
+              "grid gap-1 rounded-full bg-muted p-1",
+              tabs.length === 2 ? "grid-cols-2" : "grid-cols-3",
+            )}
           >
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t.k}
                 role="tab"
@@ -432,7 +441,7 @@ export function AwardModal({
                 onClick={() => onAwardBatch(tray)}
                 className="tap inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-cream shadow-clay-sm"
               >
-                <Sparkles className="h-4 w-4" aria-hidden /> Add to jar
+                <Sparkles className="h-4 w-4" aria-hidden /> {visitor ? "Add points" : "Add to jar"}
               </button>
             </div>
           </div>

@@ -6,20 +6,28 @@ import { COMPANIONS, type PastelKey } from "@/lib/mock-data";
 import { haptic, playChime, primeAudio } from "@/lib/feedback";
 import { KidFields } from "@/components/shell/KidFields";
 import { suggestKidLook } from "@/lib/kid-look";
+import { addVisitor, useVisitors } from "@/lib/visitors";
 
 /**
  * "Add a child" — opened by the + tile on Home, right where the parent is
  * looking, instead of sending them to another screen to hunt for it. Name,
  * colour and character, with a live preview of their avatar.
+ *
+ * mode="visitor" adds a friend who's over for the day instead: same fields,
+ * but they live on this device only and never touch the family jar.
  */
 export function AddKidSheet({
   open,
   onOpenChange,
+  mode = "child",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: "child" | "visitor";
 }) {
   const { addKid, kids } = useApp();
+  const visitors = useVisitors();
+  const isVisitor = mode === "visitor";
   const [name, setName] = useState("");
   const [color, setColor] = useState<PastelKey>("sky");
   const [companion, setCompanion] = useState<string>(COMPANIONS[0].id);
@@ -29,16 +37,19 @@ export function AddKidSheet({
   useEffect(() => {
     if (!open) return;
     setName("");
-    const look = suggestKidLook(kids);
+    const look = suggestKidLook([...kids, ...visitors]);
     setColor(look.color);
     setCompanion(look.companionId);
-  }, [open, kids]);
+    // Only re-suggest when the sheet opens, not as the lists change under it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const trimmed = name.trim();
   const submit = () => {
     if (!trimmed) return;
     primeAudio();
-    addKid(trimmed, color, companion);
+    if (isVisitor) addVisitor({ name: trimmed, color, companionId: companion });
+    else addKid(trimmed, color, companion);
     playChime("positive");
     haptic("success");
     onOpenChange(false);
@@ -56,10 +67,12 @@ export function AddKidSheet({
           <div className="flex items-start justify-between gap-4 px-6 pt-4">
             <div>
               <Drawer.Title className="font-display text-[1.9rem] font-semibold leading-tight text-ink">
-                Add a child
+                {isVisitor ? "A friend is visiting" : "Add a child"}
               </Drawer.Title>
               <p className="mt-1 text-sm text-muted-foreground">
-                They’ll get their own character, colour and marbles.
+                {isVisitor
+                  ? "They can earn points today. Nothing goes in your family jar — when they head home, you send their points to their parents."
+                  : "They’ll get their own character, colour and marbles."}
               </p>
             </div>
             <button
@@ -96,7 +109,13 @@ export function AddKidSheet({
                 disabled={!trimmed}
                 className="tap inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 text-base font-semibold text-cream shadow-clay-sm transition disabled:opacity-40"
               >
-                {trimmed ? `Add ${trimmed} to the family` : "Add to the family"}
+                {isVisitor
+                  ? trimmed
+                    ? `Let ${trimmed} earn points`
+                    : "Let them earn points"
+                  : trimmed
+                    ? `Add ${trimmed} to the family`
+                    : "Add to the family"}
               </button>
             </div>
           </form>

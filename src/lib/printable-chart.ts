@@ -19,7 +19,7 @@ import { addDays, format, startOfWeek } from "date-fns";
 
 // Cache images so repeated renders don't refetch.
 const imageCache = new Map<string, HTMLImageElement>();
-async function loadImage(url: string): Promise<HTMLImageElement> {
+export async function loadImage(url: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(url);
   if (cached && cached.complete && cached.naturalWidth > 0) return Promise.resolve(cached);
 
@@ -116,13 +116,13 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 /** Lighten a hex toward white by t (0 = original, 1 = white) — used for soft column tints. */
-function tint(hex: string, t: number): string {
+export function tint(hex: string, t: number): string {
   const [r, g, b] = hexToRgb(hex);
   const m = (c: number) => Math.round(c + (255 - c) * t);
   return `rgb(${m(r)}, ${m(g)}, ${m(b)})`;
 }
 
-function roundRect(
+export function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -146,7 +146,7 @@ function isUrlIcon(icon: string): boolean {
   return icon.startsWith("http://") || icon.startsWith("https://") || icon.startsWith("/");
 }
 
-function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+export function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
   if (ctx.measureText(text).width <= maxWidth) return text;
   let t = text;
   while (t.length > 1 && ctx.measureText(t + "…").width > maxWidth) t = t.slice(0, -1);
@@ -296,7 +296,7 @@ type SheetInput = {
   rewardName?: string | null;
 };
 
-async function ensureFonts() {
+export async function ensureFonts() {
   if (!("fonts" in document)) return;
   try {
     await Promise.all([
@@ -832,7 +832,7 @@ async function canvasToPdfBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Blob(chunks as BlobPart[], { type: "application/pdf" });
 }
 
-function downloadBlob(blob: Blob, filename: string) {
+export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -843,7 +843,7 @@ function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-function slug(s: string): string {
+export function slug(s: string): string {
   return s.replace(/[^\w]+/g, "-").replace(/^-+|-+$/g, "") || "kid";
 }
 

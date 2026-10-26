@@ -519,6 +519,14 @@
   box-shadow: var(--clay-shadow);
 }
 
+/* Primary action fill: a jewel gradient from deep plum to deep cobalt — the
+   marble colours, darkened just enough for white text to pass AA. Used for
+   every primary button and selected pill instead of a black fill. */
+@utility bg-cta {
+  background-color: oklch(0.51 0.19 285);
+  background-image: linear-gradient(135deg, oklch(0.52 0.2 302), oklch(0.5 0.19 266));
+}
+
 /* Glossy marble sphere fill — set --marble to any colour. */
 @utility marble {
   border-radius: 9999px;

@@ -22,6 +22,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as VisitRouteImport } from './routes/visit'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated.library'
@@ -98,6 +99,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VisitRoute = VisitRouteImport.update({
+  id: '/visit',
+  path: '/visit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
+  '/visit': typeof VisitRoute
   '/welcome': typeof WelcomeRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/memories': typeof AuthenticatedMemoriesRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
+  '/visit': typeof VisitRoute
   '/welcome': typeof WelcomeRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/memories': typeof AuthenticatedMemoriesRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
+  '/visit': typeof VisitRoute
   '/welcome': typeof WelcomeRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/memories': typeof AuthenticatedMemoriesRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/terms'
+    | '/visit'
     | '/welcome'
     | '/library'
     | '/memories'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/terms'
+    | '/visit'
     | '/welcome'
     | '/library'
     | '/memories'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/terms'
+    | '/visit'
     | '/welcome'
     | '/_authenticated/library'
     | '/_authenticated/memories'
@@ -325,6 +337,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   TermsRoute: typeof TermsRoute
+  VisitRoute: typeof VisitRoute
   WelcomeRoute: typeof WelcomeRoute
   KTokenRoute: typeof KTokenRoute
   ApiPublicHooksEmailCronRoute: typeof ApiPublicHooksEmailCronRoute
@@ -421,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/visit': {
+      id: '/visit'
+      path: '/visit'
+      fullPath: '/visit'
+      preLoaderRoute: typeof VisitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -543,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   TermsRoute: TermsRoute,
+  VisitRoute: VisitRoute,
   WelcomeRoute: WelcomeRoute,
   KTokenRoute: KTokenRoute,
   ApiPublicHooksEmailCronRoute: ApiPublicHooksEmailCronRoute,

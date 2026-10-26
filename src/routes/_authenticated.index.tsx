@@ -11,7 +11,17 @@ import { PersonalJarCard } from "@/components/PersonalJarCard";
 import { EmptyState } from "@/components/EmptyState";
 import { RecentActivity } from "@/components/RecentActivity";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { Plus, Undo2 } from "lucide-react";
+import { VisitSummarySheet } from "@/components/visitors/VisitSummarySheet";
+import {
+  addVisitAwards,
+  isVisitorId,
+  removeLastVisitAwards,
+  takePendingVisit,
+  useVisitors,
+  visitorAsKid,
+  visitTotal,
+} from "@/lib/visitors";
+import { Plus, Send, Undo2, Users } from "lucide-react";
 
 // The app has no real auth/session system yet (§8 landing page is built without
 // one), so "has this device ever used the app" is approximated by the presence
@@ -48,11 +58,25 @@ function HomePage() {
   const navigate = useNavigate();
   const [activeKidId, setActiveKidId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [toast, setToast] = useState<{ batches: AwardBatch[]; text: string } | null>(null);
+  const [visitorAddOpen, setVisitorAddOpen] = useState(false);
+  const [summaryVisitorId, setSummaryVisitorId] = useState<string | null>(null);
+  const visitors = useVisitors();
+  const [toast, setToast] = useState<{
+    batches: AwardBatch[];
+    text: string;
+    /** Visitor awards live on this device; undo removes the last N. */
+    visitor?: { id: string; count: number };
+  } | null>(null);
   const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jarsRef = useRef<HTMLElement>(null);
   useEffect(() => setMounted(true), []);
+
+  // Back to a friend's visit report that sent this parent to log in.
+  useEffect(() => {
+    const pending = takePendingVisit();
+    if (pending) void navigate({ to: "/visit", hash: `v=${pending}` });
+  }, [navigate]);
 
   // First-time-visitor redirect to the marketing page (§8).
   useEffect(() => {
@@ -66,7 +90,10 @@ function HomePage() {
     }
   }, [entered, navigate]);
 
-  const activeKid = kids.find((k) => k.id === activeKidId) ?? null;
+  const activeVisitor = visitors.find((v) => v.id === activeKidId) ?? null;
+  const activeKid =
+    kids.find((k) => k.id === activeKidId) ?? (activeVisitor ? visitorAsKid(activeVisitor) : null);
+  const summaryVisitor = visitors.find((v) => v.id === summaryVisitorId) ?? null;
 
   const openKid = (id: string) => {
     if (!canAward) return;
@@ -84,6 +111,25 @@ function HomePage() {
     if (!activeKidId || items.length === 0) return;
     const kidId = activeKidId;
     const totalPoints = items.reduce((sum, it) => sum + it.points, 0);
+    const summary =
+      items.length === 1
+        ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
+        : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
+
+    // A visiting friend: points stay on this device, never in the family jar,
+    // so there's no jar to scroll to — just the chimes and an undo.
+    if (isVisitorId(kidId)) {
+      setActiveKidId(null);
+      items.forEach((item, i) =>
+        window.setTimeout(() => triggerAwardFeedback("positive"), 160 + i * 260),
+      );
+      addVisitAwards(kidId, items);
+      setToast({ batches: [], text: summary, visitor: { id: kidId, count: items.length } });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 5000);
+      return;
+    }
+
     // Close the modal immediately so the marble drops into the jar are visible.
     // primeAudio() already unlocked the AudioContext on the earlier avatar tap,
     // so deferring the chime/award out of the gesture is safe on iOS.
@@ -111,11 +157,7 @@ function HomePage() {
           triggerAwardFeedback(item.points >= 0 ? "positive" : "needs-work");
           batches.push(awardPoints([kidId], item));
           if (i === items.length - 1) {
-            const text =
-              items.length === 1
-                ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
-                : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
-            setToast({ batches, text });
+            setToast({ batches, text: summary });
             if (toastTimer.current) clearTimeout(toastTimer.current);
             toastTimer.current = setTimeout(() => setToast(null), 5000);
           }
@@ -127,6 +169,7 @@ function HomePage() {
 
   const undo = () => {
     if (!toast) return;
+    if (toast.visitor) removeLastVisitAwards(toast.visitor.id, toast.visitor.count);
     // Reverse each award in the batch (newest first).
     [...toast.batches].reverse().forEach(undoBatch);
     haptic("light");
@@ -185,6 +228,47 @@ function HomePage() {
             </li>
           )}
         </ul>
+
+        {visitors.length > 0 && (
+          <div className="mt-7">
+            <h3 className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Visiting today
+            </h3>
+            <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+              {visitors.map((v) => (
+                <li key={v.id} className="flex flex-col gap-2">
+                  <KidCard
+                    kid={visitorAsKid(v)}
+                    points={visitTotal(v)}
+                    badge="Visiting"
+                    onClick={() => openKid(v.id)}
+                    disabled={!canAward}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToast(null);
+                      setSummaryVisitorId(v.id);
+                    }}
+                    className="tap inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-input bg-card px-3 text-sm font-semibold text-ink transition hover:bg-muted"
+                  >
+                    <Send className="h-4 w-4" aria-hidden /> Send points home
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {canAward && (
+          <button
+            type="button"
+            onClick={() => setVisitorAddOpen(true)}
+            className="tap mt-5 inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-sm font-semibold text-ink-soft transition hover:text-ink"
+          >
+            <Users className="h-4 w-4" aria-hidden />A friend is over? Let them earn points too
+          </button>
+        )}
       </section>
 
       {/* Jars — personal jars flank the family jar when split jars are on (§6) */}
@@ -223,10 +307,21 @@ function HomePage() {
       <InstallPrompt />
 
       <AddKidSheet open={addOpen} onOpenChange={setAddOpen} />
+      <AddKidSheet open={visitorAddOpen} onOpenChange={setVisitorAddOpen} mode="visitor" />
+      <VisitSummarySheet
+        visitor={summaryVisitor}
+        hostName={household.name}
+        onOpenChange={(open) => !open && setSummaryVisitorId(null)}
+      />
 
       {/* Award modal (§2) */}
       {activeKid && (
-        <AwardModal kid={activeKid} onAwardBatch={award} onClose={() => setActiveKidId(null)} />
+        <AwardModal
+          kid={activeKid}
+          onAwardBatch={award}
+          onClose={() => setActiveKidId(null)}
+          visitor={!!activeVisitor}
+        />
       )}
 
       {/* Undo toast — above the modal so it's visible while awarding */}

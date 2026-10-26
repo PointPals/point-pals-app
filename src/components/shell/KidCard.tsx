@@ -15,11 +15,14 @@ export function KidCard({
   points,
   onClick,
   disabled = false,
+  badge,
 }: {
   kid: Kid;
   points: number;
   onClick: () => void;
   disabled?: boolean;
+  /** Small tag in the top-left corner, e.g. "Visiting". */
+  badge?: string;
 }) {
   const { reducedMotion } = useSettings();
   const [flash, setFlash] = useState<"up" | "down" | null>(null);
@@ -41,7 +44,7 @@ export function KidCard({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={`${kid.name}, ${points} points. Give points`}
+      aria-label={`${kid.name}${badge ? ` (${badge.toLowerCase()})` : ""}, ${points} points. Give points`}
       className="kid-card tap group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[1.75rem] p-4 pb-4 text-center shadow-clay transition-shadow duration-300 hover:shadow-lift disabled:cursor-default disabled:opacity-90"
       style={{
         background: `radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, ${wash} 85%, white), color-mix(in oklab, ${wash} 35%, white) 70%)`,
@@ -51,6 +54,14 @@ export function KidCard({
         aria-hidden
         className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/35 blur-xl"
       />
+      {badge && (
+        <span
+          aria-hidden
+          className="absolute left-3 top-3 rounded-full bg-white/85 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-ink-soft shadow-clay-sm"
+        >
+          {badge}
+        </span>
+      )}
       <span
         className={cn(
           "relative block h-[6.5rem] w-[6.5rem] rounded-full transition-transform duration-500 ease-spring group-hover:-translate-y-1 group-active:scale-95 sm:h-28 sm:w-28",

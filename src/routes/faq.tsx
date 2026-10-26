@@ -72,6 +72,10 @@ const FAQ_SCHEMA: { q: string; a: string }[] = [
     a: "Yes. Each child has their own chores and habits, earns points individually, and contributes to the shared family jar. The shared jar turns chore time from sibling competition into teamwork.",
   },
   {
+    q: "Can friends who are visiting earn points?",
+    a: "Yes. Tap “A friend is over?” on Home to add them for the day — they pick a character and earn points for your chores and kind moments, without touching your family jar. When they head home, send their points to their parent as a picture and a link. If their family uses PointPals, one tap adds the points to their own jar.",
+  },
+  {
     q: "Why don't marbles drop one-for-one when the target is higher than 90?",
     a: "The jar animation can fit up to 90 marbles while staying smooth on every device. If your family's target is above 90, each marble represents a chunk of points instead of a single point, so the jar still fills honestly to 100% of the target. Small awards are added to a running total, and a soft +N floater appears for every positive award so every contribution is acknowledged, even before a full marble drops.",
   },
@@ -164,6 +168,25 @@ const SECTIONS: FaqSection[] = [
             <p>
               The shared jar is one of our most important features — it turns chore time from
               sibling competition into teamwork.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: "visiting-friends",
+        question: "Can friends who are visiting earn points?",
+        content: (
+          <>
+            <p>
+              Yes — friends always want in. Tap <strong>“A friend is over?”</strong> on Home to add
+              them for the day. They choose a character and earn points for your chores and kind
+              moments, and none of it goes in your family jar.
+            </p>
+            <p>
+              When they head home, tap <strong>Send points home</strong>: you get a picture of what
+              they did to text to their parent, plus a link. If their family uses PointPals, one tap
+              adds the points to their own jar; if not, the picture shows exactly what to add to
+              whatever they use.
             </p>
           </>
         ),
