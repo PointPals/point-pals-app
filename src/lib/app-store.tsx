@@ -461,6 +461,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
+        // auth-js re-emits SIGNED_IN every time the tab becomes visible again
+        // (e.g. back from the phone's camera). For the family already loaded,
+        // catch up quietly: flipping `loading` swaps the whole page for the
+        // loader and throws away anything half-done — like a photo just
+        // taken for a memory.
+        if (session.user.id === userIdRef.current && householdIdRef.current) {
+          void bootLive(session.user.id);
+          return;
+        }
         setLoading(true);
         void bootLive(session.user.id).then(() => {
           if (!cancelled) setLoading(false);

@@ -117,9 +117,17 @@ function gapKidSequence(kids: Kid[]): Kid[] {
 // events push kid-coloured marbles; negatives pop them, preferring one of
 // that kid's own marbles first (§3 phase 1 — "who contributed").
 //
-// If the event log's implied pool falls short of `fallbackValue`, the gap is
-// filled with neutral-colour synthetic marbles so the jar always represents
-// the actual sharedPool — even after a browser storage clear or data reset.
+// The walk is deliberately NOT capped at the target: history keeps every
+// past reward cycle (claiming a reward zeroes the pool, not the log), so the
+// walk's running total is usually far above the target. Capping it made each
+// new award compute as "remove marbles" once old cycles passed the target,
+// so new marbles never got their kid's colour. Instead the whole log is
+// walked and the jar keeps the NEWEST marbles — the current cycle's.
+//
+// If the log can't account for the whole pool (history is capped at 200
+// events), the shortfall is drawn as filler marbles at the BOTTOM of the jar
+// with ids counted from the bottom, so a new award never renames them (which
+// used to dissolve a marble and drop a wrongly coloured one).
 function buildDesired(
   events: PointEvent[],
   kids: Kid[],
@@ -145,76 +153,53 @@ function buildDesired(
   for (const e of asc) {
     const beforeCount = Math.round(pool / perMarble);
     pool = Math.max(0, pool + e.points);
-    const afterCount = Math.min(
-      Math.round(pool / perMarble),
-      Math.round(target / perMarble),
-    );
-    let diff = afterCount - beforeCount;
+    let diff = Math.round(pool / perMarble) - beforeCount;
 
     const key = kidTintKey.get(e.kidId) ?? "lilac";
     const tint = MARBLE_TINT[key] ?? DEFAULT_TINT;
 
-    if (diff > 0) {
-      for (let i = 0; i < diff; i++) {
-        list.push({
-          id: `${e.id}-${i}`,
-          kidId: e.kidId,
-          color: tint[0],
-          hue: tint[1],
-        });
-      }
-    } else if (diff < 0) {
-      let toRemove = -diff;
-      while (toRemove > 0 && list.length > 0) {
-        let idx = -1;
-        for (let i = list.length - 1; i >= 0; i--) {
-          if (list[i].kidId === e.kidId) {
-            idx = i;
-            break;
-          }
+    for (let i = 0; i < diff; i++) {
+      list.push({ id: `${e.id}-${i}`, kidId: e.kidId, color: tint[0], hue: tint[1] });
+    }
+    while (diff < 0 && list.length > 0) {
+      let idx = -1;
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i].kidId === e.kidId) {
+          idx = i;
+          break;
         }
-        if (idx < 0) idx = list.length - 1;
-        list.splice(idx, 1);
-        toRemove--;
       }
+      if (idx < 0) idx = list.length - 1;
+      list.splice(idx, 1);
+      diff++;
     }
   }
 
-  // If the fallback value indicates the jar should have fewer marbles than the
-  // event log builds (e.g. after a reward cycle reset), trim the list so the jar
-  // empties truthfully. Trim from the START (oldest events) so newly-earned
-  // marbles (from the current reward cycle) survive — this keeps the visible
-  // marble colours aligned with personalPool / sharedPool.
-  // Prefer the caller's pool, but ignore a NaN/Infinity fallback so a bad split
-  // calc can't blank the jar — fall back to the event-derived pool instead.
+  // How many marbles the jar should show: the caller's pool (ignoring a
+  // NaN/Infinity so a bad split calc can't blank the jar), up to the target
+  // and the physical cap.
   const safeFallback = Number.isFinite(fallbackValue) ? (fallbackValue as number) : pool;
   const desiredCount = Math.min(
     Math.round(Math.max(0, safeFallback) / perMarble),
     Math.round(target / perMarble),
     cap,
   );
-  if (list.length > desiredCount) {
-    list.splice(0, list.length - desiredCount);
-  }
 
-  // Fill any remaining gap so the jar always has the right marble count even
-  // when the event history is sparse (after a reload / before events sync).
-  // Colour gap marbles by kid so the jar reflects who has points, not a neutral
-  // fallback: a personal jar → that child's colour; the family jar → the kids'
-  // colours distributed by their points (e.g. Leo blue + Ruby pink, not orange).
+  // Keep the newest marbles — the current reward cycle's.
+  const kept = list.slice(Math.max(0, list.length - desiredCount));
+
+  // Filler for any part of the pool the log doesn't cover, coloured by the
+  // kids' points (a personal jar → that child's colour; the family jar → the
+  // kids' colours in proportion), sitting under the known marbles.
+  const gapCount = desiredCount - kept.length;
   const gapSeq = gapKidSequence(kids);
-  let gapIdx = 0;
-  while (list.length < desiredCount) {
-    const gk = gapSeq.length ? gapSeq[gapIdx % gapSeq.length] : null;
+  const filler: { id: string; kidId: string; color: string; hue: string }[] = [];
+  for (let i = 0; i < gapCount; i++) {
+    const gk = gapSeq.length ? gapSeq[i % gapSeq.length] : null;
     const t = gk ? (MARBLE_TINT[gk.color] ?? DEFAULT_TINT) : (MARBLE_TINT.sand ?? DEFAULT_TINT);
-    list.push({ id: `gap-${list.length}`, kidId: gk ? gk.id : "gap", color: t[0], hue: t[1] });
-    gapIdx++;
+    filler.push({ id: `gap-${i}`, kidId: gk ? gk.id : "gap", color: t[0], hue: t[1] });
   }
-
-  // Cap: keep the newest `cap` marbles so an old jar full of ancient events
-  // doesn't stall the physics.
-  if (list.length > cap) list.splice(0, list.length - cap);
-  return list;
+  return [...filler, ...kept];
 }
 
 export function MarbleJar({
