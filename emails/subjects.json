@@ -1,0 +1,18 @@
+{
+  "supabase": {
+    "reset-password": "Reset your PointPals password",
+    "confirm-signup": "Confirm your email for PointPals",
+    "magic-link": "Your PointPals login link",
+    "invite": "You’ve been invited to PointPals",
+    "change-email": "Confirm your new email for PointPals",
+    "reauthentication": "Your PointPals confirmation code"
+  },
+  "resend": {
+    "contact-confirmation": "We got your message",
+    "tip-start-small": "Start small: the 3-chore rule",
+    "tip-label-praise": "The kind of praise that sticks",
+    "habit-fading-tips": "One month in: when to fade the points",
+    "memory-expiry-warning": "Your memory feed refreshes on {{{cycle_end_date}}}",
+    "montage-ready": "Your season recap is ready 🎬"
+  }
+}
