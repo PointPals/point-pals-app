@@ -1,15 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PublicLogo } from "@/components/PublicLogo";
+import { AuthShell } from "@/components/public/AuthShell";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
   head: () => ({
-    meta: [
-      { title: "Reset password — PointPals" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Reset password — PointPals" }, { name: "robots", content: "noindex" }],
   }),
 });
 
@@ -53,16 +50,17 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <PublicLogo fixed />
-      <div className="card-soft p-6 w-full max-w-sm">
+    <AuthShell>
+      <div className="card-soft auth-card w-full p-7">
         <h1 className="font-display text-2xl font-bold">
           {mode === "update" ? "Set a new password" : "Reset password"}
         </h1>
         {mode === "request" ? (
           <form onSubmit={sendReset} className="mt-5 space-y-3">
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Email
+              </span>
               <input
                 type="email"
                 required
@@ -76,7 +74,7 @@ function ResetPasswordPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+              className="w-full rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
             >
               {busy ? "Sending…" : "Send reset link"}
             </button>
@@ -84,7 +82,9 @@ function ResetPasswordPage() {
         ) : (
           <form onSubmit={updatePassword} className="mt-5 space-y-3">
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">New password</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                New password
+              </span>
               <input
                 type="password"
                 required
@@ -99,7 +99,7 @@ function ResetPasswordPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+              className="w-full rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
             >
               {busy ? "Updating…" : "Update password"}
             </button>
@@ -111,6 +111,6 @@ function ResetPasswordPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

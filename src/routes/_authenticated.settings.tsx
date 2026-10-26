@@ -1,3 +1,4 @@
+import { SignOutButton } from "@/components/shell/SignOutButton";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-store";
@@ -71,7 +72,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { submitContactForm } from "@/lib/emails.functions";
-import { fetchSeasonInfo, setSeasonRefreshEnabled } from "@/lib/montage";
+import { fetchSeasonInfo } from "@/lib/montage";
 import { exportMemoriesZip } from "@/lib/montage";
 
 const SUPPORT_EMAIL = "support@pointpals.co.nz";
@@ -95,8 +96,8 @@ function SettingsPage() {
   const { role, userId, isAdmin } = useHouseholdRole(household.id);
   const isLive = !!userId; // signed in against Supabase household
 
-  // Seasonal memory refresh (retention opt-out). null = not loaded / demo mode.
-  const [seasonRefresh, setSeasonRefresh] = useState<boolean | null>(null);
+  // Memory season info. null = not loaded / demo mode.
+  const [seasonDaysLeft, setSeasonDaysLeft] = useState<number | null>(null);
   const [seasonDays, setSeasonDays] = useState(90);
   const [memoryCount, setMemoryCount] = useState(0);
   const [exporting, setExporting] = useState(false);
@@ -109,7 +110,7 @@ function SettingsPage() {
     if (!isLive) return;
     void fetchSeasonInfo(household.id).then((s) => {
       if (s) {
-        setSeasonRefresh(s.enabled);
+        setSeasonDaysLeft(s.daysLeft);
         setSeasonDays(s.retentionDays);
       }
     });
@@ -122,12 +123,6 @@ function SettingsPage() {
         if (count !== null) setMemoryCount(count);
       });
   }, [isLive, household.id]);
-  async function saveSeasonRefresh(enabled: boolean) {
-    setSeasonRefresh(enabled); // optimistic
-    const ok = await setSeasonRefreshEnabled(household.id, enabled);
-    if (!ok) setSeasonRefresh(!enabled);
-    else trackParent("memory_season_refresh_toggled", { enabled });
-  }
   async function handleExportMemories() {
     setExporting(true);
     setExportError(null);
@@ -304,9 +299,7 @@ function SettingsPage() {
     <div className="space-y-8 pb-8">
       <div>
         <h1 className="font-display text-3xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Parent controls and your data.
-        </p>
+        <p className="text-sm text-muted-foreground">Parent controls and your data.</p>
       </div>
 
       {/* Household */}
@@ -332,7 +325,7 @@ function SettingsPage() {
                 step={10}
                 value={household.rewardTarget}
                 onChange={(e) => setRewardTarget(Number(e.target.value))}
-                className="flex-1 accent-foreground"
+                className="flex-1 accent-primary"
               />
               <span className="font-display text-lg font-bold w-12 text-right">
                 {household.rewardTarget}
@@ -462,7 +455,7 @@ function SettingsPage() {
                     onClick={() => setInviteRole(opt.value)}
                     className={`tap px-4 py-1.5 rounded-full text-sm font-semibold transition ${
                       inviteRole === opt.value
-                        ? "bg-foreground text-background"
+                        ? "bg-cta text-white"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -493,7 +486,7 @@ function SettingsPage() {
                   }
                 }}
                 disabled={generating}
-                className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+                className="tap rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
               >
                 {generating ? (
                   <>
@@ -655,7 +648,7 @@ function SettingsPage() {
                 setSetting("kidsViewPin", kidPin);
                 setSetting("kidsViewActive", true);
               }}
-              className="tap inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+              className="tap inline-flex items-center gap-2 rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
             >
               <Eye className="h-4 w-4" /> Lock this device
             </button>
@@ -769,9 +762,7 @@ function SettingsPage() {
                       <p>
                         Type <strong>DELETE</strong> below to confirm.
                       </p>
-                      {deleteError && (
-                        <p className="text-xs text-destructive">{deleteError}</p>
-                      )}
+                      {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="px-6 pb-2">
@@ -805,9 +796,7 @@ function SettingsPage() {
                           await supabase.auth.signOut();
                           navigate({ to: "/welcome" });
                         } catch (err) {
-                          setDeleteError(
-                            err instanceof Error ? err.message : "Deletion failed"
-                          );
+                          setDeleteError(err instanceof Error ? err.message : "Deletion failed");
                           setDeleteConfirmText("");
                           setDeleting(false);
                         }
@@ -819,21 +808,27 @@ function SettingsPage() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-            {isLive && seasonRefresh !== null && (
+            {isLive && seasonDaysLeft !== null && (
               <div className="border-t border-border/60 -mx-4 mt-1">
                 {/* Memory count + season info */}
-                <div className="px-4 pt-4 pb-2">
-                  <p className="text-xs text-muted-foreground">
-                    {seasonRefresh
-                      ? `Your memories cycle every ${seasonDays} days. When the season ends, the feed is cleared and a video montage is emailed to you.`
-                      : `Seasonal refresh is off — memories stay forever. No montage video will be created.`}
+                <div className="px-4 pt-4 pb-4">
+                  <p className="flex items-start gap-2 text-sm font-semibold text-ink">
+                    <RefreshCw className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    Memories are kept for {seasonDays} days
                   </p>
-                  {seasonRefresh && memoryCount > 0 && (
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    For your family’s privacy, photos, videos and voice notes are cleared at the end
+                    of each {seasonDays}-day season. A few days before, we email you and make your
+                    season recap video, oldest moment first.
+                    {seasonDaysLeft > 0 &&
+                      ` This season ends in ${seasonDaysLeft} ${seasonDaysLeft === 1 ? "day" : "days"}.`}
+                  </p>
+                  {memoryCount > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         onClick={() => void handleExportMemories()}
                         disabled={exporting}
-                        className="tap inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:opacity-50"
+                        className="tap inline-flex items-center gap-2 rounded-full bg-cta px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                       >
                         {exporting ? (
                           <>
@@ -855,13 +850,6 @@ function SettingsPage() {
                   )}
                   {exportError && <p className="mt-2 text-xs text-destructive">{exportError}</p>}
                 </div>
-                <ToggleRow
-                  icon={<RefreshCw className="h-4 w-4" />}
-                  label="Seasonal memory refresh"
-                  desc={`Memories are kept for one ${seasonDays}-day season, then cleared — you get an email and a downloadable montage first. Turn off to keep the feed forever.`}
-                  checked={seasonRefresh}
-                  onChange={(v) => void saveSeasonRefresh(v)}
-                />
               </div>
             )}
           </div>
@@ -893,7 +881,7 @@ function SettingsPage() {
                   <button
                     onClick={() => void saveDisplayName()}
                     disabled={savingName}
-                    className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                    className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
                   >
                     {displayNameSaved ? <Check className="h-4 w-4" /> : null}
                     {savingName ? "Saving…" : displayNameSaved ? "Saved" : "Save"}
@@ -905,15 +893,7 @@ function SettingsPage() {
 
           <div className="space-y-3 border-t border-border/60 pt-4">
             <p className="text-sm text-muted-foreground">Sign out of PointPals on this device.</p>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/welcome" });
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
+            <SignOutButton className="tap inline-flex min-h-11 items-center gap-2 rounded-full border border-destructive/40 px-5 text-sm font-semibold text-destructive transition hover:bg-destructive/10" />
           </div>
         </div>
       </section>
@@ -1019,7 +999,7 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
       }}
     >
       <DialogTrigger asChild>
-        <button className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition">
+        <button className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full bg-cta px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition">
           <MailQuestion className="h-4 w-4" /> Message us
         </button>
       </DialogTrigger>
@@ -1086,7 +1066,6 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif,image/heic"
-                capture="environment"
                 onChange={(e) => {
                   const file = e.target.files?.[0] ?? null;
                   setScreenshot(file);
@@ -1119,7 +1098,7 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
             <button
               type="submit"
               disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> {busy ? "Sending…" : "Send message"}
             </button>
@@ -1225,7 +1204,7 @@ function KidsViewShareLink({ householdId }: { householdId: string }) {
             />
             <button
               onClick={copy}
-              className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+              className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copied" : "Share"}
@@ -1251,7 +1230,7 @@ function KidsViewShareLink({ householdId }: { householdId: string }) {
 function RoleBadge({ role }: { role: HouseholdRole }) {
   if (!role) return null;
   const styles: Record<Exclude<HouseholdRole, null>, string> = {
-    admin: "bg-foreground text-background",
+    admin: "bg-cta text-white",
     parent: "bg-lilac text-lilac-foreground",
     contributor: "bg-sage text-sage-foreground",
     viewer: "bg-muted text-muted-foreground",

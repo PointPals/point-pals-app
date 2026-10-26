@@ -175,7 +175,7 @@ function RewardsPage() {
                   step={10}
                   value={rewardTarget}
                   onChange={(e) => setRewardTargetLocal(Number(e.target.value))}
-                  className="flex-1 accent-foreground"
+                  className="flex-1 accent-primary"
                 />
                 <span className="font-display text-lg font-bold w-12 text-right">
                   {rewardTarget}
@@ -185,7 +185,7 @@ function RewardsPage() {
             <button
               onClick={saveReward}
               disabled={!rewardName.trim()}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cta text-white px-6 py-3 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
               <Check className="w-4 h-4" /> Set reward
             </button>
@@ -215,7 +215,7 @@ function RewardsPage() {
               {reached && (
                 <button
                   onClick={handleClaimReward}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition animate-pulse"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition animate-pulse"
                 >
                   <PartyPopper className="w-4 h-4" /> Claim reward!
                 </button>
@@ -302,7 +302,7 @@ function RewardsPage() {
                       step={5}
                       value={household.splitRatio}
                       onChange={(e) => setSplitRatio(Number(e.target.value))}
-                      className="flex-1 accent-foreground"
+                      className="flex-1 accent-primary"
                     />
                     <span className="font-display text-lg font-bold w-12 text-right">
                       {household.splitRatio}%

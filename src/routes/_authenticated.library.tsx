@@ -4,7 +4,8 @@ import { useApp } from "@/lib/app-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { IconTile } from "@/components/IconTile";
 import { KidChartCard } from "@/components/KidChartCard";
-import { CompanionPicker } from "@/components/CompanionPicker";
+import { KidFields } from "@/components/shell/KidFields";
+import { AddKidSheet } from "@/components/shell/AddKidSheet";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import type { Chore, PastelKey } from "@/lib/mock-data";
 import { COMPANIONS, PASTEL_HEX } from "@/lib/mock-data";
@@ -40,7 +41,9 @@ import {
   EyeOff,
   RefreshCw,
   GripVertical,
+  Plus,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function IconPickerGrid({
   selected,
@@ -189,7 +192,7 @@ function IconPickerGrid({
             onClick={() => setTagFilter(t)}
             className={`tap px-3 py-1 rounded-full text-xs font-semibold transition ${
               tagFilter === t
-                ? "bg-foreground text-background"
+                ? "bg-cta text-white"
                 : "bg-muted text-muted-foreground hover:bg-muted/70"
             }`}
           >
@@ -376,7 +379,7 @@ export const Route = createFileRoute("/_authenticated/library")({
   component: LibraryPage,
   head: () => ({
     meta: [
-      { title: "Points — PointPals" },
+      { title: "Chores — PointPals" },
       {
         name: "description",
         content: "Manage chores, positive skills, needs-work behaviours, and the family roster.",
@@ -419,13 +422,11 @@ function LibraryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold">Points</h1>
-        <p className="text-sm text-muted-foreground">
-          Add, edit, and remove anything your family tracks.
-        </p>
-        <p className="text-xs text-muted-foreground/70 mt-1">
-          When awarding points on the home screen, tapping a child&apos;s badge shows only that
-          child&apos;s assigned items.
+        <h1 className="font-display text-[2.4rem] font-semibold leading-none tracking-[-0.03em] text-ink">
+          Chores
+        </h1>
+        <p className="mt-2 text-[0.95rem] text-ink-soft">
+          Everything your family can earn marbles for — and the habits you’re working on.
         </p>
       </div>
 
@@ -436,23 +437,32 @@ function LibraryPage() {
         </div>
       )}
 
-      <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
-        {[
-          { k: "chores", label: "Chores" },
-          { k: "positive", label: "Positive" },
-          { k: "needs-work", label: "Needs work" },
-          { k: "family", label: "Family" },
-        ].map((t) => (
-          <button
-            key={t.k}
-            onClick={() => setTab(t.k as typeof tab)}
-            className={`tap inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-sm font-semibold transition ${
-              tab === t.k ? "bg-card shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+        <div
+          role="tablist"
+          aria-label="What to manage"
+          className="inline-flex items-center gap-1 rounded-full bg-muted p-1"
+        >
+          {[
+            { k: "chores", label: "Chores" },
+            { k: "positive", label: "Kind & brave" },
+            { k: "needs-work", label: "Needs work" },
+            { k: "family", label: "Family" },
+          ].map((t) => (
+            <button
+              key={t.k}
+              role="tab"
+              aria-selected={tab === t.k}
+              onClick={() => setTab(t.k as typeof tab)}
+              className={cn(
+                "tap inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2.5 text-[0.8125rem] font-semibold transition min-[400px]:px-3.5 sm:px-4 sm:text-sm",
+                tab === t.k ? "bg-card text-ink shadow-clay-sm" : "text-ink-soft hover:text-ink",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div
@@ -481,7 +491,8 @@ function LibraryPage() {
             }
             updateSkill={updateSkill}
             removeSkill={removeSkill}
-            addLabel="Add positive skill"
+            addLabel="Add kind & brave"
+            noun="kind & brave moment"
             pointsMin={1}
             pointsMax={20}
             defaultPoints={2}
@@ -502,6 +513,7 @@ function LibraryPage() {
             updateSkill={updateSkill}
             removeSkill={removeSkill}
             addLabel="Add behaviour"
+            noun="behaviour"
             muted
             pointsMin={-20}
             pointsMax={-1}
@@ -510,6 +522,49 @@ function LibraryPage() {
         )}
         {tab === "family" && <FamilyTab />}
       </div>
+    </div>
+  );
+}
+
+// The collapsed "add" row: the family's list comes first, the form on demand.
+function AddBar({
+  count,
+  noun,
+  label,
+  onAdd,
+}: {
+  count: number;
+  noun: string;
+  label: string;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-sm font-semibold text-ink-soft">
+        {count} {count === 1 ? noun : `${noun}s`}
+      </p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="tap inline-flex min-h-11 items-center gap-1.5 rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm transition hover:-translate-y-0.5"
+      >
+        <Plus className="h-4 w-4" aria-hidden /> {label}
+      </button>
+    </div>
+  );
+}
+
+function AddFormHeader({ title, onDone }: { title: string; onDone: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="font-display text-xl font-semibold text-ink">{title}</h2>
+      <button
+        type="button"
+        onClick={onDone}
+        className="tap min-h-10 rounded-full px-3 text-sm font-semibold text-ink-soft hover:bg-muted hover:text-ink"
+      >
+        Done
+      </button>
     </div>
   );
 }
@@ -592,7 +647,7 @@ function AppliesToChips({
               aria-pressed={on}
               className={`tap inline-flex items-center gap-1.5 rounded-full pl-1 pr-3 py-1 text-sm font-semibold border transition ${
                 on
-                  ? "bg-foreground text-background border-foreground"
+                  ? "bg-cta text-white border-transparent"
                   : "border-input text-muted-foreground hover:bg-muted"
               }`}
             >
@@ -656,7 +711,7 @@ function SortableChoreTile({
       }}
       className="w-full flex flex-col items-center"
     >
-      <div className="tap relative">
+      <div className="tap relative w-full max-w-[7.5rem]">
         <IconTile
           icon={it.icon}
           label={it.name}
@@ -715,6 +770,7 @@ function ChoreManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
   const [icon, setIcon] = useState<string | null>(null);
+  const [adding, setAdding] = useState(chores.length === 0);
 
   // Device-local print order (drives the PDF chart). Subscribe so the grid
   // reflows immediately when a chore is dragged to a new spot.
@@ -776,81 +832,90 @@ function ChoreManager({
 
   return (
     <div className="space-y-6">
-      {/* Add form */}
-      <form onSubmit={submit} className="card-soft p-4 space-y-3">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[180px]">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Name
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Put away dishes"
-              className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Points
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={points}
-              onChange={(e) => setPoints(clampPoints(Number(e.target.value)))}
-              className="w-20 mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground font-display font-bold text-lg"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={busy || !name.trim()}
-            className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
-          >
-            {busy ? "Adding…" : "Add chore"}
-          </button>
-        </div>
-
-        <IconPickerGrid selected={icon} onSelect={setIcon} />
-
-        <div className="flex flex-wrap gap-2 items-center">
-          {PALETTE.map((c) => (
+      {!adding ? (
+        <AddBar
+          count={chores.length}
+          noun="chore"
+          label="Add chore"
+          onAdd={() => setAdding(true)}
+        />
+      ) : (
+        <form onSubmit={submit} className="card-soft p-5 space-y-4">
+          <AddFormHeader title="New chore" onDone={() => setAdding(false)} />
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex-1 min-w-[180px]">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Name
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Put away dishes"
+                className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Points
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={points}
+                onChange={(e) => setPoints(clampPoints(Number(e.target.value)))}
+                className="w-20 mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground font-display font-bold text-lg"
+              />
+            </div>
             <button
-              type="button"
-              key={c}
-              onClick={() => setColor(c)}
-              className={`w-7 h-7 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
-              style={{ backgroundColor: PASTEL_HEX[c] }}
-              aria-label={c}
-            />
-          ))}
-          <div className="flex-1 min-w-[160px] ml-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Tags
-            </label>
-            <input
-              value={tagsStr}
-              onChange={(e) => setTagsStr(e.target.value)}
-              placeholder="e.g. Must Do, Morning"
-              className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-sm"
-            />
+              type="submit"
+              disabled={busy || !name.trim()}
+              className="tap rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+            >
+              {busy ? "Adding…" : "Add chore"}
+            </button>
           </div>
-        </div>
-      </form>
+
+          <IconPickerGrid selected={icon} onSelect={setIcon} />
+
+          <div className="flex flex-wrap gap-2 items-center">
+            {PALETTE.map((c) => (
+              <button
+                type="button"
+                key={c}
+                onClick={() => setColor(c)}
+                className={`w-7 h-7 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
+                style={{ backgroundColor: PASTEL_HEX[c] }}
+                aria-label={c}
+              />
+            ))}
+            <div className="flex-1 min-w-[160px] ml-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Tags
+              </label>
+              <input
+                value={tagsStr}
+                onChange={(e) => setTagsStr(e.target.value)}
+                placeholder="e.g. Must Do, Morning"
+                className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-sm"
+              />
+            </div>
+          </div>
+        </form>
+      )}
 
       {chores.length === 0 && (
         <div className="card-soft px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Nothing here yet — add your first chore above to start tracking it.
+            Nothing here yet — add your first chore to start tracking it.
           </p>
         </div>
       )}
 
       {chores.length > 0 && (
-        <p className="text-xs text-muted-foreground/80 -mb-2">
-          Tap a chore to rename it or change its points. Drag the grip handle (top-left of each
-          tile) to set the order chores print on the chart — e.g. morning first.
+        <p className="pb-1 text-xs leading-relaxed text-muted-foreground">
+          Tap a chore to edit it or choose which children it’s for. Drag the grip (top-left) to set
+          the order chores print on the chart — e.g. morning first.
         </p>
       )}
 
@@ -916,6 +981,7 @@ function SkillManager({
   updateSkill,
   removeSkill,
   addLabel,
+  noun,
   muted = false,
   pointsMin,
   pointsMax,
@@ -926,6 +992,8 @@ function SkillManager({
   updateSkill: (id: string, patch: ItemPatch) => void;
   removeSkill: (id: string) => void;
   addLabel: string;
+  /** Singular noun for the count line, e.g. "behaviour". */
+  noun: string;
   muted?: boolean;
   pointsMin: number;
   pointsMax: number;
@@ -938,6 +1006,7 @@ function SkillManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
   const [icon, setIcon] = useState<string | null>(null);
+  const [adding, setAdding] = useState(skills.length === 0);
 
   const clampPoints = (n: number) => Math.max(pointsMin, Math.min(pointsMax, n));
 
@@ -964,61 +1033,66 @@ function SkillManager({
 
   return (
     <div className="space-y-6">
-      <form onSubmit={submit} className="card-soft p-4 space-y-3">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[180px]">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Name
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Put away dishes"
-              className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Points
-            </label>
-            <input
-              type="number"
-              min={pointsMin}
-              max={pointsMax}
-              value={points}
-              onChange={(e) => setPoints(Number(e.target.value))}
-              className="w-20 mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground font-display font-bold text-lg"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={busy || !name.trim()}
-            className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
-          >
-            {busy ? "Adding…" : addLabel}
-          </button>
-        </div>
-
-        <IconPickerGrid selected={icon} onSelect={setIcon} />
-
-        <div className="flex gap-2">
-          {PALETTE.map((c) => (
+      {!adding ? (
+        <AddBar count={skills.length} noun={noun} label={addLabel} onAdd={() => setAdding(true)} />
+      ) : (
+        <form onSubmit={submit} className="card-soft p-5 space-y-4">
+          <AddFormHeader title={addLabel} onDone={() => setAdding(false)} />
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex-1 min-w-[180px]">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Name
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Put away dishes"
+                className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Points
+              </label>
+              <input
+                type="number"
+                min={pointsMin}
+                max={pointsMax}
+                value={points}
+                onChange={(e) => setPoints(Number(e.target.value))}
+                className="w-20 mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground font-display font-bold text-lg"
+              />
+            </div>
             <button
-              type="button"
-              key={c}
-              onClick={() => setColor(c)}
-              className={`w-7 h-7 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
-              style={{ backgroundColor: PASTEL_HEX[c] }}
-              aria-label={c}
-            />
-          ))}
-        </div>
-      </form>
+              type="submit"
+              disabled={busy || !name.trim()}
+              className="tap rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+            >
+              {busy ? "Adding…" : addLabel}
+            </button>
+          </div>
+
+          <IconPickerGrid selected={icon} onSelect={setIcon} />
+
+          <div className="flex gap-2">
+            {PALETTE.map((c) => (
+              <button
+                type="button"
+                key={c}
+                onClick={() => setColor(c)}
+                className={`w-7 h-7 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
+                style={{ backgroundColor: PASTEL_HEX[c] }}
+                aria-label={c}
+              />
+            ))}
+          </div>
+        </form>
+      )}
 
       {skills.length === 0 && (
         <div className="card-soft px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Nothing here yet — add your first one above to start tracking it.
+            Nothing here yet — add your first one to start tracking it.
           </p>
         </div>
       )}
@@ -1026,7 +1100,7 @@ function SkillManager({
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-2 gap-y-6 justify-items-center">
         {skills.map((it) => (
           <div key={it.id} className="w-full flex flex-col items-center">
-            <div className="tap relative">
+            <div className="tap relative w-full max-w-[7.5rem]">
               <IconTile
                 icon={it.icon}
                 label={it.name}
@@ -1157,7 +1231,7 @@ function AiIconPanel({
         <button
           onClick={generate}
           disabled={generating || !prompt.trim() || (usage?.used ?? 0) >= (usage?.cap ?? 10)}
-          className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
+          className="tap rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
         >
           {generating ? <span className="animate-spin">⟳</span> : <Wand2 className="w-3.5 h-3.5" />}
           {generating ? "Generating…" : "Generate"}
@@ -1174,7 +1248,7 @@ function AiIconPanel({
               onSelect(result);
               onClose();
             }}
-            className="tap rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-semibold"
+            className="tap rounded-full bg-cta text-white px-4 py-1.5 text-xs font-semibold"
           >
             Use this icon
           </button>
@@ -1292,7 +1366,8 @@ function UploadIconPanel({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        // No `capture` attribute: it forces phones straight into the camera.
+        // Without it iOS/Android show the picker (Photo Library, Camera, Files).
         className="hidden"
         onChange={handleFile}
       />
@@ -1334,7 +1409,7 @@ function UploadIconPanel({
                 </button>
                 <button
                   onClick={upload}
-                  className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
+                  className="tap rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
                 >
                   {uploading ? (
                     <span className="animate-spin">⟳</span>
@@ -1366,7 +1441,7 @@ function UploadIconPanel({
             onClick={() => {
               onComplete(result);
             }}
-            className="tap rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-semibold"
+            className="tap rounded-full bg-cta text-white px-4 py-1.5 text-xs font-semibold"
           >
             Use this icon
           </button>
@@ -1520,7 +1595,7 @@ function EditPanel({
         <div className="flex items-center gap-3">
           <button
             onClick={onCancel}
-            className="tap text-sm font-semibold text-muted-foreground hover:text-foreground"
+            className="tap min-h-11 px-2 text-sm font-semibold text-ink-soft hover:text-ink"
           >
             Cancel
           </button>
@@ -1541,7 +1616,7 @@ function EditPanel({
               onSave(patch);
             }}
             disabled={!name.trim()}
-            className="tap inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="tap inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
           >
             <Check className="w-4 h-4" /> Save changes
           </button>
@@ -1554,7 +1629,7 @@ function EditPanel({
 // ─── Family Tab ──────────────────────────────────────────────────────────────
 
 function FamilyTab() {
-  const { kids, addKid, updateKid, removeKid, resetRewardCycle } = useApp();
+  const { kids, updateKid, removeKid, resetRewardCycle } = useApp();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -1575,10 +1650,19 @@ function FamilyTab() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">
-        Each user can take home a printable weekly chart — colour it in by hand, and points still
-        get tapped into the app as usual. Tap a user to edit their name, colour, or mascot.
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <p className="max-w-prose text-sm leading-relaxed text-ink-soft">
+          Print each child a weekly chart to colour in on the fridge — points still go into the app
+          as usual. Tap the pencil to change a name, colour or character.
+        </p>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="tap inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm transition hover:-translate-y-0.5"
+        >
+          <Plus className="h-4 w-4" aria-hidden /> Add a child
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {kids.map((k) => (
@@ -1587,9 +1671,9 @@ function FamilyTab() {
             <button
               onClick={() => setEditingId(k.id)}
               aria-label={`Edit ${k.name}`}
-              className="tap absolute top-2 right-2 w-8 h-8 rounded-full bg-card border border-border shadow flex items-center justify-center"
+              className="tap absolute top-2 right-2 grid h-10 w-10 place-items-center rounded-full bg-card text-ink shadow-clay-sm"
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="h-4 w-4" aria-hidden />
             </button>
           </div>
         ))}
@@ -1597,12 +1681,12 @@ function FamilyTab() {
 
       {editingId && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center pt-[15%] sm:pt-[8%] px-4 animate-pop-in"
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/35 px-4 py-[max(1.5rem,env(safe-area-inset-top))] backdrop-blur-[2px] animate-pop-in sm:py-[6vh]"
           onClick={(e) => {
             if (e.target === e.currentTarget) setEditingId(null);
           }}
         >
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-xl">
             <KidForm
               key={editingId}
               initial={kids.find((k) => k.id === editingId)}
@@ -1628,23 +1712,7 @@ function FamilyTab() {
         </div>
       )}
 
-      {!editingId &&
-        (adding ? (
-          <KidForm
-            onSubmit={(name, color, companionId) => {
-              addKid(name, color, companionId);
-              setAdding(false);
-            }}
-            onCancel={() => setAdding(false)}
-          />
-        ) : (
-          <button
-            onClick={() => setAdding(true)}
-            className="tap w-full rounded-2xl border-2 border-dashed border-border py-4 text-sm font-semibold text-muted-foreground hover:border-foreground hover:text-foreground transition"
-          >
-            + Add a kid
-          </button>
-        ))}
+      <AddKidSheet open={adding} onOpenChange={setAdding} />
     </div>
   );
 }
@@ -1672,54 +1740,22 @@ function KidForm({
         if (!name.trim()) return;
         onSubmit(name.trim(), color, companionId);
       }}
-      className="card-soft p-4 space-y-4 animate-pop-in"
+      className="card-soft space-y-5 p-6 animate-pop-in"
     >
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-bold">
-          {editing ? `Edit ${initial!.name}` : "Add a kid"}
-        </h3>
-        <div
-          className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center"
-          style={{ backgroundColor: PASTEL_HEX[color] }}
-        >
-          <CompanionAvatar
-            seed={initial?.id ?? "new"}
-            color={color}
-            size={40}
-            companionId={companionId}
-          />
-        </div>
-      </div>
+      <h3 className="font-display text-[1.6rem] font-semibold leading-tight text-ink">
+        {editing ? `Edit ${initial!.name}` : "Add a child"}
+      </h3>
 
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[180px]">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Kid's name
-          </label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            className="w-full mt-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground"
-          />
-        </div>
-        <div className="flex gap-2">
-          {PALETTE.map((c) => (
-            <button
-              type="button"
-              key={c}
-              onClick={() => setColor(c)}
-              className={`w-8 h-8 rounded-full transition ${color === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
-              style={{ backgroundColor: PASTEL_HEX[c] }}
-              aria-label={c}
-            />
-          ))}
-        </div>
-      </div>
+      <KidFields
+        name={name}
+        onNameChange={setName}
+        color={color}
+        onColorChange={setColor}
+        companionId={companionId}
+        onCompanionChange={setCompanionId}
+      />
 
-      <CompanionPicker value={companionId} onChange={setCompanionId} />
-
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-5">
         {editing && onDelete ? (
           <button
             type="button"
@@ -1758,9 +1794,9 @@ function KidForm({
           <button
             type="submit"
             disabled={!name.trim()}
-            className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="tap inline-flex min-h-11 items-center rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm disabled:opacity-40"
           >
-            {editing ? "Save changes" : "Add kid"}
+            {editing ? "Save changes" : "Add child"}
           </button>
         </div>
       </div>

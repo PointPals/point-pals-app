@@ -104,6 +104,11 @@ validation; templates must also define default from/subject.
 | Subscription-Cancelled      | `9bbe49aa…` | stripe-webhook          | — |
 | Contact-Confirmation        | `267dc7da…` | contact form            | `first_name` |
 | Memory-Expiry-Warning       | `f2ebbe00…` | memory-expiry cron      | `first_name`, `family_name`, `cycle_end_date`, `memory_count`, `memory_plural`, `retention_days`, `settings_url`, `memories_url`, `keep_url`, `unsubscribe_url` |
+| Memory-Montage-Ready        | `0988eb46…` | render-montage          | `first_name`, `family_name`, `season_label`, `memory_count`, `memory_plural`, `has_videos`, `download_url`, `expires_in_hours`, `season_limit`, `memories_url`, `unsubscribe_url` |
+
+Branded HTML for the templates still in use (and for the Supabase Auth
+emails) lives in `emails/` — see `emails/README.md` for where each one is
+pasted.
 
 (Full IDs live in `src/lib/emails.server.ts`, `_shared/email-templates.ts`,
 `stripe-webhook/index.ts`, and `notify-memory-expiry/index.ts`.)
@@ -140,32 +145,47 @@ Wire your image provider where marked `TODO` in the function.
 
 ## 8. Memory seasons (retention + montage)
 
-The memory feed runs in fixed **90-day seasons**
-(`20260714000000_memory_retention.sql`): each household has a cycle anchor on
-`households` (`memory_cycle_started_at` → derived `memory_cycle_ends_at`).
+The memory feed runs in fixed **90-day seasons** for every household
+(`20260714000000_memory_retention.sql`, made mandatory by
+`20261026000000_retention_always_on.sql`): each household has a cycle anchor on
+`households` (`memory_cycle_started_at` → derived `memory_cycle_ends_at`). All
+cycle columns, including `memory_retention_enabled`, are frozen for clients by
+the billing guard trigger — there is no opt-out.
+
 Two cron jobs (`20260714000001_memory_retention_cron.sql`, authenticated with
 the Vault `CRON_SECRET`) drive the lifecycle:
 
-- **notify-memory-expiry** (daily 9:30 UTC) — emails the household when a
-  season ends within 0–4 days (idempotent via `email_memory_expiry_sent_at`).
-  Sends direct HTML via Resend — no hosted template to create.
-- **purge-expired-memories** (daily 13:00 UTC) — deletes the ended season's
-  storage objects + rows and rolls the anchor. **Never purges a household
-  whose reminder is missing or under 24h old.** Supports `{"dry_run": true}`
-  for a no-op report — recommended for the first production runs.
+- **notify-memory-expiry** (daily 9:30 UTC) — emails the household when its
+  season ends within 4 days, or has already ended unwarned (idempotent via
+  `email_memory_expiry_sent_at`; hosted template Memory-Expiry-Warning). Then
+  starts the season recap through `render-montage`'s cron path, unless the
+  family already made one this season.
+- **purge-expired-memories** (daily 13:00 UTC), in order:
+  1. Finishes in-flight recap renders (MP4 → `exports`, Montage-Ready email);
+     renders stuck for 2 days are marked failed.
+  2. Deletes each ended season's storage objects, then its rows, and rolls the
+     anchor. Waits for a reminder that's at least 24h old and for any
+     rendering recap — but only up to **7 days past the season end**, after
+     which it purges regardless (bounced email, no admin). Rows are kept if a
+     storage delete fails, so the files are retried next run.
+  3. Sweeps buckets not tied to memory rows via `expired_storage_objects()`:
+     `exports/*.zip` after 1 day, `exports/*.mp4` after 90 days (clears
+     `montage_jobs.output_path`), `support_attachments` after 90 days.
 
-Per-household opt-out: `memory_retention_enabled` (toggle in Settings → Your
-data). The cycle columns themselves are frozen for clients by the billing
-guard trigger.
+  Supports `{"dry_run": true}` for a no-op report — recommended for the first
+  production runs.
 
 Deploy: `supabase functions deploy notify-memory-expiry purge-expired-memories
-render-montage`, then `supabase db push`.
+render-montage` (config.toml turns off gateway JWT checks for all three; each
+checks its own caller), then `supabase db push`.
 
-**Montage export** (`render-montage`, `20260714000002_montage_jobs.sql`):
-members can render their season as an MP4 via Shotstack — set
-`SHOTSTACK_API_KEY` (see `ENV.md`); until then the UI degrades gracefully.
-Finished videos land in the private `exports` bucket and are served by signed
-URL. Cost gate: 1 montage/season free tier, 5 for subscribers.
+**Season recap** (`render-montage`, `montage_jobs`): an MP4 of the season in
+date order via Shotstack — set `SHOTSTACK_API_KEY` (see `ENV.md`); until then
+the UI and the automatic recap degrade gracefully (`not_configured`). Busy
+seasons are thinned evenly to 60 clips so the recap spans the whole season;
+videos play for their recorded length (capped at 10s; 6s when unknown).
+Finished videos land in the private `exports` bucket; the emailed link is
+signed for 7 days, in-app links for 1 hour. Cap: 5 montages per season.
 
 ## 9. PWA / app-store path (§8)
 

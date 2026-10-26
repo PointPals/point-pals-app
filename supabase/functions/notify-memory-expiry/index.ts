@@ -1,14 +1,16 @@
 // Edge Function: notify-memory-expiry
 // Cron-driven: finds households whose memory-feed season ends in the next
-// 0–4 days and sends a "your memories are about to refresh" email with a
-// link to download the season montage first.
+// 0–4 days (or has already ended without a warning) and sends a "your
+// memories are about to refresh" email, then starts the family's season
+// recap montage so it's ready before the purge (purge-expired-memories
+// finishes the render and emails the download link).
 //
 // Scheduled via the CRON_SECRET auth pattern (same as notify-trial-ending).
 // Idempotent: stamps email_memory_expiry_sent_at on each household.
 // The purge (purge-expired-memories) refuses to wipe any household whose
 // stamp is missing or fresher than 24 hours — nobody loses memories unwarned.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ── Inline shared helpers ─────────────────────────────────────────────────
 
@@ -108,10 +110,10 @@ Deno.serve(async (req) => {
     });
   }
 
-  // ── FIND SEASONS ENDING IN 0–4 DAYS ─────────────────────────────────────
-  // Window starts at "now" (not +1 day like trial-ending) so a household
-  // whose end date slipped past is still warned before the purge — the purge
-  // requires this stamp to be at least 24h old before it will touch anything.
+  // ── FIND SEASONS ENDING IN ≤4 DAYS, INCLUDING OVERDUE ONES ──────────────
+  // No lower bound: a household whose end date already slipped past without
+  // a warning (a failed send, a newly-enabled season) is still warned before
+  // the purge — the purge requires this stamp to be at least 24h old.
   const now = new Date();
   const windowEnd = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -120,7 +122,6 @@ Deno.serve(async (req) => {
     .select("id, name, memory_retention_days, memory_cycle_ends_at")
     .eq("memory_retention_enabled", true)
     .is("email_memory_expiry_sent_at", null)
-    .gte("memory_cycle_ends_at", now.toISOString())
     .lte("memory_cycle_ends_at", windowEnd);
 
   if (hhErr) {
@@ -141,6 +142,7 @@ Deno.serve(async (req) => {
   console.log(`Found ${households.length} households with a memory season ending soon.`);
 
   let sent = 0;
+  let recaps = 0;
   const errors: string[] = [];
 
   for (const hh of households) {
@@ -182,7 +184,13 @@ Deno.serve(async (req) => {
       const email = userData.user.email;
       const meta = userData.user.user_metadata ?? {};
       const firstName = meta.first_name || meta.display_name || email.split("@")[0] || "there";
-      const cycleEndDate = hh.memory_cycle_ends_at ? formatNzDate(hh.memory_cycle_ends_at) : "soon";
+      // The purge runs at least 24h after this email, so an overdue season
+      // refreshes tomorrow at the earliest — never show a date in the past.
+      const refreshAt = Math.max(
+        new Date(hh.memory_cycle_ends_at).getTime(),
+        now.getTime() + 24 * 60 * 60 * 1000,
+      );
+      const cycleEndDate = formatNzDate(new Date(refreshAt).toISOString());
 
       const memoryPlural = memoryCount === 1 ? "memory" : "memories";
 
@@ -218,6 +226,8 @@ Deno.serve(async (req) => {
 
       sent++;
       console.log(`Sent memory-expiry email to ${email} (${hh.name})`);
+
+      if (await startSeasonRecap(supabase, hh.id, hh.memory_cycle_ends_at)) recaps++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`Error processing household ${hh.id}: ${msg}`);
@@ -226,9 +236,47 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, sent, errors: errors.length > 0 ? errors : undefined }),
+    JSON.stringify({ ok: true, sent, recaps, errors: errors.length > 0 ? errors : undefined }),
     {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );
 });
+
+/** Kick off this season's recap montage unless the family already has one
+ * (made, or in progress). Uses render-montage's cron path; returns true if a
+ * render was started. A household without SHOTSTACK configured just gets a
+ * logged "not_configured". */
+async function startSeasonRecap(
+  supabase: SupabaseClient,
+  householdId: string,
+  cycleEndsAt: string,
+): Promise<boolean> {
+  try {
+    const { count } = await supabase
+      .from("montage_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("household_id", householdId)
+      .eq("cycle_ends_at", cycleEndsAt)
+      .in("status", ["queued", "rendering", "done"]);
+    if ((count ?? 0) > 0) return false;
+
+    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/render-montage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-cron-secret": Deno.env.get("CRON_SECRET") ?? "",
+      },
+      body: JSON.stringify({ householdId, action: "start" }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok || !body?.ok) {
+      console.warn(`Recap for ${householdId} not started: ${body?.error ?? res.status}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn(`Recap for ${householdId} failed to start:`, e instanceof Error ? e.message : e);
+    return false;
+  }
+}

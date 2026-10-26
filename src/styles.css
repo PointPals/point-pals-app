@@ -1,10 +1,8 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import "@fontsource/zain/400.css";
-@import "@fontsource/zain/700.css";
-@import "@fontsource/zain/800.css";
-@import "@fontsource-variable/nunito-sans";
+@import "@fontsource-variable/fraunces/soft.css";
+@import "@fontsource-variable/figtree";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -288,21 +286,28 @@
 }
 
 /*
- * PointPals — soft pastel design system.
- * Zain (display) + Nunito Sans (body). No pure black; warm charcoal for text.
+ * PointPals — "premium toy" design system.
+ *
+ * Cream canvas, deep aubergine ink (never pure black), and a jewel-marble
+ * palette borrowed from the Pals themselves. Fraunces (SOFT axis — a squishy,
+ * toy-shop serif) for display; Figtree for UI and body. Depth comes from
+ * layered "clay" shadows rather than borders.
+ *
+ * The legacy --pastel-* tokens are kept (re-tuned as soft tints of the marble
+ * palette) because the whole app reads them for kid colours and fills.
  */
 
 @theme inline {
-  --font-display: "Zain", "Nunito Sans Variable", system-ui, sans-serif;
-  --font-sans: "Nunito Sans Variable", system-ui, sans-serif;
+  --font-display: "Fraunces Variable", "Figtree Variable", Georgia, serif;
+  --font-sans: "Figtree Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-3xl: calc(var(--radius) + 14px);
+  --radius-4xl: calc(var(--radius) + 22px);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -325,7 +330,21 @@
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
 
-  /* Pastel palette — semantic access */
+  /* Ink scale — headings, night scenes, premium dark surfaces */
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-cream: var(--cream);
+
+  /* Jewel marbles — the Pals' signature colours, used for accents & marbles */
+  --color-plum: var(--marble-plum);
+  --color-saffron: var(--marble-saffron);
+  --color-coral: var(--marble-coral);
+  --color-cobalt: var(--marble-cobalt);
+  --color-jade: var(--marble-jade);
+  --color-aqua: var(--marble-aqua);
+  --color-rose: var(--marble-rose);
+
+  /* Soft tints — semantic fills (legacy names, re-tuned) */
   --color-sky: var(--pastel-sky);
   --color-butter: var(--pastel-butter);
   --color-sage: var(--pastel-sage);
@@ -339,52 +358,86 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  --shadow-clay: var(--clay-shadow);
+  --shadow-clay-sm: var(--clay-shadow-sm);
+  --shadow-lift: var(--lift-shadow);
+  --shadow-glow: var(--glow-shadow);
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: pp-marquee var(--marquee-duration, 40s) linear infinite;
 }
 
 :root {
   --radius: 1.25rem;
 
-  /* Warm cream background, warm charcoal text — never pure white/black */
-  --background: oklch(0.985 0.012 85);
-  --foreground: oklch(0.28 0.02 60);
+  /* Canvas & ink */
+  --cream: oklch(0.975 0.012 82); /* #FBF6EE */
+  --ink: oklch(0.235 0.045 300); /* #231B33 deep aubergine */
+  --ink-soft: oklch(0.38 0.04 300); /* #4A4159 */
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.28 0.02 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.28 0.02 60);
+  --background: var(--cream);
+  --foreground: var(--ink);
 
-  /* Primary = dusty blue */
-  --primary: oklch(0.72 0.09 240);
-  --primary-foreground: oklch(0.99 0.005 85);
+  --card: oklch(0.995 0.004 85); /* #FFFDF9 */
+  --card-foreground: var(--ink);
+  --popover: oklch(0.995 0.004 85);
+  --popover-foreground: var(--ink);
 
-  --secondary: oklch(0.94 0.02 85);
-  --secondary-foreground: oklch(0.32 0.02 60);
-  --muted: oklch(0.95 0.015 85);
-  --muted-foreground: oklch(0.5 0.02 70);
-  --accent: oklch(0.88 0.06 30);
-  --accent-foreground: oklch(0.28 0.02 60);
+  /* Primary = a deep jewel violet between the plum and cobalt marbles (the
+   * solid partner of the bg-cta gradient). No black fills anywhere. */
+  --primary: oklch(0.51 0.19 285);
+  --primary-foreground: oklch(1 0 0);
 
-  --destructive: oklch(0.68 0.14 30);
-  --destructive-foreground: oklch(0.99 0.005 85);
+  --secondary: oklch(0.945 0.016 82);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.945 0.016 82); /* #F2ECE2 */
+  --muted-foreground: oklch(0.5 0.03 300); /* #6B6380 — 5.4:1 on cream */
+  --accent: oklch(0.92 0.07 82); /* saffron tint */
+  --accent-foreground: var(--ink);
 
-  --border: oklch(0.9 0.015 85);
-  --input: oklch(0.92 0.015 85);
-  --ring: oklch(0.75 0.09 240);
+  --destructive: oklch(0.6 0.19 25);
+  --destructive-foreground: var(--cream);
 
-  /* Pastels — the toy-shop palette */
-  --pastel-sky: oklch(0.84 0.08 240); /* dusty blue */
-  --pastel-butter: oklch(0.92 0.09 95); /* buttercream yellow */
-  --pastel-sage: oklch(0.86 0.06 140); /* sage green */
-  --pastel-blush: oklch(0.85 0.06 15); /* blush pink */
-  --pastel-lilac: oklch(0.82 0.07 300); /* lilac */
-  --pastel-sand: oklch(0.88 0.06 65); /* warm sand */
-  --pastel-foam: oklch(0.87 0.06 185); /* seafoam */
+  --border: oklch(0.905 0.018 80);
+  --input: oklch(0.89 0.02 80);
+  --ring: oklch(0.62 0.19 268);
 
-  --chart-1: var(--pastel-sky);
-  --chart-2: var(--pastel-butter);
-  --chart-3: var(--pastel-sage);
-  --chart-4: var(--pastel-blush);
-  --chart-5: var(--pastel-lilac);
+  /* Jewel marbles */
+  --marble-plum: oklch(0.66 0.17 300); /* #A57BF0 — Lumi */
+  --marble-saffron: oklch(0.82 0.15 78); /* #F5B841 — Tumble */
+  --marble-coral: oklch(0.71 0.17 40); /* #FF7F5C — Ember */
+  --marble-cobalt: oklch(0.62 0.19 268); /* #5B7CFA — Orbit */
+  --marble-jade: oklch(0.72 0.14 160); /* #3DBE8B — Moss */
+  --marble-aqua: oklch(0.76 0.12 210); /* #39C3D8 — Ripple */
+  --marble-rose: oklch(0.72 0.15 355); /* #F27DAE */
+
+  /* Soft tints (legacy pastel names) */
+  --pastel-sky: oklch(0.88 0.06 262);
+  --pastel-butter: oklch(0.93 0.08 85);
+  --pastel-sage: oklch(0.9 0.06 160);
+  --pastel-blush: oklch(0.9 0.05 10);
+  --pastel-lilac: oklch(0.88 0.07 300);
+  --pastel-sand: oklch(0.9 0.05 65);
+  --pastel-foam: oklch(0.9 0.06 205);
+
+  --chart-1: var(--marble-cobalt);
+  --chart-2: var(--marble-saffron);
+  --chart-3: var(--marble-jade);
+  --chart-4: var(--marble-coral);
+  --chart-5: var(--marble-plum);
+
+  /* Clay depth: a lit top edge, a shaded bottom edge, and a soft drop. */
+  --clay-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -3px 0 oklch(0.235 0.045 300 / 0.05),
+    0 1px 2px oklch(0.235 0.045 300 / 0.06), 0 14px 34px -14px oklch(0.235 0.045 300 / 0.22);
+  --clay-shadow-sm:
+    inset 0 1px 0 oklch(1 0 0 / 0.85), inset 0 -2px 0 oklch(0.235 0.045 300 / 0.05),
+    0 6px 16px -8px oklch(0.235 0.045 300 / 0.2);
+  --lift-shadow: 0 30px 70px -28px oklch(0.235 0.045 300 / 0.38);
+  --glow-shadow: 0 0 0 1px oklch(1 0 0 / 0.6), 0 18px 50px -12px oklch(0.82 0.15 78 / 0.55);
 }
 
 @layer base {
@@ -395,7 +448,6 @@
   html,
   body {
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
     /* Native-app feel: no grey tap-flash, and the app owns its own scroll —
      * the browser's pull-to-refresh bounce doesn't take over. */
     -webkit-tap-highlight-color: transparent;
@@ -417,23 +469,15 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
-    background-image:
-      radial-gradient(
-        circle at 15% 10%,
-        color-mix(in oklab, var(--pastel-butter) 40%, transparent),
-        transparent 45%
-      ),
-      radial-gradient(
-        circle at 90% 20%,
-        color-mix(in oklab, var(--pastel-blush) 35%, transparent),
-        transparent 45%
-      ),
-      radial-gradient(
-        circle at 50% 100%,
-        color-mix(in oklab, var(--pastel-foam) 30%, transparent),
-        transparent 55%
-      );
-    background-attachment: fixed;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* One warm light source from above — no busy multi-blob wash. */
+    background-image: radial-gradient(
+      1400px 700px at 50% -260px,
+      oklch(0.95 0.05 82 / 0.85),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
   }
 
   h1,
@@ -441,17 +485,87 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 0;
+    letter-spacing: -0.02em;
+    font-optical-sizing: auto;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--marble-saffron) 45%, transparent);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2.5px solid var(--color-ring);
+    outline-offset: 3px;
+    border-radius: 6px;
   }
 }
 
+/* Softly-lit card. Kept under its legacy name — every screen uses it. */
 @utility card-soft {
   background: var(--color-card);
   border-radius: var(--radius-2xl);
+  box-shadow: var(--clay-shadow);
+  border: 1px solid color-mix(in oklab, var(--color-border) 55%, transparent);
+}
+
+/* Chunkier clay surface for hero tiles and kid-facing controls. */
+@utility card-clay {
+  background: linear-gradient(180deg, oklch(1 0 0), var(--color-card));
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--clay-shadow);
+}
+
+/* Primary action fill: a jewel gradient from deep plum to deep cobalt — the
+   marble colours, darkened just enough for white text to pass AA. Used for
+   every primary button and selected pill instead of a black fill. */
+@utility bg-cta {
+  background-color: oklch(0.51 0.19 285);
+  background-image: linear-gradient(135deg, oklch(0.52 0.2 302), oklch(0.5 0.19 266));
+}
+
+/* Glossy marble sphere fill — set --marble to any colour. */
+@utility marble {
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 32% 28%, oklch(1 0 0 / 0.95) 0 8%, transparent 26%),
+    radial-gradient(circle at 70% 78%, oklch(0 0 0 / 0.18), transparent 55%),
+    radial-gradient(
+      circle at 40% 35%,
+      color-mix(in oklab, var(--marble, var(--marble-saffron)) 70%, white),
+      var(--marble, var(--marble-saffron)) 62%
+    );
   box-shadow:
-    0 1px 2px oklch(0 0 0 / 0.04),
-    0 8px 24px -8px color-mix(in oklab, var(--pastel-sky) 40%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+    inset -4px -6px 12px oklch(0 0 0 / 0.12),
+    0 10px 22px -10px color-mix(in oklab, var(--marble, var(--marble-saffron)) 80%, black);
+}
+
+/* Paper grain for premium print-like sections (very subtle). */
+@utility grain {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.14  0 0 0 0 0.1  0 0 0 0 0.2  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+
+@keyframes pp-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @utility tile-tap {
@@ -627,8 +741,12 @@
 
 /* Shimmering glimmer sweep across the hero "game" word. */
 @keyframes pp-game-glimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -100% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 .game-glimmer {
   animation: pp-game-glimmer 3.2s ease-in-out infinite;
@@ -648,3 +766,761 @@
     padding: 0 !important;
   }
 }
+
+/* ── Pals: life for the character art. Hooks live in <Pal>. ──────────────
+ * Idle: a soft breath (squash from the feet). Moods change the loop: happy
+ * bobs, wow lifts, sleepy sways slowly. `.pal-hop` is a one-shot tap reaction
+ * any caller can add. --pal-phase offsets each Pal so rows never sync. */
+@keyframes pal-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.012, 0.985);
+  }
+}
+@keyframes pal-happy-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  30% {
+    transform: translateY(-5%) rotate(-2deg);
+  }
+  60% {
+    transform: translateY(0) rotate(1.5deg);
+  }
+}
+@keyframes pal-wow {
+  0%,
+  100% {
+    transform: translateY(-3%) scale(1.04);
+  }
+  50% {
+    transform: translateY(-5%) scale(1.05);
+  }
+}
+@keyframes pal-sleepy {
+  0%,
+  100% {
+    transform: rotate(-2.5deg) scale(1, 1);
+  }
+  50% {
+    transform: rotate(2.5deg) scale(1.01, 0.98);
+  }
+}
+@keyframes pal-ground-breathe {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(0.94);
+  }
+}
+@keyframes pal-hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  25% {
+    transform: translateY(0) scale(1.08, 0.9);
+  }
+  55% {
+    transform: translateY(-16%) scale(0.95, 1.06);
+  }
+  80% {
+    transform: translateY(0) scale(1.05, 0.95);
+  }
+}
+.pal .pal-body-group {
+  transform-origin: 50% 96%;
+}
+.pal-animate .pal-body-group {
+  animation: pal-breathe 3.8s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -3.8s);
+}
+.pal-animate .pal-ground {
+  animation: pal-ground-breathe 3.8s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -3.8s);
+}
+.pal-animate.pal-mood-happy .pal-body-group {
+  animation: pal-happy-bob 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -1.6s);
+}
+.pal-mood-wow .pal-body-group {
+  transform: translateY(-3%) scale(1.04);
+}
+.pal-animate.pal-mood-wow .pal-body-group {
+  animation: pal-wow 1.2s ease-in-out infinite;
+}
+.pal-animate.pal-mood-sleepy .pal-body-group {
+  animation: pal-sleepy 5.5s ease-in-out infinite;
+  animation-delay: calc(var(--pal-phase, 0) * -5.5s);
+}
+.pal-hop {
+  animation: pal-hop 620ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: 50% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pal-animate .pal-body-group,
+  .pal-animate .pal-ground,
+  .pal-hop {
+    animation: none !important;
+  }
+}
+
+/* === area:cast === */
+/* === end area:cast === */
+
+/* (spacer) */
+
+/* === area:landing === */
+/* Marketing landing (/welcome) — cinematic scrollytelling. Everything is
+ * prefixed .lp- so it can't leak into the app. Structural "motion" layouts
+ * switch on [data-motion="on"], which JS sets only when animation is welcome;
+ * without it (SSR, no-JS, reduced motion) every scene is a calm static layout. */
+
+.lp-display-xl {
+  font-size: clamp(3.15rem, 8.6vw, 8.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.lp-display-l {
+  font-size: clamp(2.6rem, 6.4vw, 6.6rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.lp-display-m {
+  font-size: clamp(2.1rem, 4.4vw, 4.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.lp-jewel-text {
+  background: linear-gradient(
+    100deg,
+    var(--marble-plum) 0%,
+    var(--marble-cobalt) 45%,
+    var(--marble-aqua) 80%,
+    var(--marble-jade) 110%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: 0.04em;
+}
+.lp-hero-dot {
+  --marble: var(--marble-saffron);
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin-left: 0.04em;
+  vertical-align: baseline;
+}
+
+/* Soft studio light behind a jar. */
+.lp-glow {
+  background:
+    radial-gradient(42% 40% at 50% 52%, oklch(0.93 0.09 82 / 0.95), transparent 70%),
+    radial-gradient(55% 50% at 38% 40%, oklch(0.88 0.08 300 / 0.55), transparent 72%),
+    radial-gradient(50% 45% at 66% 62%, oklch(0.9 0.07 210 / 0.5), transparent 72%);
+  border-radius: 50%;
+}
+.lp-orb {
+  filter: blur(14px) saturate(1.1);
+}
+/* A clay plinth (product-shot pedestal) under a jar. */
+.lp-plinth {
+  border-radius: 50%;
+  background:
+    radial-gradient(60% 70% at 50% 30%, oklch(1 0 0 / 0.95), transparent 70%),
+    linear-gradient(180deg, oklch(0.97 0.02 80), oklch(0.9 0.03 75));
+  box-shadow:
+    inset 0 -6px 12px oklch(0.235 0.045 300 / 0.08),
+    0 24px 40px -18px oklch(0.235 0.045 300 / 0.35);
+}
+
+@keyframes lp-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-6%) rotate(1.5deg);
+  }
+}
+.lp-bob {
+  animation: lp-bob 5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+/* Tappable Pals: generous focus ring that follows the plush silhouette-ish. */
+.lp-pal-btn:focus-visible {
+  outline: 2.5px solid var(--color-ring);
+  outline-offset: 4px;
+}
+.lp-bubble {
+  opacity: 0;
+  transform: translate(var(--bx, 0), 6px) scale(0.85);
+  transition:
+    opacity 220ms ease,
+    transform 420ms var(--ease-spring);
+}
+.lp-bubble-on {
+  opacity: 1;
+  transform: translate(var(--bx, 0), 0) scale(1);
+}
+
+@keyframes lp-jar-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 oklch(0.82 0.15 78 / 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 28px oklch(0.82 0.15 78 / 0.9));
+  }
+}
+.lp-jar-glow {
+  animation: lp-jar-glow 1.1s ease-in-out 2;
+}
+
+/* Header: transparent over the hero → frosted pill; hides on scroll down. */
+.lp-header {
+  transition: transform 500ms var(--ease-out-expo);
+}
+.lp-header[data-hidden="true"] {
+  transform: translateY(-120%);
+}
+.lp-header-bar {
+  transition:
+    background-color 400ms ease,
+    box-shadow 400ms ease,
+    backdrop-filter 400ms ease;
+}
+.lp-header[data-scrolled="true"] .lp-header-bar {
+  background-color: color-mix(in oklab, var(--cream) 84%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.8),
+    0 12px 32px -16px oklch(0.235 0.045 300 / 0.28);
+}
+
+/* Phone mockup bezel + glass glare. */
+/* A pearl handset: white body with a faint lilac sheen. */
+.lp-phone {
+  background: linear-gradient(
+    150deg,
+    #ffffff 0%,
+    oklch(0.93 0.025 300) 46%,
+    oklch(0.97 0.012 300) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1.5px oklch(0.235 0.045 300 / 0.08),
+    inset 0 2px 1px oklch(1 0 0 / 0.9),
+    0 60px 90px -36px oklch(0.235 0.045 300 / 0.4),
+    0 22px 40px -22px oklch(0.235 0.045 300 / 0.35);
+}
+.lp-phone-glare {
+  background: linear-gradient(
+    118deg,
+    oklch(1 0 0 / 0.2) 0%,
+    oklch(1 0 0 / 0) 30%,
+    oklch(1 0 0 / 0) 72%,
+    oklch(1 0 0 / 0.06) 100%
+  );
+}
+
+/* ── 01 · The 6pm problem ── */
+/* Evening light, not night: a lilac dusk over cream. */
+.lp-six {
+  background: linear-gradient(
+    180deg,
+    var(--cream) 0%,
+    oklch(0.95 0.035 300) 50%,
+    oklch(0.955 0.03 230) 100%
+  );
+}
+.lp-six-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5rem;
+  padding: 7.5rem 0 8rem;
+}
+.lp-six-heat {
+  opacity: 0;
+  background:
+    radial-gradient(70% 55% at 50% 78%, oklch(0.75 0.15 40 / 0.3), transparent 72%),
+    radial-gradient(50% 40% at 50% 100%, oklch(0.8 0.12 355 / 0.25), transparent 70%);
+}
+.lp-six-calm {
+  opacity: 0;
+  background:
+    radial-gradient(55% 45% at 50% 46%, oklch(0.8 0.1 300 / 0.45), transparent 72%),
+    radial-gradient(60% 40% at 50% 82%, oklch(0.85 0.08 210 / 0.35), transparent 70%);
+}
+.lp-six-stars {
+  display: none; /* white starfield belonged to the old night version */
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, oklch(1 0 0 / 0.7), transparent 60%),
+    radial-gradient(1px 1px at 28% 8%, oklch(1 0 0 / 0.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 66% 14%, oklch(1 0 0 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 82% 26%, oklch(1 0 0 / 0.6), transparent 60%),
+    radial-gradient(1px 1px at 46% 22%, oklch(1 0 0 / 0.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 92% 9%, oklch(1 0 0 / 0.5), transparent 60%);
+}
+.lp-six-clock {
+  display: none;
+  font-size: clamp(8rem, 33vw, 30rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: oklch(0.235 0.045 300 / 0.05);
+}
+.lp-nag-dot {
+  display: none;
+  --d: 12px;
+  width: var(--d);
+  height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+}
+.lp-six[data-motion="on"] .lp-six-stage {
+  display: block;
+  height: 100svh;
+  padding: 0;
+}
+.lp-six[data-motion="on"] .lp-six-head {
+  position: absolute;
+  inset-inline: 0;
+  top: max(6.5rem, 13svh);
+}
+.lp-six[data-motion="on"] .lp-six-pile {
+  position: absolute;
+  inset: 0;
+}
+.lp-six[data-motion="on"] .lp-six-cloud {
+  display: block;
+  position: relative;
+  height: 100%;
+  max-width: none;
+  padding: 0;
+}
+.lp-six[data-motion="on"] .lp-nag {
+  --spread: 0.64;
+  position: absolute;
+  left: calc(50% + (var(--x) - 50) * var(--spread) * 1%);
+  top: calc(var(--y) * 1%);
+  translate: -50% -50%;
+}
+.lp-six[data-motion="on"] .lp-nag-dot {
+  display: block;
+}
+.lp-six[data-motion="on"] .lp-six-calmtext {
+  position: absolute;
+  inset-inline: 0;
+  top: 47%;
+  translate: 0 -50%;
+}
+.lp-six[data-motion="on"] .lp-six-clock {
+  display: block;
+}
+@media (min-width: 768px) {
+  .lp-nag-dot {
+    --d: 18px;
+  }
+  .lp-six[data-motion="on"] .lp-nag {
+    --spread: 0.92;
+  }
+}
+
+/* ── 02 · One tap, one marble ── */
+.lp-one-fly,
+.lp-one-chip,
+.lp-one-tapdot,
+.lp-one-ripple {
+  display: none;
+}
+.lp-one-fly {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+}
+.lp-one[data-motion="on"] .lp-one-fly,
+.lp-one[data-motion="on"] .lp-one-tapdot,
+.lp-one[data-motion="on"] .lp-one-ripple {
+  display: block;
+}
+.lp-one[data-motion="on"] .lp-one-chip {
+  display: flex;
+}
+.lp-one[data-motion="on"] .lp-one-stage {
+  height: 100svh;
+  padding-top: 5.5rem;
+  padding-bottom: 2rem;
+}
+@media (max-width: 1023px) {
+  .lp-one[data-motion="on"] .lp-one-stage {
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.75rem;
+    padding-top: 5.25rem;
+    padding-bottom: 3.25rem;
+  }
+  .lp-one[data-motion="on"] .lp-one-steps {
+    display: none;
+  }
+  .lp-one[data-motion="on"] .lp-one-lede {
+    margin-top: 0.75rem;
+  }
+  .lp-one[data-motion="on"] .lp-one-scene {
+    aspect-ratio: auto;
+    height: 100%;
+    max-width: 30rem;
+  }
+}
+@media (min-width: 768px) {
+  .lp-one-fly {
+    width: 26px;
+    height: 26px;
+    margin: -13px 0 0 -13px;
+  }
+}
+
+/* ── 03 · Meet the Pals ── */
+.lp-pals-track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+  padding: 2.5rem 1rem 1.5rem;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.lp-pals-track::-webkit-scrollbar {
+  display: none;
+}
+.lp-pal-card {
+  flex: none;
+  width: min(82vw, 22rem);
+  scroll-snap-align: center;
+  background:
+    radial-gradient(
+      110% 62% at 50% 22%,
+      color-mix(in oklab, var(--pal) 24%, white),
+      transparent 72%
+    ),
+    linear-gradient(180deg, var(--pal-tint), color-mix(in oklab, var(--pal-tint) 72%, var(--pal)));
+}
+.lp-pal-card.lp-pal-outro {
+  background:
+    radial-gradient(90% 50% at 50% 10%, oklch(0.55 0.16 300 / 0.45), transparent 70%), var(--ink);
+}
+.lp-pal-ghost {
+  display: block;
+  font-size: clamp(4.5rem, 12vw, 10rem);
+  color: color-mix(in oklab, var(--pal) 20%, transparent);
+}
+.lp-pal-halo {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--pal) 30%, white) 0%,
+    transparent 68%
+  );
+}
+.lp-pals-progress {
+  display: none;
+}
+@media (min-width: 768px) {
+  .lp-pals-swipe {
+    display: none;
+  }
+  .lp-pals-track {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 3rem 2rem 0;
+  }
+  .lp-pal-card {
+    width: calc((100% - 2rem) / 3);
+    max-width: 26rem;
+  }
+}
+.lp-pals[data-motion="on"] .lp-pals-stage {
+  height: 100svh;
+  padding: 0;
+}
+.lp-pals[data-motion="on"] .lp-pals-rail {
+  display: flex;
+  align-items: center;
+  gap: 4vw;
+  width: max-content;
+  height: 100%;
+  padding-inline: 4vw 6vw;
+}
+.lp-pals[data-motion="on"] .lp-pals-intro {
+  flex: none;
+  width: min(34rem, 36vw);
+  padding: 0;
+}
+.lp-pals[data-motion="on"] .lp-pals-track {
+  flex-wrap: nowrap;
+  gap: 1.75vw;
+  padding: 0;
+}
+.lp-pals[data-motion="on"] .lp-pal-card {
+  width: min(29rem, 34vw);
+  max-width: none;
+  height: min(80svh, 44rem);
+}
+.lp-pals[data-motion="on"] .lp-pals-progress {
+  display: block;
+}
+@media (max-width: 1279px), (max-height: 780px) {
+  .lp-pals[data-motion="on"] .lp-pal-bio {
+    display: none;
+  }
+}
+
+/* ── 04 · Kids' mode ── */
+.lp-kid {
+  background:
+    radial-gradient(
+      50% 45% at 72% 52%,
+      color-mix(in oklab, var(--pastel-lilac) 75%, transparent),
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      var(--cream),
+      color-mix(in oklab, var(--pastel-lilac) 30%, var(--cream)) 45%,
+      var(--cream)
+    );
+}
+.lp-kid-glow {
+  background: radial-gradient(closest-side, oklch(0.9 0.07 300 / 0.75), transparent);
+}
+.lp-kid-wash {
+  background:
+    radial-gradient(120% 55% at 50% 0%, oklch(1 0 0 / 0.9) 0%, transparent 62%),
+    linear-gradient(180deg, #eee5ff, #d6c4ff);
+}
+.lp-kid-screen-a,
+.lp-kid-screen-c,
+.lp-kid-dot,
+.lp-kid-marble {
+  display: none;
+}
+.lp-kid[data-motion="on"] .lp-kid-screen-a,
+.lp-kid[data-motion="on"] .lp-kid-screen-c {
+  display: flex;
+}
+.lp-kid[data-motion="on"] .lp-kid-dot,
+.lp-kid[data-motion="on"] .lp-kid-marble {
+  display: block;
+}
+.lp-kid[data-motion="on"] .lp-kid-stage {
+  height: 100svh;
+  padding-top: 5.5rem;
+  padding-bottom: 2rem;
+}
+.lp-kid[data-motion="on"] .lp-kid-scene {
+  max-width: min(24rem, calc((100svh - 8.5rem) * 0.4737));
+}
+@media (max-width: 1023px) {
+  .lp-kid[data-motion="on"] .lp-kid-stage {
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 1.25rem;
+    padding-top: 5.25rem;
+    padding-bottom: 1.5rem;
+  }
+  .lp-kid[data-motion="on"] .lp-kid-steps {
+    display: grid;
+    margin-top: 1rem;
+  }
+  .lp-kid[data-motion="on"] .lp-kid-steps > * + * {
+    margin-top: 0;
+  }
+  .lp-kid[data-motion="on"] .lp-kid-step {
+    grid-area: 1 / 1;
+  }
+  .lp-kid[data-motion="on"] .lp-kid-note {
+    display: none;
+  }
+  .lp-kid[data-motion="on"] .lp-kid-scene {
+    height: 100%;
+    max-width: none;
+  }
+  .lp-kid[data-motion="on"] .lp-kid-phone {
+    height: 100%;
+    aspect-ratio: 9 / 19;
+    margin-inline: auto;
+  }
+}
+@media (min-width: 1024px) {
+  .lp-one[data-motion="on"] .lp-one-scene {
+    max-width: min(50rem, calc((100svh - 8rem) / 0.9));
+  }
+}
+
+/* ── 05 · Celebrate ── */
+.lp-cel {
+  background:
+    radial-gradient(45% 40% at 72% 38%, oklch(0.93 0.09 82 / 0.85), transparent 72%),
+    radial-gradient(60% 50% at 20% 90%, oklch(0.93 0.05 10 / 0.5), transparent 70%), var(--cream);
+}
+.lp-cel-flare {
+  opacity: 0.55;
+  background:
+    radial-gradient(
+      closest-side,
+      oklch(0.9 0.12 82 / 0.95),
+      oklch(0.9 0.12 82 / 0.25) 55%,
+      transparent
+    ),
+    radial-gradient(40% 40% at 40% 40%, oklch(0.88 0.08 355 / 0.4), transparent 70%);
+}
+.lp-cel-burst {
+  display: none;
+}
+.lp-cel[data-motion="on"] .lp-cel-burst {
+  display: block;
+}
+@keyframes lp-cel-jump {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  20% {
+    transform: translateY(0) scale(1.08, 0.9);
+  }
+  45% {
+    transform: translateY(-22%) scale(0.95, 1.06);
+  }
+  70% {
+    transform: translateY(0) scale(1.05, 0.94);
+  }
+}
+.lp-cel-jump {
+  transform-origin: 50% 100%;
+  animation: lp-cel-jump 700ms var(--ease-spring) 3 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-bob,
+  .lp-jar-glow,
+  .lp-cel-jump {
+    animation: none !important;
+  }
+  .lp-bubble,
+  .lp-header {
+    transition: none !important;
+  }
+}
+/* === end area:landing === */
+
+/* (spacer) */
+
+/* === area:shell === */
+/* Kid cards on Home: each character floats gently on its own beat. */
+@keyframes kid-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.kid-float {
+  animation: kid-float 3.6s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+.kid-card:active .kid-float {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kid-float {
+    animation: none;
+  }
+}
+@keyframes toast-rise {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.toast-rise {
+  animation: toast-rise 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-rise {
+    animation: none;
+  }
+}
+/* === end area:shell === */
+
+/* (spacer) */
+
+/* === area:award === */
+/* === end area:award === */
+
+/* (spacer) */
+
+/* === area:public === */
+/* Auth screens: one consistent, premium field style without touching each
+ * form's markup (inputs keep their own logic and classes). */
+.auth-shell .auth-card,
+.auth-shell .card-soft {
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--lift-shadow), var(--clay-shadow-sm);
+}
+.auth-shell input[type="email"],
+.auth-shell input[type="password"],
+.auth-shell input[type="text"],
+.auth-shell input:not([type]) {
+  min-height: 3rem;
+  border-radius: 1rem;
+  border-color: var(--color-input);
+  background: var(--color-background);
+  padding-inline: 1rem;
+  font-size: 1rem;
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+.auth-shell input:focus-visible,
+.auth-shell input:focus {
+  outline: none;
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-ring) 22%, transparent);
+}
+.auth-shell h1 {
+  font-size: 2.1rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+.auth-shell button[type="submit"] {
+  min-height: 3.25rem;
+}
+/* === end area:public === */
+
+/* (spacer) */
+
+/* === area:secondary === */
+/* === end area:secondary === */

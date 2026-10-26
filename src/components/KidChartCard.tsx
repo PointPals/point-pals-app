@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, Check, Loader2 } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import { useCorrection } from "@/lib/correction-store";
 import { CompanionAvatar } from "@/components/CompanionAvatar";
 import { PASTEL_HEX, appliesToKid, type Kid } from "@/lib/mock-data";
 import { companionForKid, downloadKidChart, weeklyChores } from "@/lib/printable-chart";
@@ -9,6 +10,7 @@ import { companionForKid, downloadKidChart, weeklyChores } from "@/lib/printable
 // button that generates their printable weekly chore chart as a real PDF.
 export function KidChartCard({ kid }: { kid: Kid }) {
   const { chores, household } = useApp();
+  const { activeReward } = useCorrection();
   const [state, setState] = useState<"idle" | "working" | "done">("idle");
   const [note, setNote] = useState<string | null>(null);
 
@@ -28,6 +30,11 @@ export function KidChartCard({ kid }: { kid: Kid }) {
         companion,
         chores: active,
         householdName: household.name,
+        // The child's own goal when they have a personal jar, else the family's.
+        rewardName:
+          (household.splitJarsEnabled && kid.personalTarget > 0 && kid.personalReward) ||
+          activeReward?.name ||
+          null,
       });
       if (res.status === "cancelled") {
         setState("idle");
@@ -72,7 +79,7 @@ export function KidChartCard({ kid }: { kid: Kid }) {
         type="button"
         onClick={onDownload}
         disabled={state === "working"}
-        className="w-full rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 transition"
+        className="w-full rounded-full bg-cta text-white px-4 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 transition"
       >
         {state === "working" ? (
           <>

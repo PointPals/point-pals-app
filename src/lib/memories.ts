@@ -30,7 +30,12 @@ export type MemoryMedia = {
   path?: string; // storage path (remote only)
 };
 
-export type MemoryMediaInput = { path: string; kind: "image" | "video" };
+export type MemoryMediaInput = {
+  path: string;
+  kind: "image" | "video";
+  /** Video length in seconds, recorded at upload — the season recap uses it. */
+  duration?: number;
+};
 
 export type MemoryLikeEntry = {
   postId: string;
@@ -155,6 +160,28 @@ async function signedUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+/** A video's length in seconds, read from its metadata (undefined if the
+ * browser can't tell, e.g. some recorder output reports Infinity). */
+function probeVideoDuration(blob: Blob): Promise<number | undefined> {
+  if (typeof document === "undefined") return Promise.resolve(undefined);
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const video = document.createElement("video");
+    const done = (seconds?: number) => {
+      clearTimeout(timer);
+      URL.revokeObjectURL(url);
+      resolve(seconds);
+    };
+    const timer = setTimeout(() => done(undefined), 5000);
+    video.preload = "metadata";
+    video.muted = true;
+    video.onloadedmetadata = () =>
+      done(isFinite(video.duration) ? Math.round(video.duration * 10) / 10 : undefined);
+    video.onerror = () => done(undefined);
+    video.src = url;
+  });
+}
+
 // The bucket's RLS policies grant access by the first folder segment
 // (is_member(foldername[1])), so every object path MUST start with the
 // household id — bare root-level paths are silently denied in live mode.
@@ -166,8 +193,10 @@ async function remoteUpload(
   kidIds: string[],
 ): Promise<{ media: MemoryMedia[] }> {
   const uploaded: MemoryMedia[] = [];
+  const durations: (number | undefined)[] = [];
   for (let i = 0; i < medias.length; i++) {
     const m = medias[i];
+    durations.push(m.kind === "video" ? await probeVideoDuration(m.blob) : undefined);
     const suffix = medias.length > 1 ? `_${i}` : "";
     const path = `${householdId}/${id}${suffix}.${m.ext}`;
     const up = await withTimeout(
@@ -184,7 +213,11 @@ async function remoteUpload(
         household_id: householdId,
         storage_path: first?.path ?? null,
         media_type: first?.kind ?? null,
-        media_paths: uploaded.map((u) => ({ path: u.path, kind: u.kind })),
+        media_paths: uploaded.map((u, i): MemoryMediaInput => ({
+          path: u.path!,
+          kind: u.kind,
+          ...(durations[i] !== undefined ? { duration: durations[i] } : {}),
+        })),
         caption,
       }),
     ),

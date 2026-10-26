@@ -94,7 +94,7 @@ function ArithmeticGate({ onPassed, onCancel }: { onPassed: () => void; onCancel
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/35 backdrop-blur-[2px] p-4">
       <div className="card-soft w-full max-w-sm p-6 space-y-4 text-center">
         <p className="text-sm text-muted-foreground">
           Please verify you're an adult to continue
@@ -124,7 +124,7 @@ function ArithmeticGate({ onPassed, onCancel }: { onPassed: () => void; onCancel
             </button>
             <button
               type="submit"
-              className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background"
+              className="rounded-full bg-cta px-5 py-2 text-sm font-semibold text-white"
             >
               Verify
             </button>

@@ -1,15 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
-import { Home, Star, Camera, Settings, ChevronLeft, LogOut } from "lucide-react";
+import { Home, ListChecks, Camera, Settings, ChevronLeft } from "lucide-react";
 import { useApp } from "@/lib/app-store";
-import { useCorrection } from "@/lib/correction-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
-import { supabase } from "@/integrations/supabase/client";
-import { useBackNav, isRootTab, pageTitle } from "@/lib/navigation";
+import { useBackNav, isRootTab } from "@/lib/navigation";
 import { useSettings } from "@/lib/settings";
 import { KidView } from "@/components/KidView";
-import { LOGO_POINTS_URL } from "@/lib/image-urls";
-const logoUrl = LOGO_POINTS_URL;
+import { Wordmark } from "@/components/brand/Wordmark";
+import { GoalChip } from "@/components/shell/GoalChip";
+import { SignOutButton } from "@/components/shell/SignOutButton";
 
 // Small inline jar-of-marbles glyph used for the Rewards tab — lucide has no
 // jar, and a jar reads more truthfully than a gift box for this app.
@@ -35,11 +34,13 @@ function JarIcon({ className }: { className?: string }) {
   );
 }
 
-// Bottom nav = the app's four screens (§6): Home, Library, Memories, Rewards.
+// Bottom nav = the app's four screens (§6): Home, Chores, Memories, Rewards.
+// "/library" is labelled Chores — it's where chores and behaviours are set up,
+// and the old "Points" label (with a star) didn't say that.
 // Settings lives behind the gear in the header — parent config, not a tab.
 const NAV = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/library", label: "Points", icon: Star },
+  { to: "/library", label: "Chores", icon: ListChecks },
   { to: "/memories", label: "Memories", icon: Camera },
   { to: "/rewards", label: "Rewards", icon: JarIcon },
 ] as const;
@@ -47,7 +48,6 @@ const NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { household } = useApp();
-  const { activeReward } = useCorrection();
   const { role } = useHouseholdRole(household.id);
   const { goBack } = useBackNav();
   const settings = useSettings();
@@ -57,7 +57,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => (role === "viewer" ? NAV.filter((n) => n.to !== "/rewards") : NAV),
     [role],
   );
-  const pct = Math.min(100, (household.sharedPool / household.rewardTarget) * 100);
 
   // Always start a newly-navigated page at the top. TanStack's built-in scroll
   // restoration handles back/forward, but new pushes on this app were landing
@@ -118,6 +117,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/sign-in",
     "/sign-up",
     "/reset-password",
+    "/join",
+    "/onboarding",
+    "/welcome-back",
     "/about",
     "/faq",
     "/blog",
@@ -126,6 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/terms",
     "/refunds",
     "/k", // public read-only Kids' view share link — no app nav/sidebar
+    "/visit", // a visiting friend's report, opened by their parent
   ];
   if (CHROME_FREE.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return <>{children}</>;
@@ -142,7 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const showBack = !isRootTab(pathname);
 
   return (
-    <div className="min-h-screen pp-app-pad md:pl-56">
+    <div className="min-h-screen pp-app-pad md:pl-64">
       {/* Pull-to-refresh indicator (mobile). Sits above the header, only
           visible while pulling or refreshing. */}
       {(ptrPull > 0 || ptrRefreshing) && (
@@ -152,7 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-hidden="true"
         >
           <div
-            className={`mt-2 h-8 w-8 rounded-full border-2 border-foreground/30 border-t-foreground ${
+            className={`mt-2 h-8 w-8 rounded-full border-2 border-ink/20 border-t-ink ${
               ptrRefreshing || ptrPull >= PTR_THRESHOLD ? "animate-spin" : ""
             }`}
             style={{
@@ -163,161 +166,110 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border bg-card/60 backdrop-blur px-4 py-6 z-30">
-        <Link to="/" className="block mb-6">
-          <img
-            src={logoUrl}
-            alt="PointPals logo"
-            width={180}
-            height={72}
-            className="h-10 w-auto select-none"
-            draggable={false}
-          />
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col border-r border-border/70 bg-card/55 backdrop-blur-xl px-5 py-7 z-30">
+        <Link to="/" className="block px-2" aria-label="PointPals home">
+          <Wordmark className="text-[2rem]" />
         </Link>
-        <nav className="flex flex-col gap-1">
+        <div className="mt-2 px-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground truncate">
+          {household.name}
+        </div>
+        <nav className="mt-8 flex flex-col gap-1" aria-label="Main">
           {visibleNav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
                 key={to}
                 to={to}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
+                aria-current={active ? "page" : undefined}
+                className={`tap flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-[0.95rem] font-semibold transition ${
                   active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-cta text-white shadow-clay-sm"
+                    : "text-ink-soft hover:bg-muted hover:text-ink"
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="h-[18px] w-[18px]" aria-hidden />
                 <span>{label}</span>
               </Link>
             );
           })}
         </nav>
+        <GoalChip variant="card" className="mt-8" />
         {role !== "viewer" && (
-          <div className="mt-auto space-y-1">
+          <div className="mt-auto space-y-1 pt-6">
             <Link
               to="/settings"
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
+              aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+              className={`tap flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition ${
                 pathname.startsWith("/settings")
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-cta text-white"
+                  : "text-ink-soft hover:bg-muted hover:text-ink"
               }`}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="h-4 w-4" aria-hidden />
               <span>Settings</span>
             </Link>
-            <button
-              onClick={() => { supabase.auth.signOut(); }}
-              className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign out</span>
-            </button>
+            <SignOutButton className="tap flex min-h-11 w-full items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive" />
           </div>
         )}
       </aside>
 
-      <header className="max-w-4xl mx-auto px-5 pt-6 pb-4">
-        <div className="flex items-center justify-between">
+      <header className="md:hidden max-w-4xl mx-auto px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-3">
+        <div className="flex items-center justify-between gap-3">
           {showBack ? (
             <button
               onClick={goBack}
-              className="md:hidden tap flex items-center gap-1 -ml-1 text-foreground"
-              aria-label="Go back"
+              className="md:hidden tap -ml-1 inline-flex min-h-11 items-center gap-0.5 rounded-full bg-card/80 pl-2 pr-4 text-sm font-semibold text-ink shadow-clay-sm"
             >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="font-display text-xl font-bold">{pageTitle(pathname)}</span>
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+              Back
             </button>
           ) : (
-            <Link to="/" className="block md:hidden">
-              <img
-                src={logoUrl}
-                alt="PointPals logo"
-                width={200}
-                height={80}
-                className="h-12 sm:h-14 w-auto select-none"
-                draggable={false}
-              />
-              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mt-1">
+            <Link to="/" className="block md:hidden min-w-0" aria-label="PointPals home">
+              <Wordmark className="text-[1.7rem]" />
+              <div className="mt-1 max-w-[11rem] text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground truncate">
                 {household.name}
               </div>
             </Link>
           )}
-          <div className="hidden md:block">
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {household.name}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Reward name lives on the small label line (truncated) so the
-                jar count always stays visible — on mobile a long prize title
-                used to swallow the numbers entirely. */}
-            <div className="text-right min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate max-w-[140px] sm:max-w-[220px] ml-auto">
-                {activeReward ? activeReward.name : "Family pool"}
-              </div>
-              <div className="font-display text-2xl font-bold leading-none mt-1 whitespace-nowrap">
-                {household.sharedPool}
-                <span className="text-muted-foreground text-base font-sans font-normal">
-                  {" "}
-                  / {activeReward ? activeReward.targetPoints : household.rewardTarget}
-                </span>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <GoalChip className="md:hidden w-[9.5rem]" />
             {role !== "viewer" && (
-              <>
-                <Link
-                  to="/settings"
-                  aria-label="Settings"
-                  className={`tap md:hidden h-11 w-11 rounded-full border border-border flex items-center justify-center transition ${
-                    pathname.startsWith("/settings")
-                      ? "bg-foreground text-background"
-                      : "bg-card/80 text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Settings className="w-5 h-5" />
-                </Link>
-                <button
-                  onClick={() => { supabase.auth.signOut(); }}
-                  aria-label="Sign out"
-                  className="tap md:hidden h-11 w-11 rounded-full border border-border flex items-center justify-center bg-card/80 text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </>
+              <Link
+                to="/settings"
+                aria-label="Settings"
+                className={`tap md:hidden h-11 w-11 shrink-0 rounded-full flex items-center justify-center shadow-clay-sm transition ${
+                  pathname.startsWith("/settings")
+                    ? "bg-cta text-white"
+                    : "bg-card/90 text-ink-soft hover:text-ink"
+                }`}
+              >
+                <Settings className="w-5 h-5" aria-hidden />
+              </Link>
             )}
           </div>
         </div>
-        <div className="mt-3 h-2.5 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${pct}%`,
-              background:
-                "linear-gradient(90deg, var(--pastel-butter), var(--pastel-blush), var(--pastel-lilac))",
-            }}
-          />
-        </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-5">{children}</main>
+      <main className="max-w-4xl mx-auto px-5 md:pt-10">{children}</main>
 
+      {/* Mobile bottom nav — a floating glass pill, clear of the home bar. */}
       <nav
-        className="pp-bottom-nav md:hidden fixed inset-x-0 bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]"
-        style={{ '--nav-h': '68px' } as React.CSSProperties}
+        aria-label="Main"
+        className="pp-bottom-nav md:hidden fixed inset-x-3 z-50 bottom-[calc(0.6rem+env(safe-area-inset-bottom))] rounded-[1.75rem] border border-white/70 bg-card/85 shadow-lift backdrop-blur-xl"
       >
-        <div className="flex items-stretch justify-around px-2 pt-1.5 pb-1">
+        <div className="flex items-stretch justify-around gap-1 p-1.5">
           {visibleNav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
                 key={to}
                 to={to}
-                className={`tap flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[52px] rounded-xl text-[11px] font-semibold transition-colors ${
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                aria-current={active ? "page" : undefined}
+                className={`tap flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[54px] rounded-[1.35rem] text-[11px] font-semibold transition-colors duration-300 ${
+                  active ? "bg-cta text-white shadow-clay-sm" : "text-ink-soft hover:text-ink"
                 }`}
               >
-                <Icon className={`w-6 h-6 ${active ? "" : "opacity-80"}`} />
+                <Icon className="w-[22px] h-[22px]" aria-hidden />
                 <span>{label}</span>
               </Link>
             );

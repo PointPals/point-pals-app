@@ -178,7 +178,7 @@ function ReportsPage() {
             onClick={() => setScopeKidId(null)}
             className={`tap min-h-[44px] px-4 rounded-full text-sm font-semibold border transition ${
               scopeKidId === null
-                ? "bg-foreground text-background border-foreground"
+                ? "bg-cta text-white border-transparent"
                 : "border-input text-muted-foreground hover:bg-muted"
             }`}
           >
@@ -190,7 +190,7 @@ function ReportsPage() {
               onClick={() => setScopeKidId(k.id)}
               className={`tap min-h-[44px] px-4 rounded-full text-sm font-semibold border transition ${
                 scopeKidId === k.id
-                  ? "bg-foreground text-background border-foreground"
+                  ? "bg-cta text-white border-transparent"
                   : "border-input text-muted-foreground hover:bg-muted"
               }`}
             >

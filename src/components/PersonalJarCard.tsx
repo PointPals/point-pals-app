@@ -128,7 +128,7 @@ export const PersonalJarCard = memo(function PersonalJarCard({
                 step={5}
                 value={targetDraft}
                 onChange={(e) => setTargetDraft(Number(e.target.value))}
-                className="flex-1 accent-foreground"
+                className="flex-1 accent-primary"
               />
               <span className="font-display text-sm font-bold w-8 text-right tabular-nums">
                 {targetDraft}
@@ -137,7 +137,7 @@ export const PersonalJarCard = memo(function PersonalJarCard({
             <div className="flex gap-2">
               <button
                 onClick={saveReward}
-                className="flex-1 inline-flex items-center justify-center gap-1 rounded-full bg-foreground px-3 py-2 text-xs font-semibold text-background hover:opacity-90 transition"
+                className="flex-1 inline-flex items-center justify-center gap-1 rounded-full bg-cta px-3 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
               >
                 <Check className="w-3.5 h-3.5" /> Save
               </button>
@@ -166,7 +166,7 @@ export const PersonalJarCard = memo(function PersonalJarCard({
               ) : (
                 <button
                   onClick={handleClaim}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background hover:opacity-90 transition animate-pulse"
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-cta px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition animate-pulse"
                 >
                   <Gift className="w-3.5 h-3.5" />
                   {kid.personalReward ? kid.personalReward : "Claim reward"}

@@ -120,7 +120,7 @@ export function InstallPrompt() {
           </div>
           <button
             onClick={install}
-            className="tap inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold"
+            className="tap inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold"
           >
             <Download className="w-4 h-4" /> Add
           </button>

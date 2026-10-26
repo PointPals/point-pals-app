@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { useApp } from "@/lib/app-store";
+import { useCorrection } from "@/lib/correction-store";
+import { TINT_HEX } from "@/lib/companion-tints";
+import { CompanionAvatar } from "./CompanionAvatar";
 import { useSettings } from "@/lib/settings";
 import { playFanfare, haptic } from "@/lib/feedback";
 import { MarbleJar } from "./MarbleJar";
@@ -13,6 +16,7 @@ import { PASTEL_HEX } from "@/lib/mock-data";
 // Rewards.
 export function FamilyJarCard({ size = 240 }: { size?: number }) {
   const { household, history, kids } = useApp();
+  const { activeReward } = useCorrection();
   const settings = useSettings();
   const [celebrating, setCelebrating] = useState(false);
   // Floating "+N" receipts — one per new positive award, shown even when the
@@ -67,33 +71,36 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
   }, [settings.reducedMotion]);
 
   return (
-    <div className="card-soft relative overflow-hidden p-5 flex flex-col items-center text-center">
-      {/* Pastel mesh backdrop — soft, warm, heirloom-shelf feel */}
+    <div className="card-clay relative w-full max-w-xl overflow-hidden px-5 pb-6 pt-6 flex flex-col items-center text-center">
+      {/* Soft glow — a warm pool of light the jar sits in */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(60% 45% at 50% 10%, rgba(253,230,138,0.45), transparent 70%)," +
-            "radial-gradient(50% 40% at 12% 40%, rgba(251,207,232,0.4), transparent 70%)," +
-            "radial-gradient(55% 45% at 92% 55%, rgba(191,219,254,0.4), transparent 70%)," +
-            "radial-gradient(70% 40% at 50% 100%, rgba(221,214,254,0.35), transparent 70%)",
+            "radial-gradient(60% 45% at 50% 12%, oklch(0.95 0.06 85 / 0.9), transparent 70%)," +
+            "radial-gradient(45% 40% at 10% 55%, oklch(0.93 0.05 300 / 0.55), transparent 70%)," +
+            "radial-gradient(45% 40% at 92% 60%, oklch(0.93 0.05 210 / 0.55), transparent 70%)",
         }}
       />
       {/* Warm shelf glow beneath the jar */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-14 h-16 w-3/4 rounded-[50%]"
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-24 h-16 w-3/4 rounded-[50%]"
         style={{
-          background:
-            "radial-gradient(closest-side, rgba(212,168,74,0.28), transparent 75%)",
+          background: "radial-gradient(closest-side, rgba(212,168,74,0.28), transparent 75%)",
           filter: "blur(10px)",
         }}
       />
 
-      <div className="relative z-10 flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-        <Sparkles className="w-3.5 h-3.5" /> Family jar
+      <div className="relative z-10 flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        <Sparkles className="w-3.5 h-3.5" aria-hidden /> Family jar
       </div>
+      {activeReward && (
+        <div className="relative z-10 mt-1.5 max-w-full truncate px-4 font-display text-2xl font-semibold tracking-[-0.02em] text-ink">
+          {activeReward.name}
+        </div>
+      )}
 
       <MarbleJar
         value={household.sharedPool}
@@ -106,12 +113,8 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
         className="relative z-10 -my-2"
       />
 
-
       {/* Floating "+N" receipts — anchored near the jar mouth, drift upward */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[42%] z-20"
-      >
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[42%] z-20">
         {floaters.map((f) => (
           <span
             key={f.id}
@@ -131,7 +134,7 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
       {/* Per-kid contribution: use personalPool (current cycle) when split jars are on,
           fall back to history-based total for legacy (no split jars) mode. */}
       {kids.length > 0 && household.sharedPool > 0 && (
-        <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
+        <div className="relative z-10 mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
           {kids.map((k) => {
             // Mirror the home-screen avatar badge exactly so the legend, the
             // badges and the jar total always agree: net current points (or
@@ -144,19 +147,29 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
               <div key={k.id} className="flex items-center gap-1.5 text-muted-foreground">
                 <span
                   aria-hidden
-                  className="inline-block w-2.5 h-2.5 rounded-full shadow-inner"
-                  style={{ backgroundColor: PASTEL_HEX[k.color] }}
-                />
-                <span className="font-medium text-foreground">{k.name}</span>
-                <span>· {contributed}</span>
+                  className="relative inline-block h-6 w-6 overflow-hidden rounded-full ring-2"
+                  style={{
+                    backgroundColor: PASTEL_HEX[k.color],
+                    ["--tw-ring-color" as string]: TINT_HEX[k.color],
+                  }}
+                >
+                  <CompanionAvatar
+                    seed={k.id}
+                    color={k.color}
+                    size={24}
+                    companionId={k.companionId}
+                  />
+                </span>
+                <span className="font-semibold text-ink">{k.name}</span>
+                <span className="tabular-nums">· {contributed}</span>
               </div>
             );
           })}
         </div>
       )}
 
-      <div className="relative z-10">
-        <div className="font-display text-3xl font-bold leading-none">
+      <div className="relative z-10 mt-4">
+        <div className="font-display text-4xl font-semibold leading-none tracking-[-0.03em] text-ink">
           {household.sharedPool}
           <span className="text-muted-foreground text-lg font-sans font-normal">
             {" "}
@@ -170,7 +183,7 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
             </div>
             <Link
               to="/rewards"
-              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition"
+              className="tap mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-cta px-6 text-sm font-semibold text-white shadow-clay-sm hover:opacity-90 transition"
             >
               Choose your reward
             </Link>
