@@ -11,9 +11,12 @@ node emails/build.mjs   # rewrites emails/supabase/*.html and emails/resend/*.ht
 Edit the copy in `build.mjs`, rebuild, then paste the updated HTML where
 it's used (below). Subjects are listed in `subjects.json`.
 
-Character images load from the public Supabase `assets` bucket
-(`…/assets/<pal>.png`); many email apps hide images until the reader allows
-them, so every email reads fine without them.
+The logo loads from the website (`https://pointpals.co.nz/brand/pointpals-logo-email.png`,
+on the email's cream so it holds up in dark-mode inboxes), so paste updated
+templates only once a site with that file is live. Character images load from
+the public Supabase `assets` bucket (`…/assets/<pal>.png`). Many email apps
+hide images until the reader allows them, so every email reads fine without
+them — the logo falls back to the word "PointPals".
 
 ## Supabase Auth (Dashboard → Authentication → Emails → Templates)
 

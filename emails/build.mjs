@@ -97,8 +97,8 @@ function layout({ title, preheader, pal, heading, body, footerNote = "" }) {
     <td align="center" style="padding:32px 16px 40px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
         <tr>
-          <td style="padding:0 8px 20px;font-family:${SERIF};font-size:28px;font-weight:bold;letter-spacing:-0.5px;color:${INK};">
-            <a href="${SITE}" style="color:${INK};text-decoration:none;">PointPals<span style="color:#F5B841;">&#9679;</span></a>
+          <td style="padding:0 4px 16px;">
+            <a href="${SITE}" style="color:${INK};text-decoration:none;"><img src="${SITE}/brand/pointpals-logo-email.png" width="210" height="66" alt="PointPals" style="display:block;width:210px;height:66px;border:0;outline:none;font-family:${SERIF};font-size:28px;font-weight:bold;line-height:66px;color:${INK};"></a>
           </td>
         </tr>
         <tr>
