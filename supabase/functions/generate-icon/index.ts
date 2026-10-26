@@ -12,6 +12,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Image as RasterImage } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
+import { geminiImageRequest, pickImagePart } from "../_shared/gemini-image.ts";
 
 // ── Inline shared helpers ─────────────────────────────────────────────────
 const corsHeaders = {
@@ -151,33 +152,27 @@ async function sendBillingAlert(errorType: string, message: string) {
   }
 }
 
-/** Call Gemini 2.0 Flash to generate an icon image. */
+/** Ask Gemini to draw an icon image. */
 async function generateImage(prompt: string): Promise<Uint8Array> {
   const fullPrompt = `${STYLE_PROMPT}\n\n${prompt}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_API_KEY}`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: fullPrompt }],
-      }],
-      generationConfig: {
-        temperature: 0.4,
-        topP: 1,
-        topK: 32,
-        maxOutputTokens: 4096,
-        responseModalities: ["IMAGE", "TEXT"],
-      },
-      safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      ],
-    }),
+  const res = await geminiImageRequest(GOOGLE_API_KEY, {
+    contents: [{
+      parts: [{ text: fullPrompt }],
+    }],
+    generationConfig: {
+      temperature: 0.4,
+      topP: 1,
+      topK: 32,
+      maxOutputTokens: 4096,
+      responseModalities: ["IMAGE", "TEXT"],
+    },
+    safetySettings: [
+      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+    ],
   });
 
   if (!res.ok) {
@@ -187,9 +182,7 @@ async function generateImage(prompt: string): Promise<Uint8Array> {
 
   const data = await res.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  const imagePart = parts.find((p: { inlineData?: { mimeType: string; data: string } }) =>
-    p.inlineData?.mimeType?.startsWith("image/")
-  );
+  const imagePart = pickImagePart(parts);
 
   if (!imagePart?.inlineData?.data) {
     const text = parts.map((p: { text?: string }) => p.text ?? "").join(" ").trim();

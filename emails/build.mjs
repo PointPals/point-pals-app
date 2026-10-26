@@ -23,7 +23,9 @@ const MUTED = "#6B6380";
 const CREAM = "#FBF6EE";
 const CTA = "#5E45D6"; // solid fallback for the plum → cobalt gradient
 const CTA_GRADIENT = "linear-gradient(135deg,#7A4FD3,#3F5BD9)";
-const MARBLES = ["#A57BF0", "#5B7CFA", "#39C3D8", "#3DBE8B", "#F5B841", "#FF7F5C", "#F27DAE"];
+// The jar's own marble colours (MARBLE_TINT in src/components/MarbleJar.tsx),
+// in rainbow order: lilac, sky, foam, sage, butter, sand, orange, blush.
+const MARBLES = ["#B79BE0", "#8FC7EA", "#84CFCB", "#9CD08C", "#F1D36A", "#E0B673", "#F0A858", "#EDA6B2"];
 const PAL_WASH = {
   sunny: "#F3E1A0",
   pip: "#B8D4EC",
