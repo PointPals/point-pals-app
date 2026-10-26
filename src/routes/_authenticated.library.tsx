@@ -192,7 +192,7 @@ function IconPickerGrid({
             onClick={() => setTagFilter(t)}
             className={`tap px-3 py-1 rounded-full text-xs font-semibold transition ${
               tagFilter === t
-                ? "bg-foreground text-background"
+                ? "bg-cta text-white"
                 : "bg-muted text-muted-foreground hover:bg-muted/70"
             }`}
           >
@@ -546,7 +546,7 @@ function AddBar({
       <button
         type="button"
         onClick={onAdd}
-        className="tap inline-flex min-h-11 items-center gap-1.5 rounded-full bg-ink px-5 text-sm font-semibold text-cream shadow-clay-sm transition hover:-translate-y-0.5"
+        className="tap inline-flex min-h-11 items-center gap-1.5 rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm transition hover:-translate-y-0.5"
       >
         <Plus className="h-4 w-4" aria-hidden /> {label}
       </button>
@@ -647,7 +647,7 @@ function AppliesToChips({
               aria-pressed={on}
               className={`tap inline-flex items-center gap-1.5 rounded-full pl-1 pr-3 py-1 text-sm font-semibold border transition ${
                 on
-                  ? "bg-foreground text-background border-foreground"
+                  ? "bg-cta text-white border-transparent"
                   : "border-input text-muted-foreground hover:bg-muted"
               }`}
             >
@@ -870,7 +870,7 @@ function ChoreManager({
             <button
               type="submit"
               disabled={busy || !name.trim()}
-              className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+              className="tap rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
             >
               {busy ? "Adding…" : "Add chore"}
             </button>
@@ -1066,7 +1066,7 @@ function SkillManager({
             <button
               type="submit"
               disabled={busy || !name.trim()}
-              className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+              className="tap rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
             >
               {busy ? "Adding…" : addLabel}
             </button>
@@ -1231,7 +1231,7 @@ function AiIconPanel({
         <button
           onClick={generate}
           disabled={generating || !prompt.trim() || (usage?.used ?? 0) >= (usage?.cap ?? 10)}
-          className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
+          className="tap rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
         >
           {generating ? <span className="animate-spin">⟳</span> : <Wand2 className="w-3.5 h-3.5" />}
           {generating ? "Generating…" : "Generate"}
@@ -1248,7 +1248,7 @@ function AiIconPanel({
               onSelect(result);
               onClose();
             }}
-            className="tap rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-semibold"
+            className="tap rounded-full bg-cta text-white px-4 py-1.5 text-xs font-semibold"
           >
             Use this icon
           </button>
@@ -1409,7 +1409,7 @@ function UploadIconPanel({
                 </button>
                 <button
                   onClick={upload}
-                  className="tap rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
+                  className="tap rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
                 >
                   {uploading ? (
                     <span className="animate-spin">⟳</span>
@@ -1441,7 +1441,7 @@ function UploadIconPanel({
             onClick={() => {
               onComplete(result);
             }}
-            className="tap rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-semibold"
+            className="tap rounded-full bg-cta text-white px-4 py-1.5 text-xs font-semibold"
           >
             Use this icon
           </button>
@@ -1616,7 +1616,7 @@ function EditPanel({
               onSave(patch);
             }}
             disabled={!name.trim()}
-            className="tap inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="tap inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
           >
             <Check className="w-4 h-4" /> Save changes
           </button>
@@ -1658,7 +1658,7 @@ function FamilyTab() {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="tap inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-ink px-5 text-sm font-semibold text-cream shadow-clay-sm transition hover:-translate-y-0.5"
+          className="tap inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm transition hover:-translate-y-0.5"
         >
           <Plus className="h-4 w-4" aria-hidden /> Add a child
         </button>
@@ -1794,7 +1794,7 @@ function KidForm({
           <button
             type="submit"
             disabled={!name.trim()}
-            className="tap inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-cream shadow-clay-sm disabled:opacity-40"
+            className="tap inline-flex min-h-11 items-center rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm disabled:opacity-40"
           >
             {editing ? "Save changes" : "Add child"}
           </button>

@@ -216,7 +216,7 @@ export function KidMode({
                 type="button"
                 disabled={picks.length === 0}
                 onClick={() => setStage("handback")}
-                className="tap inline-flex min-h-14 shrink-0 items-center gap-2 rounded-full bg-ink px-6 text-lg font-bold text-cream shadow-clay transition disabled:opacity-35"
+                className="tap inline-flex min-h-14 shrink-0 items-center gap-2 rounded-full bg-cta px-6 text-lg font-bold text-white shadow-clay transition disabled:opacity-35"
               >
                 I’m done! <ArrowRight className="h-5 w-5" aria-hidden />
               </button>
@@ -438,7 +438,7 @@ function HoldToApprove({
       }}
       onContextMenu={(e) => e.preventDefault()}
       aria-label={`${label} (press and hold)`}
-      className="relative flex min-h-16 w-full select-none items-center justify-center overflow-hidden rounded-full bg-ink px-6 text-lg font-bold text-cream shadow-clay transition disabled:opacity-35 [-webkit-touch-callout:none]"
+      className="relative flex min-h-16 w-full select-none items-center justify-center overflow-hidden rounded-full bg-cta px-6 text-lg font-bold text-white shadow-clay transition disabled:opacity-35 [-webkit-touch-callout:none]"
     >
       <span
         aria-hidden

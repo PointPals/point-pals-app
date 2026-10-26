@@ -142,7 +142,7 @@ function WelcomeBackPage() {
             type="checkbox"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
-            className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-ink"
+            className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-primary"
           />
           <span className="text-sm leading-relaxed text-ink-soft">
             I confirm that I am the parent or legal guardian of the children whose information will
@@ -152,7 +152,7 @@ function WelcomeBackPage() {
         <button
           type="submit"
           disabled={busy || !consent}
-          className="tap inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-base font-semibold text-cream shadow-clay-sm transition disabled:opacity-40"
+          className="tap inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-cta px-6 py-3.5 text-base font-semibold text-white shadow-clay-sm transition disabled:opacity-40"
         >
           {busy ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

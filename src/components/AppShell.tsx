@@ -183,7 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-current={active ? "page" : undefined}
                 className={`tap flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-[0.95rem] font-semibold transition ${
                   active
-                    ? "bg-ink text-cream shadow-clay-sm"
+                    ? "bg-cta text-white shadow-clay-sm"
                     : "text-ink-soft hover:bg-muted hover:text-ink"
                 }`}
               >
@@ -201,7 +201,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-current={pathname.startsWith("/settings") ? "page" : undefined}
               className={`tap flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition ${
                 pathname.startsWith("/settings")
-                  ? "bg-ink text-cream"
+                  ? "bg-cta text-white"
                   : "text-ink-soft hover:bg-muted hover:text-ink"
               }`}
             >
@@ -239,7 +239,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label="Settings"
                 className={`tap md:hidden h-11 w-11 shrink-0 rounded-full flex items-center justify-center shadow-clay-sm transition ${
                   pathname.startsWith("/settings")
-                    ? "bg-ink text-cream"
+                    ? "bg-cta text-white"
                     : "bg-card/90 text-ink-soft hover:text-ink"
                 }`}
               >
@@ -266,7 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={to}
                 aria-current={active ? "page" : undefined}
                 className={`tap flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[54px] rounded-[1.35rem] text-[11px] font-semibold transition-colors duration-300 ${
-                  active ? "bg-ink text-cream shadow-clay-sm" : "text-ink-soft hover:text-ink"
+                  active ? "bg-cta text-white shadow-clay-sm" : "text-ink-soft hover:text-ink"
                 }`}
               >
                 <Icon className="w-[22px] h-[22px]" aria-hidden />

@@ -32,15 +32,15 @@ export function PhoneFrame({
       {/* side buttons */}
       <span
         aria-hidden
-        className="absolute -left-[1.4%] top-[18%] h-[6%] w-[1.6%] rounded-l-full bg-ink"
+        className="absolute -left-[1.4%] top-[18%] h-[6%] w-[1.6%] rounded-l-full bg-[oklch(0.86_0.03_300)]"
       />
       <span
         aria-hidden
-        className="absolute -left-[1.4%] top-[27%] h-[9%] w-[1.6%] rounded-l-full bg-ink"
+        className="absolute -left-[1.4%] top-[27%] h-[9%] w-[1.6%] rounded-l-full bg-[oklch(0.86_0.03_300)]"
       />
       <span
         aria-hidden
-        className="absolute -right-[1.4%] top-[24%] h-[12%] w-[1.6%] rounded-r-full bg-ink"
+        className="absolute -right-[1.4%] top-[24%] h-[12%] w-[1.6%] rounded-r-full bg-[oklch(0.86_0.03_300)]"
       />
       <div
         aria-hidden={label ? true : undefined}

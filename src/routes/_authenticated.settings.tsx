@@ -325,7 +325,7 @@ function SettingsPage() {
                 step={10}
                 value={household.rewardTarget}
                 onChange={(e) => setRewardTarget(Number(e.target.value))}
-                className="flex-1 accent-foreground"
+                className="flex-1 accent-primary"
               />
               <span className="font-display text-lg font-bold w-12 text-right">
                 {household.rewardTarget}
@@ -455,7 +455,7 @@ function SettingsPage() {
                     onClick={() => setInviteRole(opt.value)}
                     className={`tap px-4 py-1.5 rounded-full text-sm font-semibold transition ${
                       inviteRole === opt.value
-                        ? "bg-foreground text-background"
+                        ? "bg-cta text-white"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -486,7 +486,7 @@ function SettingsPage() {
                   }
                 }}
                 disabled={generating}
-                className="tap rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+                className="tap rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
               >
                 {generating ? (
                   <>
@@ -648,7 +648,7 @@ function SettingsPage() {
                 setSetting("kidsViewPin", kidPin);
                 setSetting("kidsViewActive", true);
               }}
-              className="tap inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+              className="tap inline-flex items-center gap-2 rounded-full bg-cta text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
             >
               <Eye className="h-4 w-4" /> Lock this device
             </button>
@@ -828,7 +828,7 @@ function SettingsPage() {
                       <button
                         onClick={() => void handleExportMemories()}
                         disabled={exporting}
-                        className="tap inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:opacity-50"
+                        className="tap inline-flex items-center gap-2 rounded-full bg-cta px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                       >
                         {exporting ? (
                           <>
@@ -881,7 +881,7 @@ function SettingsPage() {
                   <button
                     onClick={() => void saveDisplayName()}
                     disabled={savingName}
-                    className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                    className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
                   >
                     {displayNameSaved ? <Check className="h-4 w-4" /> : null}
                     {savingName ? "Saving…" : displayNameSaved ? "Saved" : "Save"}
@@ -999,7 +999,7 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
       }}
     >
       <DialogTrigger asChild>
-        <button className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition">
+        <button className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full bg-cta px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition">
           <MailQuestion className="h-4 w-4" /> Message us
         </button>
       </DialogTrigger>
@@ -1098,7 +1098,7 @@ function SupportDialog({ supportEmail }: { supportEmail: string }) {
             <button
               type="submit"
               disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> {busy ? "Sending…" : "Send message"}
             </button>
@@ -1204,7 +1204,7 @@ function KidsViewShareLink({ householdId }: { householdId: string }) {
             />
             <button
               onClick={copy}
-              className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+              className="tap shrink-0 inline-flex items-center gap-1.5 rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copied" : "Share"}
@@ -1230,7 +1230,7 @@ function KidsViewShareLink({ householdId }: { householdId: string }) {
 function RoleBadge({ role }: { role: HouseholdRole }) {
   if (!role) return null;
   const styles: Record<Exclude<HouseholdRole, null>, string> = {
-    admin: "bg-foreground text-background",
+    admin: "bg-cta text-white",
     parent: "bg-lilac text-lilac-foreground",
     contributor: "bg-sage text-sage-foreground",
     viewer: "bg-muted text-muted-foreground",

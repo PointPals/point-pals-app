@@ -332,7 +332,7 @@ function HomePage() {
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 md:bottom-8">
           <div
             role="status"
-            className="toast-rise pointer-events-auto flex max-w-full items-center gap-3 rounded-full bg-ink py-2 pl-5 pr-2 text-cream shadow-lift"
+            className="toast-rise pointer-events-auto flex max-w-full items-center gap-3 rounded-full bg-cta py-2 pl-5 pr-2 text-white shadow-lift"
           >
             <span className="truncate text-sm font-semibold">{toast.text}</span>
             <button

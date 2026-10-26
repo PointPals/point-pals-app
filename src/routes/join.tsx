@@ -239,7 +239,7 @@ function JoinPage() {
             <button
               onClick={() => accept()}
               disabled={status === "loading" || !joinCode.trim()}
-              className="w-full rounded-full bg-foreground text-background py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full rounded-full bg-cta text-white py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {status === "loading" ? (
                 <>
@@ -297,7 +297,7 @@ function JoinPage() {
               <button
                 type="submit"
                 disabled={signUpBusy}
-                className="w-full rounded-full bg-foreground text-background py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-cta text-white py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {signUpBusy ? (
                   <>
@@ -381,7 +381,7 @@ function JoinPage() {
               <button
                 type="submit"
                 disabled={signInBusy}
-                className="w-full rounded-full bg-foreground text-background py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-cta text-white py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {signInBusy ? (
                   <>

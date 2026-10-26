@@ -46,7 +46,7 @@ export function PublicPageLayout({
             </Link>
             <Link
               to="/sign-up"
-              className="inline-flex min-h-11 items-center rounded-full bg-ink px-4 text-sm font-semibold text-cream shadow-clay-sm"
+              className="inline-flex min-h-11 items-center rounded-full bg-cta px-4 text-sm font-semibold text-white shadow-clay-sm"
             >
               Start free
             </Link>
@@ -56,26 +56,34 @@ export function PublicPageLayout({
 
       <main className={mainCls}>{children}</main>
 
-      <footer className="bg-ink text-cream">
+      <footer className="bg-white text-ink">
+        <div
+          aria-hidden
+          className="h-1 w-full"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--marble-plum), var(--marble-cobalt), var(--marble-aqua), var(--marble-jade), var(--marble-saffron), var(--marble-coral), var(--marble-rose))",
+          }}
+        />
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-10 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
             {PAGES.map((p) => (
               <Link
                 key={p.to}
                 to={p.to}
-                className="inline-flex min-h-10 items-center text-sm text-cream/75 transition hover:text-cream"
+                className="inline-flex min-h-10 items-center text-sm text-ink-soft transition hover:text-ink"
               >
                 {p.label}
               </Link>
             ))}
             <a
               href="mailto:support@pointpals.co.nz"
-              className="inline-flex min-h-10 items-center text-sm text-cream/75 transition hover:text-cream"
+              className="inline-flex min-h-10 items-center text-sm text-ink-soft transition hover:text-ink"
             >
               support@pointpals.co.nz
             </a>
           </div>
-          <p className="text-xs text-cream/50">
+          <p className="text-xs text-muted-foreground">
             &copy; 2026 PointPals &middot; Made in New Zealand
           </p>
         </div>

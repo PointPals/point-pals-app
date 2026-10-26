@@ -42,8 +42,8 @@ const SIZE: Record<Nag["size"], string> = {
 };
 
 const TONE: Record<NonNullable<Nag["tone"]>, string> = {
-  dim: "text-cream/55",
-  saffron: "text-saffron",
+  dim: "text-ink/40",
+  saffron: "text-[oklch(0.68_0.16_62)]",
   coral: "text-coral",
   rose: "text-rose",
 };
@@ -182,7 +182,7 @@ export function SixPm() {
       ref={root}
       id="problem"
       aria-labelledby="lp-six-title"
-      className="lp-six relative bg-ink text-cream"
+      className="lp-six relative text-ink"
     >
       <div className="lp-six-stage relative overflow-hidden">
         <div aria-hidden className="lp-six-heat pointer-events-none absolute inset-0" />
@@ -198,10 +198,10 @@ export function SixPm() {
         </div>
 
         <div className="lp-six-head relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-8">
-          <Eyebrow n="01" tone="cream" marble="var(--marble-coral)" className="justify-center">
+          <Eyebrow n="01" tone="ink" marble="var(--marble-coral)" className="justify-center">
             The 6pm problem
           </Eyebrow>
-          <p className="lp-display-m mt-5 font-display text-cream">Every family knows this hour.</p>
+          <p className="lp-display-m mt-5 font-display text-ink">Every family knows this hour.</p>
           <p className="sr-only">
             Shoes on. Teeth! Please. Bath, now. Please! The reminders pile up, every single night.
           </p>
@@ -219,7 +219,7 @@ export function SixPm() {
                   className={cn(
                     "lp-nag-in inline-block whitespace-nowrap font-display leading-none tracking-[-0.03em]",
                     SIZE[n.size],
-                    n.tone ? TONE[n.tone] : "text-cream",
+                    n.tone ? TONE[n.tone] : "text-ink",
                   )}
                   style={{ rotate: `${n.r}deg` }}
                 >
@@ -239,10 +239,10 @@ export function SixPm() {
         </div>
 
         <div className="lp-six-calmtext relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-8">
-          <h2 id="lp-six-title" className="lp-six-q lp-display-l text-cream">
+          <h2 id="lp-six-title" className="lp-six-q lp-display-l text-ink">
             What if noticing the good did the work?
           </h2>
-          <p className="lp-six-body mx-auto mt-6 max-w-xl text-lg leading-relaxed text-cream/75 sm:text-xl">
+          <p className="lp-six-body mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-soft sm:text-xl">
             Most evenings run on reminders. PointPals flips it &mdash; notice what&rsquo;s going
             right, tap once, and watch it happen more often.
           </p>

@@ -107,7 +107,7 @@ export function AddKidSheet({
               <button
                 type="submit"
                 disabled={!trimmed}
-                className="tap inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 text-base font-semibold text-cream shadow-clay-sm transition disabled:opacity-40"
+                className="tap inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-cta px-6 text-base font-semibold text-white shadow-clay-sm transition disabled:opacity-40"
               >
                 {isVisitor
                   ? trimmed

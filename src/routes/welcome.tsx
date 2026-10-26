@@ -81,7 +81,7 @@ function WelcomePage() {
       <div className="lp-root relative min-h-screen overflow-x-clip bg-cream text-ink">
         <a
           href="#lp-main"
-          className="sr-only z-[60] rounded-full bg-ink px-4 py-2 text-cream focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="sr-only z-[60] rounded-full bg-cta px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           Skip to content
         </a>

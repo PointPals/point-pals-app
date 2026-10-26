@@ -171,26 +171,34 @@ export function FinalCta() {
         </div>
       </section>
 
-      <footer className="bg-ink text-cream">
+      <footer className="bg-white text-ink">
+        <div
+          aria-hidden
+          className="h-1 w-full"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--marble-plum), var(--marble-cobalt), var(--marble-aqua), var(--marble-jade), var(--marble-saffron), var(--marble-coral), var(--marble-rose))",
+          }}
+        />
         <div className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:px-10 md:grid-cols-[1.3fr_repeat(3,1fr)]">
           <div>
             <Link to="/" aria-label="PointPals home" className="inline-block">
-              <Wordmark tone="cream" className="text-3xl" />
+              <Wordmark className="text-3xl" />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/65">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-soft">
               A free, research-backed family chore chart and behaviour chart for children. Notice
               the good, fill the jar, celebrate together.
             </p>
             <a
               href="mailto:support@pointpals.co.nz"
-              className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-cream underline-offset-4 hover:underline"
+              className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-ink underline-offset-4 hover:underline"
             >
               support@pointpals.co.nz
             </a>
           </div>
           {FOOTER.map((col) => (
             <nav key={col.title} aria-label={col.title}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cream/50">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 {col.title}
               </p>
               <ul className="mt-4 grid gap-1">
@@ -199,14 +207,14 @@ export function FinalCta() {
                     {"to" in l ? (
                       <Link
                         to={l.to}
-                        className="inline-flex min-h-10 items-center text-sm text-cream/80 transition-colors hover:text-cream"
+                        className="inline-flex min-h-10 items-center text-sm text-ink-soft transition-colors hover:text-ink"
                       >
                         {l.label}
                       </Link>
                     ) : (
                       <a
                         href={l.href}
-                        className="inline-flex min-h-10 items-center text-sm text-cream/80 transition-colors hover:text-cream"
+                        className="inline-flex min-h-10 items-center text-sm text-ink-soft transition-colors hover:text-ink"
                       >
                         {l.label}
                       </a>
@@ -217,8 +225,8 @@ export function FinalCta() {
             </nav>
           ))}
         </div>
-        <div className="border-t border-cream/10">
-          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 text-xs text-cream/50 sm:flex-row sm:px-10">
+        <div className="border-t border-border/70">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:px-10">
             <p>© 2026 PointPals · Made in New Zealand</p>
             <p className="flex items-center gap-2">
               <span

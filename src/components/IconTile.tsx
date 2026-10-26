@@ -81,7 +81,9 @@ export function IconTile({
           <span
             className={cn(
               "absolute -right-1.5 -top-1.5 flex h-7 min-w-7 items-center justify-center rounded-full px-2 font-display text-sm font-semibold shadow-clay-sm",
-              points >= 0 ? "bg-ink text-cream" : "bg-[oklch(0.62_0.12_30)] text-white",
+              points >= 0
+                ? "bg-white text-ink ring-1 ring-ink/10"
+                : "bg-[oklch(0.62_0.12_30)] text-white",
             )}
           >
             {points > 0 ? `+${points}` : points}

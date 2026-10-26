@@ -17,7 +17,7 @@ export function EmptyState({ variant }: { variant: "no-kids" | "no-items" }) {
         </p>
         <Link
           to="/onboarding"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-cta px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition"
         >
           <PlusCircle className="h-4 w-4" /> Set up your family
         </Link>
@@ -37,7 +37,7 @@ export function EmptyState({ variant }: { variant: "no-kids" | "no-items" }) {
       </p>
       <Link
         to="/library"
-        className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90 transition"
+        className="mt-5 inline-flex items-center gap-2 rounded-full bg-cta px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
       >
         Go to Library
       </Link>

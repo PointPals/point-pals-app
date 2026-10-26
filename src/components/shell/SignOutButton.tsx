@@ -54,7 +54,7 @@ export function SignOutButton({
               await supabase.auth.signOut();
               setBusy(false);
             }}
-            className="min-h-11 rounded-full bg-ink text-cream hover:bg-ink/90"
+            className="min-h-11 rounded-full bg-cta text-white hover:brightness-110"
           >
             Sign out
           </AlertDialogAction>

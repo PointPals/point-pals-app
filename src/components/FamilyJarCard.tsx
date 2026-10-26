@@ -183,7 +183,7 @@ export function FamilyJarCard({ size = 240 }: { size?: number }) {
             </div>
             <Link
               to="/rewards"
-              className="tap mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-ink px-6 text-sm font-semibold text-cream shadow-clay-sm hover:opacity-90 transition"
+              className="tap mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-cta px-6 text-sm font-semibold text-white shadow-clay-sm hover:opacity-90 transition"
             >
               Choose your reward
             </Link>

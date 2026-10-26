@@ -36,7 +36,7 @@ const STEPS = [
 const GOAL_PRESETS = [30, 50, 80, 100];
 
 const primaryBtn =
-  "tap inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-full bg-ink px-6 text-base font-semibold text-cream shadow-clay-sm transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-40";
+  "tap inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-full bg-cta px-6 text-base font-semibold text-white shadow-clay-sm transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-40";
 const backBtn =
   "tap inline-flex min-h-14 items-center gap-1.5 rounded-full border border-input bg-card px-5 text-sm font-semibold text-ink";
 
@@ -108,7 +108,7 @@ function Onboarding() {
             key={i}
             className={cn(
               "h-1.5 flex-1 rounded-full transition-colors duration-500",
-              i <= step ? "bg-ink" : "bg-ink/10",
+              i <= step ? "bg-cta" : "bg-ink/10",
             )}
           />
         ))}
@@ -297,7 +297,7 @@ function Onboarding() {
               value={target}
               onChange={(e) => setTarget(Number(e.target.value))}
               aria-label="Points to fill the jar"
-              className="mt-5 w-full accent-ink"
+              className="mt-5 w-full accent-primary"
             />
             <div className="mt-1 flex justify-between text-xs text-muted-foreground">
               <span>Quick (30)</span>
@@ -312,7 +312,7 @@ function Onboarding() {
                   aria-pressed={target === n}
                   className={cn(
                     "tap min-h-10 rounded-full px-4 text-sm font-semibold transition",
-                    target === n ? "bg-ink text-cream" : "bg-muted text-ink-soft hover:text-ink",
+                    target === n ? "bg-cta text-white" : "bg-muted text-ink-soft hover:text-ink",
                   )}
                 >
                   {n}

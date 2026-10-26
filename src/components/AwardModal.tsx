@@ -215,7 +215,7 @@ export function AwardModal({
               }}
               className="tap group mt-4 flex min-h-12 w-full items-center gap-3 rounded-2xl bg-white/80 px-4 py-2.5 text-left shadow-clay-sm transition hover:bg-white"
             >
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-cream">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-cta text-white">
                 <HandHeart className="h-[18px] w-[18px]" aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
@@ -259,7 +259,7 @@ export function AwardModal({
                   tab === t.k
                     ? t.k === "needs-work"
                       ? "bg-card text-ink shadow-clay-sm"
-                      : "bg-ink text-cream shadow-clay-sm"
+                      : "bg-cta text-white shadow-clay-sm"
                     : "text-ink-soft hover:text-ink",
                 )}
               >
@@ -291,7 +291,7 @@ export function AwardModal({
                     className={cn(
                       "shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition",
                       tagFilter === tag
-                        ? "bg-ink text-cream"
+                        ? "bg-cta text-white"
                         : "bg-muted text-ink-soft hover:text-ink",
                     )}
                   >
@@ -320,7 +320,7 @@ export function AwardModal({
               <Link
                 to="/library"
                 onClick={onClose}
-                className="tap mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-cream"
+                className="tap mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-cta px-5 text-sm font-semibold text-white"
               >
                 Go to Chores
               </Link>
@@ -340,7 +340,7 @@ export function AwardModal({
                   <button
                     type="button"
                     onClick={assignAll}
-                    className="tap mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-cream shadow-clay-sm"
+                    className="tap mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm"
                   >
                     <Check className="h-4 w-4" aria-hidden /> Give {kid.name} all {chores.length}{" "}
                     chores
@@ -439,7 +439,7 @@ export function AwardModal({
               </div>
               <button
                 onClick={() => onAwardBatch(tray)}
-                className="tap inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-cream shadow-clay-sm"
+                className="tap inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full bg-cta px-5 text-sm font-semibold text-white shadow-clay-sm"
               >
                 <Sparkles className="h-4 w-4" aria-hidden /> {visitor ? "Add points" : "Add to jar"}
               </button>

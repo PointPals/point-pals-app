@@ -191,7 +191,7 @@ function SeasonBanner({ householdId }: { householdId: string }) {
             download
             target="_blank"
             rel="noopener"
-            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            className="inline-flex items-center gap-2 rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
           >
             <Download className="h-4 w-4" /> Download your montage (MP4)
           </a>
@@ -545,7 +545,7 @@ function Composer({
                     <button
                       onClick={() => removeFileAt(i)}
                       aria-label={`Remove item ${i + 1}`}
-                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-foreground/70 text-background flex items-center justify-center hover:bg-foreground transition"
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-foreground/70 text-white flex items-center justify-center hover:bg-cta transition"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -625,7 +625,7 @@ function Composer({
                         .catch(() => {});
                     }
                   }}
-                  className="tap flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background shrink-0"
+                  className="tap flex h-9 w-9 items-center justify-center rounded-full bg-cta text-white shrink-0"
                   aria-label={audioPlayingPreview ? "Stop" : "Play recording"}
                 >
                   {audioPlayingPreview ? (
@@ -654,7 +654,7 @@ function Composer({
                   type="checkbox"
                   checked={keepAudio}
                   onChange={(e) => setKeepAudio(e.target.checked)}
-                  className="accent-foreground"
+                  className="accent-primary"
                 />
                 Keep the audio file when posting
               </label>
@@ -712,7 +712,7 @@ function Composer({
                 onClick={() => setShowTagSheet(!showTagSheet)}
                 className={`tap rounded-full px-3 py-2 text-sm font-semibold border transition flex items-center gap-1.5 ${
                   taggedIds.length > 0
-                    ? "bg-foreground text-background border-foreground"
+                    ? "bg-cta text-white border-transparent"
                     : "border-input hover:bg-muted"
                 }`}
               >
@@ -752,7 +752,7 @@ function Composer({
                           key={k.id}
                           onClick={() => toggleTag(k.id)}
                           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                            on ? "bg-foreground text-background" : "hover:bg-muted"
+                            on ? "bg-cta text-white" : "hover:bg-muted"
                           }`}
                         >
                           <span
@@ -790,7 +790,7 @@ function Composer({
           <button
             onClick={() => void save()}
             disabled={!canPost || saving}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cta px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             Post
@@ -1023,15 +1023,15 @@ function MemoryCard({
             {audioPlaying ? (
               <span className="flex gap-0.5 items-end h-4">
                 <span
-                  className="w-0.5 bg-foreground rounded-full animate-soundbar"
+                  className="w-0.5 bg-cta rounded-full animate-soundbar"
                   style={{ animationDelay: "0ms" }}
                 />
                 <span
-                  className="w-0.5 bg-foreground rounded-full animate-soundbar"
+                  className="w-0.5 bg-cta rounded-full animate-soundbar"
                   style={{ animationDelay: "150ms" }}
                 />
                 <span
-                  className="w-0.5 bg-foreground rounded-full animate-soundbar"
+                  className="w-0.5 bg-cta rounded-full animate-soundbar"
                   style={{ animationDelay: "300ms" }}
                 />
               </span>
@@ -1090,7 +1090,7 @@ function MemoryCard({
                 <button
                   type="submit"
                   disabled={!commentText.trim()}
-                  className="rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                  className="rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
                 >
                   Post
                 </button>
@@ -1228,7 +1228,7 @@ function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-cream/95 backdrop-blur-md flex items-center justify-center p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -1236,7 +1236,7 @@ function Lightbox({
       <button
         onClick={onClose}
         aria-label="Close"
-        className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20"
+        className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white text-ink shadow-clay-sm flex items-center justify-center hover:bg-white"
       >
         <X className="h-5 w-5" />
       </button>
@@ -1247,7 +1247,7 @@ function Lightbox({
             setIdx((i) => Math.max(0, i - 1));
           }}
           aria-label="Previous"
-          className="absolute left-4 h-11 w-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20"
+          className="absolute left-4 h-11 w-11 rounded-full bg-white text-ink shadow-clay-sm flex items-center justify-center hover:bg-white"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -1259,7 +1259,7 @@ function Lightbox({
             setIdx((i) => Math.min(media.length - 1, i + 1));
           }}
           aria-label="Next"
-          className="absolute right-4 h-11 w-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20"
+          className="absolute right-4 h-11 w-11 rounded-full bg-white text-ink shadow-clay-sm flex items-center justify-center hover:bg-white"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
@@ -1284,7 +1284,7 @@ function Lightbox({
           />
         )}
         {media.length > 1 && (
-          <div className="text-white/70 text-xs font-semibold">
+          <div className="text-ink-soft text-xs font-semibold">
             {idx + 1} / {media.length}
           </div>
         )}

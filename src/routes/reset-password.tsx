@@ -74,7 +74,7 @@ function ResetPasswordPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+              className="w-full rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
             >
               {busy ? "Sending…" : "Send reset link"}
             </button>
@@ -99,7 +99,7 @@ function ResetPasswordPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+              className="w-full rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
             >
               {busy ? "Updating…" : "Update password"}
             </button>

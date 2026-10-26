@@ -70,7 +70,7 @@ export function Plush() {
       ref={root}
       id="plush"
       aria-labelledby="lp-plush-title"
-      className="relative overflow-hidden bg-ink py-24 text-cream sm:py-32"
+      className="relative overflow-hidden bg-card py-24 text-ink sm:py-32"
     >
       {/* soft vignette + stage glow */}
       <div
@@ -78,21 +78,21 @@ export function Plush() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(60% 50% at 50% 70%, oklch(0.42 0.08 300 / 0.55), transparent 70%), radial-gradient(40% 40% at 85% 10%, oklch(0.82 0.15 78 / 0.12), transparent 70%)",
+            "radial-gradient(60% 50% at 50% 70%, color-mix(in oklab, var(--marble-plum) 16%, transparent), transparent 70%), radial-gradient(40% 40% at 85% 10%, color-mix(in oklab, var(--marble-saffron) 20%, transparent), transparent 70%), radial-gradient(40% 40% at 8% 20%, color-mix(in oklab, var(--marble-aqua) 14%, transparent), transparent 70%)",
         }}
       />
 
       <div className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <div className="grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:items-end">
           <div>
-            <Eyebrow n="07" tone="cream" marble="var(--marble-rose)">
+            <Eyebrow n="07" tone="ink" marble="var(--marble-rose)">
               The plush collection
             </Eyebrow>
-            <SplitReveal as="h2" className="lp-display-l mt-5 max-w-[11ch] text-cream">
+            <SplitReveal as="h2" className="lp-display-l mt-5 max-w-[11ch] text-ink">
               <span id="lp-plush-title">Bring your Pal home.</span>
             </SplitReveal>
           </div>
-          <p className="max-w-lg text-lg leading-relaxed text-cream/75 sm:text-xl lg:pb-3">
+          <p className="max-w-lg text-lg leading-relaxed text-ink-soft sm:text-xl lg:pb-3">
             Your family’s favourite Pals as real, huggable plush — soft enough for bedtime, sturdy
             enough for the school bag. The collection is in the works.
           </p>
@@ -128,15 +128,15 @@ export function Plush() {
                     className="mt-1 h-3 w-[86%] rounded-[50%]"
                     style={{
                       background:
-                        "linear-gradient(180deg, oklch(0.36 0.04 300), oklch(0.29 0.04 300))",
-                      boxShadow: "0 10px 24px -8px oklch(0 0 0 / 0.6)",
+                        "linear-gradient(180deg, oklch(0.95 0.02 300), oklch(0.88 0.03 300))",
+                      boxShadow: "0 10px 24px -10px oklch(0.235 0.045 300 / 0.3)",
                     }}
                   />
                   <p className="lp-plush-tag mt-4 text-center">
-                    <span className="block font-display text-xl font-semibold tracking-[-0.02em] text-cream">
+                    <span className="block font-display text-xl font-semibold tracking-[-0.02em] text-ink">
                       {p.name}
                     </span>
-                    <span className="mt-0.5 block text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-cream/55">
+                    <span className="mt-0.5 block text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                       {p.value}
                     </span>
                   </p>
@@ -147,19 +147,16 @@ export function Plush() {
           {/* shelf edge */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-[-4%] top-[calc(100%-5.6rem)] hidden h-px bg-gradient-to-r from-transparent via-cream/20 to-transparent sm:block"
+            className="pointer-events-none absolute inset-x-[-4%] top-[calc(100%-5.6rem)] hidden h-px bg-gradient-to-r from-transparent via-ink/10 to-transparent sm:block"
           />
         </div>
 
-        <div className="mt-16 grid gap-8 rounded-[2rem] border border-cream/10 bg-cream/[0.04] p-7 backdrop-blur-sm sm:mt-20 sm:p-10 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+        <div className="mt-16 grid gap-8 rounded-[2rem] border border-ink/10 bg-white/75 shadow-clay p-7 backdrop-blur-sm sm:mt-20 sm:p-10 lg:grid-cols-[1.3fr_1fr] lg:items-center">
           <ul className="grid gap-4">
             {DETAILS.map(({ icon: Icon, text }) => (
-              <li
-                key={text}
-                className="flex items-start gap-3.5 text-base text-cream/85 sm:text-lg"
-              >
-                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-cream/10">
-                  <Icon aria-hidden className="h-4.5 w-4.5 text-cream" />
+              <li key={text} className="flex items-start gap-3.5 text-base text-ink sm:text-lg">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted">
+                  <Icon aria-hidden className="h-4.5 w-4.5 text-ink" />
                 </span>
                 <span className="pt-1.5 leading-snug">{text}</span>
               </li>
@@ -169,7 +166,7 @@ export function Plush() {
             <Magnetic>
               <a
                 href={WAITLIST}
-                className="tap group inline-flex min-h-14 items-center gap-2.5 rounded-full bg-cream px-7 text-base font-semibold text-ink shadow-[0_18px_40px_-16px_oklch(0_0_0/0.7)] transition-shadow hover:shadow-glow sm:min-h-[3.75rem] sm:text-[1.05rem]"
+                className="tap group inline-flex min-h-14 items-center gap-2.5 rounded-full bg-cta px-7 text-base font-semibold text-white shadow-[0_18px_40px_-16px_oklch(0.45_0.15_285/0.6)] transition-shadow hover:shadow-glow sm:min-h-[3.75rem] sm:text-[1.05rem]"
               >
                 <span
                   aria-hidden
@@ -180,7 +177,9 @@ export function Plush() {
                 <Mail aria-hidden className="h-4 w-4" />
               </a>
             </Magnetic>
-            <p className="text-sm text-cream/55">We’ll email you once — when they’re ready.</p>
+            <p className="text-sm text-muted-foreground">
+              We’ll email you once — when they’re ready.
+            </p>
           </div>
         </div>
       </div>

@@ -79,7 +79,7 @@ export function KidChartCard({ kid }: { kid: Kid }) {
         type="button"
         onClick={onDownload}
         disabled={state === "working"}
-        className="w-full rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 transition"
+        className="w-full rounded-full bg-cta text-white px-4 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 transition"
       >
         {state === "working" ? (
           <>

@@ -283,7 +283,7 @@ function ScreenA() {
         </p>
       </div>
       <div className="mt-auto px-[6cqw] pb-[8cqw]">
-        <span className="lp-kid-handbtn flex items-center justify-center gap-[2cqw] rounded-full bg-ink py-[4cqw] text-[4cqw] font-semibold text-cream">
+        <span className="lp-kid-handbtn flex items-center justify-center gap-[2cqw] rounded-full bg-cta py-[4cqw] text-[4cqw] font-semibold text-white">
           <Hand className="h-[4.6cqw] w-[4.6cqw]" /> Let Nova pick
         </span>
       </div>
@@ -331,7 +331,7 @@ function ScreenB() {
         ))}
       </ul>
       <div className="mt-auto px-[5cqw] pb-[7cqw]">
-        <span className="flex items-center justify-center rounded-full bg-ink py-[4cqw] text-[4cqw] font-semibold text-cream">
+        <span className="flex items-center justify-center rounded-full bg-cta py-[4cqw] text-[4cqw] font-semibold text-white">
           Ask a grown-up
         </span>
       </div>
@@ -385,7 +385,7 @@ function ScreenC() {
               strokeDashoffset={0}
             />
           </svg>
-          <span className="grid h-[26cqw] w-[26cqw] place-items-center rounded-full bg-ink text-center text-[3.6cqw] font-semibold leading-tight text-cream">
+          <span className="grid h-[26cqw] w-[26cqw] place-items-center rounded-full bg-cta text-center text-[3.6cqw] font-semibold leading-tight text-white">
             <span className="lp-kid-hold">
               Hold to
               <br />

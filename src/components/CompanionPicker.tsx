@@ -69,7 +69,7 @@ export function CompanionPicker({
                 {isSel && (
                   <span
                     aria-hidden
-                    className="animate-pop-in absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-ink text-cream shadow-clay-sm"
+                    className="animate-pop-in absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-cta text-white shadow-clay-sm"
                   >
                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                   </span>

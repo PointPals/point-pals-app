@@ -102,7 +102,7 @@ export function SiteHeader() {
           </Link>
           <Link
             to="/sign-up"
-            className="tap hidden min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-cream transition-opacity hover:opacity-90 sm:inline-flex"
+            className="tap hidden min-h-11 items-center rounded-full bg-cta px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:inline-flex"
           >
             Start free
           </Link>
@@ -155,7 +155,7 @@ export function SiteHeader() {
           </Link>
           <Link
             to="/sign-up"
-            className="tap mt-1 flex min-h-12 items-center justify-center rounded-full bg-ink px-5 font-semibold text-cream"
+            className="tap mt-1 flex min-h-12 items-center justify-center rounded-full bg-cta px-5 font-semibold text-white"
           >
             Start your family jar
           </Link>

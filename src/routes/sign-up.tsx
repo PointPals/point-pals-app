@@ -182,7 +182,7 @@ function SignUpPage() {
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-input accent-foreground"
+              className="mt-1 h-4 w-4 rounded border-input accent-primary"
             />
             <span className="text-sm text-muted-foreground leading-relaxed">
               I confirm that I am the parent or legal guardian of the children whose information
@@ -203,7 +203,7 @@ function SignUpPage() {
           <button
             type="submit"
             disabled={busy || !consent}
-            className="w-full rounded-full bg-foreground text-background font-semibold py-3 disabled:opacity-50"
+            className="w-full rounded-full bg-cta text-white font-semibold py-3 disabled:opacity-50"
           >
             {busy ? "Creating…" : "Create account"}
           </button>

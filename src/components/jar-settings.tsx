@@ -30,7 +30,7 @@ export function ToggleRow({
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? "bg-foreground" : "bg-muted"}`}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? "bg-cta" : "bg-muted"}`}
       >
         <span
           className={`absolute top-0.5 h-5 w-5 rounded-full bg-background transition-transform ${checked ? "translate-x-[22px]" : "translate-x-0.5"}`}
@@ -80,7 +80,7 @@ export function PersonalTargetRow({
             save(v, reward);
           }}
           onBlur={() => save(target, reward)}
-          className="flex-1 accent-foreground"
+          className="flex-1 accent-primary"
         />
         <span className="font-display text-base font-bold w-10 text-right">{target}</span>
       </div>

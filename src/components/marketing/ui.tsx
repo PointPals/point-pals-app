@@ -120,7 +120,7 @@ export function PrimaryCta({
         className={cn(
           "lp-cta group tap relative inline-flex min-h-14 items-center justify-center gap-2.5 overflow-hidden rounded-full px-7 text-base font-semibold transition-shadow duration-500 ease-out-expo sm:min-h-[3.75rem] sm:px-8 sm:text-[1.05rem]",
           tone === "ink"
-            ? "bg-ink text-cream shadow-[0_18px_40px_-16px_oklch(0.235_0.045_300/0.7)] hover:shadow-[0_26px_50px_-18px_oklch(0.235_0.045_300/0.75)]"
+            ? "bg-cta text-white shadow-[0_18px_40px_-16px_oklch(0.235_0.045_300/0.7)] hover:shadow-[0_26px_50px_-18px_oklch(0.235_0.045_300/0.75)]"
             : "bg-cream text-ink shadow-[0_18px_40px_-16px_oklch(0_0_0/0.6)]",
           className,
         )}

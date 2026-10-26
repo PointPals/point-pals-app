@@ -411,7 +411,7 @@ function ParentScreen() {
       </div>
 
       <div className="mt-auto px-[5cqw] pb-[7cqw]">
-        <div className="rounded-[5cqw] bg-ink p-[4cqw] text-cream">
+        <div className="rounded-[5cqw] bg-cta p-[4cqw] text-white">
           <div className="flex items-baseline justify-between">
             <span className="text-[3.2cqw] font-semibold uppercase tracking-[0.14em] text-cream/70">
               Family jar

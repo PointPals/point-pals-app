@@ -178,7 +178,7 @@ export function MeetPals() {
                 </p>
               </li>
             ))}
-            <li className="lp-pal-card lp-pal-outro relative flex flex-col justify-end overflow-hidden rounded-[2.25rem] bg-ink p-6 text-cream sm:rounded-[2.75rem] sm:p-8">
+            <li className="lp-pal-card lp-pal-outro relative flex flex-col justify-end overflow-hidden rounded-[2.25rem] bg-cta p-6 text-white sm:rounded-[2.75rem] sm:p-8">
               <div aria-hidden className="absolute inset-x-0 top-[8%] flex justify-center gap-1">
                 {PALS.map((p, i) => (
                   <span
@@ -217,7 +217,7 @@ export function MeetPals() {
           aria-hidden
           className="lp-pals-progress absolute inset-x-0 bottom-8 mx-auto h-1 w-40 overflow-hidden rounded-full bg-ink/10"
         >
-          <span className="lp-pals-progress-bar block h-full origin-left rounded-full bg-ink" />
+          <span className="lp-pals-progress-bar block h-full origin-left rounded-full bg-cta" />
         </div>
       </div>
     </section>

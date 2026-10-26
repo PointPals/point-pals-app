@@ -17,8 +17,8 @@ const CAST: { id: string; style: CSSProperties; delay: number }[] = [
 
 /**
  * Shared frame for sign-in, sign-up, join, password reset and first-run setup:
- * the form on a calm cream column, and (on desktop) an ink brand panel where
- * the Pals hang out around the promise line. On phones a few Pals peek over
+ * the form on a calm cream column, and (on desktop) a bright brand panel lit
+ * with marble colours, where the Pals hang out around the promise line. On phones a few Pals peek over
  * the form.
  */
 export function AuthShell({
@@ -98,14 +98,14 @@ export function AuthShell({
       </div>
 
       <aside
-        className="relative hidden overflow-hidden bg-ink lg:sticky lg:top-0 lg:block lg:h-dvh lg:self-start"
+        className="relative hidden overflow-hidden bg-white lg:sticky lg:top-0 lg:block lg:h-dvh lg:self-start"
         aria-hidden
       >
         <div
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(55% 45% at 50% 48%, oklch(0.42 0.08 300 / 0.75), transparent 70%), radial-gradient(40% 35% at 85% 12%, oklch(0.82 0.15 78 / 0.18), transparent 70%), radial-gradient(40% 35% at 12% 88%, oklch(0.76 0.12 210 / 0.2), transparent 70%)",
+              "radial-gradient(55% 45% at 50% 48%, color-mix(in oklab, var(--marble-plum) 22%, transparent), transparent 70%), radial-gradient(45% 40% at 88% 10%, color-mix(in oklab, var(--marble-saffron) 30%, transparent), transparent 70%), radial-gradient(45% 40% at 10% 90%, color-mix(in oklab, var(--marble-aqua) 28%, transparent), transparent 70%), radial-gradient(35% 30% at 90% 92%, color-mix(in oklab, var(--marble-rose) 20%, transparent), transparent 70%)",
           }}
         />
         {CAST.map((p) => (
@@ -118,10 +118,10 @@ export function AuthShell({
           </span>
         ))}
         <div className="absolute inset-x-[16%] top-1/2 -translate-y-1/2 text-center">
-          <p className="mx-auto max-w-[12ch] font-display text-[clamp(2.6rem,4.4vw,4.2rem)] font-semibold leading-[0.95] tracking-[-0.04em] text-cream">
+          <p className="mx-auto max-w-[12ch] font-display text-[clamp(2.6rem,4.4vw,4.2rem)] font-semibold leading-[0.95] tracking-[-0.04em] text-ink">
             {headline}
           </p>
-          <p className="mx-auto mt-5 max-w-[22rem] text-base leading-relaxed text-cream/70">
+          <p className="mx-auto mt-5 max-w-[22rem] text-base leading-relaxed text-ink-soft">
             {blurb}
           </p>
         </div>

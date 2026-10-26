@@ -122,7 +122,7 @@ export function KidView() {
               </button>
               <button
                 onClick={tryExit}
-                className="flex-1 rounded-full bg-foreground text-background px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+                className="flex-1 rounded-full bg-cta text-white px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition"
               >
                 Exit
               </button>
