@@ -100,6 +100,9 @@ export type RewardHistory = {
   targetPoints: number;
   achievedAt: number;
   contributingKidIds: string[];
+  /** Set when one member reached their personal-jar goal; absent/null for a
+   *  family-jar reward. */
+  kidId?: string | null;
 };
 
 export type MemoryLike = {
