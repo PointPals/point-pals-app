@@ -145,7 +145,8 @@ export function computeGauge(events: ReportEvent[]): {
   pctPositive: number | null;
 } {
   const scored = events.filter((e) => e.type !== "correction");
-  const positive = scored.filter((e) => e.points > 0).length;
+  // A 0-point habit still counts: it was done, it just no longer earns a marble.
+  const positive = scored.filter((e) => e.points >= 0).length;
   const needsWork = scored.filter((e) => e.points < 0).length;
   const total = positive + needsWork;
   return { positive, needsWork, pctPositive: total > 0 ? (positive / total) * 100 : null };

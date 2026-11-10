@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Undo2 } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { iconUrl, isIconKey } from "@/lib/icons";
+import { pointsLabel } from "@/lib/points-label";
 
 // A compact, collapsed-by-default log of the 10 most recent point events, so a
 // parent can see what was last tapped without the home screen turning back into
@@ -66,8 +67,7 @@ export function RecentActivity() {
                         : "text-foreground"
                   }`}
                 >
-                  {e.points > 0 ? "+" : ""}
-                  {e.points}
+                  {pointsLabel(e.points)}
                 </span>
                 {!isCorrection && (
                   <button

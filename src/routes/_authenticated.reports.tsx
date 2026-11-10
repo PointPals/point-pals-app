@@ -15,6 +15,7 @@ import {
   type ReportEvent,
 } from "@/lib/reports";
 import { Download, Printer, MoreVertical, Wrench, Check, X, BarChart3 } from "lucide-react";
+import { pointsLabel } from "@/lib/points-label";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: ReportsPage,
@@ -344,8 +345,7 @@ function EventRow({
               : "bg-blush/30 text-foreground"
         }`}
       >
-        {event.points > 0 ? "+" : ""}
-        {event.points}
+        {pointsLabel(event.points)}
       </span>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold truncate">

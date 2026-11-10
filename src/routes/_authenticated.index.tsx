@@ -22,6 +22,7 @@ import {
   visitTotal,
 } from "@/lib/visitors";
 import { Plus, Send, Undo2, Users } from "lucide-react";
+import { pointsLabel } from "@/lib/points-label";
 
 // The app has no real auth/session system yet (§8 landing page is built without
 // one), so "has this device ever used the app" is approximated by the presence
@@ -113,8 +114,10 @@ function HomePage() {
     const totalPoints = items.reduce((sum, it) => sum + it.points, 0);
     const summary =
       items.length === 1
-        ? `${items[0].points > 0 ? "+" : ""}${items[0].points} ${items[0].name}`
-        : `${totalPoints > 0 ? "+" : ""}${totalPoints} points · ${items.length} taps`;
+        ? `${pointsLabel(items[0].points)} ${items[0].name}`
+        : totalPoints === 0
+          ? `✓ ${items.length} habits done`
+          : `${pointsLabel(totalPoints)} points · ${items.length} taps`;
 
     // A visiting friend: points stay on this device, never in the family jar,
     // so there's no jar to scroll to — just the chimes and an undo.
