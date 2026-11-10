@@ -202,6 +202,41 @@ function buildDesired(
   return [...filler, ...kept];
 }
 
+/**
+ * The biggest marble radius that lets `count` marbles stack (in offset rows,
+ * as they settle) inside a jar interior `innerW` wide, up to FILL_TO of its
+ * `height`. A rows-based fit, not an area estimate: an area guess left
+ * 100-marble jars only ~60% full at their target and overfilled tiny ones.
+ */
+const FILL_TO = 0.9;
+function fitRadius(count: number, innerW: number, height: number): number {
+  const n = Math.max(1, count);
+  const fits = (r: number) => {
+    const wide = Math.floor(innerW / (2 * r));
+    const narrow = Math.floor((innerW - r) / (2 * r));
+    if (wide < 1) return false;
+    // The rounded bottom corners lose about one marble on the first row.
+    const rows = Math.floor((height * FILL_TO - 2 * r) / (Math.sqrt(3) * r)) + 1;
+    let held = -1;
+    for (let i = 0; i < rows; i++) held += i % 2 === 0 ? wide : Math.max(1, narrow);
+    return held >= n;
+  };
+  let lo = 2;
+  let hi = innerW / 4;
+  if (fits(hi)) return hi;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+  // A settled pile still packs a little tighter than ideal rows (marbles
+  // nest and slightly overlap under the weight above), so scale up to land
+  // the pile at FILL_TO. Calibrated against rendered jars of 10–300 marbles.
+  // Narrow jars (the small personal ones) nest proportionally tighter.
+  const pile = 1.1 + 0.07 * Math.min(1, Math.max(0, (230 - innerW) / 160));
+  return Math.max(3, lo * pile);
+}
+
 export function MarbleJar({
   value,
   target,
@@ -306,12 +341,10 @@ export function MarbleJar({
     const br = W * 0.16; // bottom corner radius
     const innerW = right - left;
 
-    // Marble radius sized so `target` marbles fill to the top.
-    const totalTarget = Math.round(target / perMarble);
-    const jarArea = innerW * (bottom - top);
-    // packing efficiency ~0.72 for loose circles
-    const rFit = Math.sqrt((jarArea * 0.72) / (Math.max(totalTarget, 1) * Math.PI));
-    const R = Math.max(4, Math.min(rFit, innerW / 5));
+    // Marble radius sized so `target` marbles fill the jar to just under the
+    // lid — a 100-point family goal and a 50-point personal goal both look
+    // full exactly when they're reached.
+    const R = fitRadius(Math.round(target / perMarble), innerW, bottom - top);
 
     function spawn(m: { id: string; kidId: string; color: string; hue: string }) {
       marbles.current.push({
@@ -455,8 +488,11 @@ export function MarbleJar({
         m.y += m.vy;
         resolveWalls(m);
       }
-      // pairwise separation (simple, stable positional relaxation)
-      for (let iter = 0; iter < 2; iter++) {
+      // pairwise separation (simple, stable positional relaxation). A deep
+      // pile needs more passes or the bottom marbles stay squashed into each
+      // other, and a "full" jar then looks part-empty.
+      const passes = list.length > 60 ? 6 : list.length > 25 ? 4 : 3;
+      for (let iter = 0; iter < passes; iter++) {
         for (let i = 0; i < list.length; i++) {
           for (let j = i + 1; j < list.length; j++) {
             const a = list[i];
