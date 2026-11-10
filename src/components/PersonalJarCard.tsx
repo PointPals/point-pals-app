@@ -1,15 +1,18 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useApp } from "@/lib/app-store";
+import { useCorrection } from "@/lib/correction-store";
 import { useSettings } from "@/lib/settings";
 import { MarbleJar } from "./MarbleJar";
 import { Confetti } from "./Confetti";
 import { playFanfare, haptic } from "@/lib/feedback";
-import { Gift, Sparkles, Check, Pencil, RefreshCw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Sparkles, Check, Pencil, RefreshCw, RotateCcw, Trophy } from "lucide-react";
 import type { Kid } from "@/lib/mock-data";
 
 /**
- * A small marble jar showing one kid's personal progress, with a "Claim
- * reward" button when full and (optionally) the change / restart controls the
+ * A small marble jar showing one kid's personal progress, with a "Reset
+ * points" button when they reach their target (which records the win in their
+ * report and starts the jar again) and (optionally) the change / restart controls the
  * family jar has (change the reward name + target, restart the jar back to
  * zero). Those controls live on the Rewards page; the home screen passes
  * `showControls={false}` so the jar there is view + claim only.
@@ -23,7 +26,12 @@ export const PersonalJarCard = memo(function PersonalJarCard({
   size?: number;
   showControls?: boolean;
 }) {
-  const { history, claimPersonalReward, resetKidPoints, setPersonalTarget } = useApp();
+  const { history, resetKidPoints, setPersonalTarget } = useApp();
+  const { personalWins, resetPersonalGoal } = useCorrection();
+  const wins = useMemo(
+    () => personalWins.filter((w) => w.kidId === kid.id).length,
+    [personalWins, kid.id],
+  );
   const settings = useSettings();
   const [celebrating, setCelebrating] = useState(false);
   const [claimed, setClaimed] = useState(false);
@@ -55,7 +63,13 @@ export const PersonalJarCard = memo(function PersonalJarCard({
   }, [settings.reducedMotion]);
 
   const handleClaim = useCallback(() => {
-    claimPersonalReward(kid.id);
+    if (
+      !window.confirm(
+        `Reset ${kid.name}'s points? Reaching ${kid.personalTarget} is saved to ${kid.name}'s report, and their jar starts again from 0.`,
+      )
+    )
+      return;
+    resetPersonalGoal(kid.id);
     playFanfare();
     haptic("success");
     setCelebrating(true);
@@ -64,7 +78,7 @@ export const PersonalJarCard = memo(function PersonalJarCard({
       setCelebrating(false);
       setClaimed(false);
     }, 2500);
-  }, [kid.id, claimPersonalReward]);
+  }, [kid.id, kid.name, kid.personalTarget, resetPersonalGoal]);
 
   const openEditor = useCallback(() => {
     setNameDraft(kid.personalReward ?? "");
@@ -158,26 +172,41 @@ export const PersonalJarCard = memo(function PersonalJarCard({
                 / {kid.personalTarget}
               </span>
             </div>
-            {reached ? (
-              claimed ? (
-                <div className="mt-2 text-sm font-semibold text-sage-foreground flex items-center gap-1.5 justify-center">
-                  <Check className="w-4 h-4" /> Reward claimed!
+            {/* The confirmation sits outside `reached`: the reset empties the jar at
+                once, so inside it the message never got a chance to show. */}
+            {claimed ? (
+              <div className="mt-2 text-sm font-semibold text-sage-foreground flex items-center gap-1.5 justify-center">
+                <Check className="w-4 h-4" /> Saved to {kid.name}&apos;s report
+              </div>
+            ) : reached ? (
+              <div className="mt-2 flex flex-col items-center gap-1.5">
+                <div className="text-xs font-semibold text-ink">
+                  🎉 Goal reached{kid.personalReward ? ` — ${kid.personalReward}` : "!"}
                 </div>
-              ) : (
                 <button
+                  type="button"
                   onClick={handleClaim}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-cta px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition animate-pulse"
+                  className="tap inline-flex min-h-10 items-center gap-1.5 rounded-full bg-cta px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
                 >
-                  <Gift className="w-3.5 h-3.5" />
-                  {kid.personalReward ? kid.personalReward : "Claim reward"}
+                  <RotateCcw className="w-3.5 h-3.5" /> Reset points
                 </button>
-              )
+              </div>
             ) : kid.personalTarget > 0 ? (
               <div className="mt-1 text-xs text-muted-foreground">
                 {remaining} point{remaining === 1 ? "" : "s"} to go · {pct}%
               </div>
             ) : (
               <div className="mt-1 text-xs text-muted-foreground">No target set</div>
+            )}
+
+            {wins > 0 && (
+              <Link
+                to="/reports"
+                search={{ kid: kid.id }}
+                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-ink"
+              >
+                <Trophy className="w-3 h-3" /> {wins} {wins === 1 ? "goal" : "goals"} reached
+              </Link>
             )}
 
             {/* Change / Restart — same mechanics as the family jar. Hidden on

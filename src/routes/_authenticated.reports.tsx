@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/lib/app-store";
+import { useCorrection } from "@/lib/correction-store";
 import { useHouseholdRole } from "@/lib/use-household-role";
 import { supabase } from "@/integrations/supabase/client";
 import { PASTEL_HEX, PASTEL_MUTED } from "@/lib/mock-data";
@@ -15,9 +16,15 @@ import {
   type ReportEvent,
 } from "@/lib/reports";
 import { Download, Printer, MoreVertical, Wrench, Check, X, BarChart3 } from "lucide-react";
+import { GoalsReached } from "@/components/GoalsReached";
+import { pointsLabel } from "@/lib/points-label";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: ReportsPage,
+  // ?kid=<id> opens straight onto one member (from their jar's "goals reached").
+  validateSearch: (search: Record<string, unknown>): { kid?: string } => ({
+    kid: typeof search.kid === "string" ? search.kid : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Reports — PointPals" },
@@ -30,13 +37,15 @@ export const Route = createFileRoute("/_authenticated/reports")({
 // used elsewhere (useHouseholdRole.canEdit etc.).
 function ReportsPage() {
   const { household, kids, history, correctPoints, mode } = useApp();
+  const { personalWins } = useCorrection();
+  const { kid: kidParam } = Route.useSearch();
   const { role } = useHouseholdRole(household.id);
   const canView = role === null || role === "admin" || role === "parent";
 
   const [rangeKey, setRangeKey] = useState<DateRangeKey>("this-week");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [scopeKidId, setScopeKidId] = useState<string | null>(null);
+  const [scopeKidId, setScopeKidId] = useState<string | null>(kidParam ?? null);
   const [events, setEvents] = useState<ReportEvent[]>([]);
   const [loading, setLoading] = useState(false);
   // Map of awarder user-id → display name, so the activity list shows who
@@ -227,6 +236,8 @@ function ReportsPage() {
         </div>
       </div>
 
+      <GoalsReached wins={personalWins} kids={kids} scopeKidId={scopeKidId} />
+
       {/* Event list */}
       <div className="card-soft overflow-hidden">
         {events.length === 0 ? (
@@ -344,8 +355,7 @@ function EventRow({
               : "bg-blush/30 text-foreground"
         }`}
       >
-        {event.points > 0 ? "+" : ""}
-        {event.points}
+        {pointsLabel(event.points)}
       </span>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold truncate">

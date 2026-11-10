@@ -6,7 +6,15 @@
 // the shared pool) is delegated to the app store's resetRewardCycle so demo
 // and live behave identically.
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useApp } from "./app-store";
 import { supabase } from "@/integrations/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -19,8 +27,13 @@ const db = supabase as unknown as SupabaseClient;
 type ActiveReward = { name: string; targetPoints: number } | null;
 
 type CorrectionCtx = {
+  /** Family-jar rewards, newest first. */
   rewardHistory: RewardHistory[];
+  /** Personal-jar goals reached (one entry per win, `kidId` set), newest first. */
+  personalWins: RewardHistory[];
   claimReward: (rewardName: string, targetPoints: number) => void;
+  /** A member reached their personal goal: record the win, then reset their jar. */
+  resetPersonalGoal: (kidId: string) => void;
   setActiveReward: (name: string, targetPoints: number) => void;
   clearActiveReward: () => void;
   activeReward: ActiveReward;
@@ -48,8 +61,12 @@ function loadLocal(): PersistedRewards {
 const CorrectionCtxProvider = createContext<CorrectionCtx | null>(null);
 
 export function CorrectionProvider({ children }: { children: ReactNode }) {
-  const { kids, household, mode, resetRewardCycle } = useApp();
-  const [rewardHistory, setRewardHistory] = useState<RewardHistory[]>([]);
+  const { kids, household, mode, resetRewardCycle, claimPersonalReward } = useApp();
+  // Family rewards and personal wins share one list (and one table); split
+  // on read.
+  const [allHistory, setRewardHistory] = useState<RewardHistory[]>([]);
+  const rewardHistory = useMemo(() => allHistory.filter((r) => !r.kidId), [allHistory]);
+  const personalWins = useMemo(() => allHistory.filter((r) => !!r.kidId), [allHistory]);
   const [activeReward, setActiveRewardState] = useState<ActiveReward>(null);
   const [hydrated, setHydrated] = useState(false);
   const live = mode === "live";
@@ -87,20 +104,26 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      window.localStorage.setItem(REWARD_KEY, JSON.stringify({ activeReward, rewardHistory }));
+      window.localStorage.setItem(
+        REWARD_KEY,
+        JSON.stringify({ activeReward, rewardHistory: allHistory }),
+      );
     } catch {
       /* storage blocked — session-only */
     }
-  }, [activeReward, rewardHistory, hydrated]);
+  }, [activeReward, allHistory, hydrated]);
 
   // Live mode: the reward_history table is the source of truth for past rewards.
   useEffect(() => {
     if (!live || !household.id) return;
     let cancelled = false;
     void (async () => {
+      // select("*") rather than a column list: kid_id only exists once the
+      // personal-goal migration has run, and naming it would fail the whole
+      // query (and blank the family history) before then.
       const { data, error } = await db
         .from("reward_history")
-        .select("id, reward_name, target_points, achieved_at, contributing_kid_ids")
+        .select("*")
         .eq("household_id", household.id)
         .order("achieved_at", { ascending: false });
       if (cancelled || error || !data) return;
@@ -112,6 +135,7 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
             target_points: number;
             achieved_at: string;
             contributing_kid_ids: string[] | null;
+            kid_id?: string | null;
           }[]
         ).map((r) => ({
           id: r.id,
@@ -119,6 +143,7 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
           targetPoints: r.target_points,
           achievedAt: new Date(r.achieved_at).getTime(),
           contributingKidIds: r.contributing_kid_ids ?? [],
+          kidId: r.kid_id ?? null,
         })),
       );
     })();
@@ -193,6 +218,43 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
     [live, household.id, kids, resetRewardCycle, persistActiveReward],
   );
 
+  const resetPersonalGoal = useCallback(
+    (kidId: string) => {
+      const kid = kids.find((k) => k.id === kidId);
+      if (!kid) return;
+      const entry: RewardHistory = {
+        id: uid(),
+        rewardName: kid.personalReward?.trim() || "Personal goal",
+        targetPoints: kid.personalTarget,
+        achievedAt: Date.now(),
+        contributingKidIds: [kid.id],
+        kidId: kid.id,
+      };
+      setRewardHistory((prev) => [entry, ...prev]);
+      if (live) {
+        void db
+          .from("reward_history")
+          .insert({
+            id: entry.id,
+            household_id: household.id,
+            reward_name: entry.rewardName,
+            target_points: entry.targetPoints,
+            contributing_kid_ids: entry.contributingKidIds,
+            kid_id: kid.id,
+          })
+          .then(({ error }) => {
+            if (error) {
+              // Most likely the personal-goal migration hasn't been applied.
+              console.warn("Couldn't save the personal goal to reward_history:", error.message);
+            }
+          });
+      }
+      // Their jar starts again from 0; the family jar keeps its marbles.
+      claimPersonalReward(kid.id);
+    },
+    [kids, live, household.id, claimPersonalReward],
+  );
+
   const setActiveReward = useCallback(
     (name: string, targetPoints: number) => {
       setActiveRewardState({ name, targetPoints });
@@ -208,7 +270,15 @@ export function CorrectionProvider({ children }: { children: ReactNode }) {
 
   return (
     <CorrectionCtxProvider.Provider
-      value={{ rewardHistory, claimReward, setActiveReward, clearActiveReward, activeReward }}
+      value={{
+        rewardHistory,
+        personalWins,
+        claimReward,
+        resetPersonalGoal,
+        setActiveReward,
+        clearActiveReward,
+        activeReward,
+      }}
     >
       {children}
     </CorrectionCtxProvider.Provider>

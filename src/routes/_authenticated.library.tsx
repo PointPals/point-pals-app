@@ -152,8 +152,8 @@ function IconPickerGrid({
               manageMode ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Eye className="w-3 h-3" />
-            {manageMode ? "Done" : "Hide icons"}
+            <Pencil className="w-3 h-3" />
+            {manageMode ? "Done" : "Edit icons"}
           </button>
           <button
             type="button"
@@ -238,8 +238,8 @@ function IconPickerGrid({
       <div className="mt-2 max-h-60 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-muted/40 p-2">
         {manageMode ? (
           <div className="text-[11px] font-semibold text-muted-foreground text-center mt-1 mb-1.5 px-2">
-            Tap an icon to hide or show it — tap a custom icon to delete it. Tap "Done" when
-            finished.
+            Tap one of your own icons to delete it for the whole family, or a built-in icon to hide
+            or show it on this device. Tap "Done" when finished.
           </div>
         ) : (
           hiddenCount > 0 && (
@@ -270,15 +270,21 @@ function IconPickerGrid({
               const url = storageUrl(u.storagePath);
               const on = selected === url;
               const removeIcon = async () => {
-                if (!window.confirm(`Remove "${u.label || "Custom icon"}"?`)) return;
-                try {
-                  const { supabase } = await import("@/integrations/supabase/client");
-                  // @ts-expect-error user_icons not in types
-                  await (supabase.from("user_icons") as any)
-                    .update({ deleted_at: new Date().toISOString() })
-                    .eq("id", u.id);
-                  setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
-                } catch {}
+                if (
+                  !window.confirm(
+                    `Delete "${u.label || "this icon"}" for everyone in your family? Chores already using it keep their picture.`,
+                  )
+                )
+                  return;
+                // @ts-expect-error user_icons not in types
+                const { error } = await (supabase.from("user_icons") as any)
+                  .update({ deleted_at: new Date().toISOString() })
+                  .eq("id", u.id);
+                if (error) {
+                  window.alert("Couldn't delete that icon — check your connection and try again.");
+                  return;
+                }
+                setUserIcons((prev) => prev.filter((x) => x.id !== u.id));
               };
               return (
                 <button
@@ -494,7 +500,7 @@ function LibraryPage() {
             removeSkill={removeSkill}
             addLabel="Add kind & brave"
             noun="kind & brave moment"
-            pointsMin={1}
+            pointsMin={0}
             pointsMax={20}
             defaultPoints={2}
           />
@@ -795,7 +801,7 @@ function ChoreManager({
     setChoreOrderIds(arrayMove(orderedIds, from, to));
   };
 
-  const clampPoints = (n: number) => Math.max(1, Math.min(20, n));
+  const clampPoints = (n: number) => Math.max(0, Math.min(20, n));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -861,7 +867,7 @@ function ChoreManager({
               </label>
               <input
                 type="number"
-                min={1}
+                min={0}
                 max={20}
                 value={points}
                 onChange={(e) => setPoints(clampPoints(Number(e.target.value)))}
@@ -876,6 +882,12 @@ function ChoreManager({
               {busy ? "Adding…" : "Add chore"}
             </button>
           </div>
+          {points === 0 && (
+            <p className="text-xs text-muted-foreground -mt-1">
+              0 points makes this a habit: it&apos;s still logged as done and counts in reports, but
+              no marble drops. Handy once a chore is just part of the routine.
+            </p>
+          )}
 
           <IconPickerGrid selected={icon} onSelect={setIcon} />
 
@@ -944,7 +956,7 @@ function ChoreManager({
             <div ref={editPanelRef}>
               <EditPanel
                 item={item}
-                pointsMin={1}
+                pointsMin={0}
                 pointsMax={20}
                 onSave={(patch) => {
                   updateChore(editingId, patch);
@@ -1207,7 +1219,11 @@ function AiIconPanel({
         <h4 className="text-sm font-semibold flex items-center gap-2">
           <Wand2 className="w-4 h-4" /> Generate icon with AI
         </h4>
-        <button onClick={onClose} className="tap text-muted-foreground hover:text-foreground">
+        <button
+          type="button"
+          onClick={onClose}
+          className="tap text-muted-foreground hover:text-foreground"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -1226,10 +1242,19 @@ function AiIconPanel({
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Describe the icon..."
-          className="flex-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-sm"
-          onKeyDown={(e) => e.key === "Enter" && generate()}
+          enterKeyHint="go"
+          // 16px on phones so iOS doesn't zoom in; Enter generates instead of
+          // submitting the chore form this panel sits inside.
+          className="flex-1 bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-base sm:text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void generate();
+            }
+          }}
         />
         <button
+          type="button"
           onClick={generate}
           disabled={generating || !prompt.trim() || (usage?.used ?? 0) >= (usage?.cap ?? 10)}
           className="tap rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
@@ -1245,6 +1270,7 @@ function AiIconPanel({
             <img src={result} alt="Generated icon" className="w-full h-full object-contain" />
           </div>
           <button
+            type="button"
             onClick={() => {
               onSelect(result);
               onClose();
@@ -1347,7 +1373,11 @@ function UploadIconPanel({
         <h4 className="text-sm font-semibold flex items-center gap-2">
           <Upload className="w-4 h-4" /> Upload your own icon
         </h4>
-        <button onClick={onClose} className="tap text-muted-foreground hover:text-foreground">
+        <button
+          type="button"
+          onClick={onClose}
+          className="tap text-muted-foreground hover:text-foreground"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -1375,6 +1405,7 @@ function UploadIconPanel({
 
       {!preview && (
         <button
+          type="button"
           onClick={() => inputRef.current?.click()}
           className="tap w-full rounded-xl border-2 border-dashed border-border py-8 text-muted-foreground hover:border-foreground hover:text-foreground transition flex flex-col items-center gap-2"
         >
@@ -1395,10 +1426,12 @@ function UploadIconPanel({
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="Name this icon (optional)"
-                className="w-full bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-sm text-center"
+                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+                className="w-full bg-transparent border-b border-border py-1.5 focus:outline-none focus:border-foreground text-base sm:text-sm text-center"
               />
               <div className="flex gap-2 justify-center">
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedFile(null);
                     setPreview(null);
@@ -1409,6 +1442,7 @@ function UploadIconPanel({
                   Remove
                 </button>
                 <button
+                  type="button"
                   onClick={upload}
                   className="tap rounded-full bg-cta text-white px-4 py-2 text-sm font-semibold flex items-center gap-1.5"
                 >
@@ -1439,6 +1473,7 @@ function UploadIconPanel({
             <img src={result} alt="Cleaned icon" className="w-full h-full object-contain" />
           </div>
           <button
+            type="button"
             onClick={() => {
               onComplete(result);
             }}
@@ -1544,6 +1579,13 @@ function EditPanel({
           />
         </div>
       </div>
+
+      {points === 0 && (
+        <p className="text-xs text-muted-foreground -mt-1">
+          0 points makes this a habit: it&apos;s still logged as done and counts in reports, but no
+          marble drops. Handy once a chore is just part of the routine.
+        </p>
+      )}
 
       {showTags && (
         <div>

@@ -215,7 +215,7 @@ function computeStreaks(
   for (const kid of kids) {
     const days = new Set(
       history
-        .filter((e) => e.kidId === kid.id && e.points > 0 && mustDo.has(e.itemName))
+        .filter((e) => e.kidId === kid.id && e.points >= 0 && mustDo.has(e.itemName))
         .map((e) => dayKey(e.at)),
     );
     // Anchor to today if active today, else yesterday (so an as-yet-untouched

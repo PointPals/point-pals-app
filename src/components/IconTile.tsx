@@ -2,6 +2,7 @@ import type { PastelKey } from "@/lib/mock-data";
 import { PASTEL_HEX, PASTEL_MUTED } from "@/lib/mock-data";
 import { iconUrl, isIconKey } from "@/lib/icons";
 import { cn } from "@/lib/utils";
+import { pointsLabel } from "@/lib/points-label";
 
 /** Renders a chore/behaviour icon: a registry key, image URL, or emoji. */
 export function TileIcon({ icon, className }: { icon: string; className?: string }) {
@@ -59,7 +60,7 @@ export function IconTile({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${label}${points !== undefined ? `, ${points > 0 ? "+" : ""}${points} points` : ""}`}
+      aria-label={`${label}${points === undefined ? "" : points === 0 ? ", habit — no points" : `, ${pointsLabel(points)} points`}`}
       className={cn(dim, "group flex flex-col items-center gap-2 focus:outline-none")}
     >
       <div className="relative aspect-square w-full">
@@ -86,7 +87,7 @@ export function IconTile({
                 : "bg-[oklch(0.62_0.12_30)] text-white",
             )}
           >
-            {points > 0 ? `+${points}` : points}
+            {pointsLabel(points)}
           </span>
         )}
         {count !== undefined && count > 0 && (

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { IconTile, TileIcon } from "./IconTile";
 import { KidMode } from "./kid-mode/KidMode";
+import { pointsLabel } from "@/lib/points-label";
 
 type AwardItem = { name: string; icon: string; points: number };
 type Tab = "chores" | "positive" | "needs-work";
@@ -419,8 +420,7 @@ export function AwardModal({
               </button>
               <div className="min-w-0 flex-1">
                 <div className="font-display text-xl font-semibold leading-none text-ink">
-                  {trayPoints > 0 ? "+" : ""}
-                  {trayPoints}
+                  {pointsLabel(trayPoints)}
                   <span className="font-sans text-sm font-normal text-muted-foreground">
                     {" "}
                     · {tray.length} {tray.length === 1 ? "tap" : "taps"}
