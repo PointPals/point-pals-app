@@ -158,16 +158,25 @@ export function TappablePal({
   sound = true,
   restMood = "idle",
   bubbleSide = "top",
+  bubbleAlign = "center",
+  bubbleWide = false,
+  talkMs = 1600,
   shadow = true,
 }: {
   id: string;
   label: string;
   className?: string;
-  bubble?: string;
+  bubble?: ReactNode;
   onTap?: () => void;
   sound?: boolean;
   restMood?: PalMood;
   bubbleSide?: "top" | "left" | "right";
+  /** For a top bubble: centre it, or grow it inward from a Pal near a screen edge. */
+  bubbleAlign?: "center" | "start" | "end";
+  /** A sentence rather than a word: wraps onto two lines instead of one pill. */
+  bubbleWide?: boolean;
+  /** How long the bubble stays up after a tap. */
+  talkMs?: number;
   shadow?: boolean;
 }) {
   const [happy, setHappy] = useState(false);
@@ -199,7 +208,7 @@ export function TappablePal({
         timer.current = window.setTimeout(() => {
           setHappy(false);
           setTalking(false);
-        }, 1600);
+        }, talkMs);
         onTap?.();
       }}
       onPointerEnter={(e) => {
@@ -226,8 +235,14 @@ export function TappablePal({
         <span
           aria-hidden
           className={cn(
-            "lp-bubble pointer-events-none absolute z-10 whitespace-nowrap rounded-full bg-card px-3 py-1.5 font-display text-sm font-semibold text-ink shadow-clay-sm",
-            bubbleSide === "top" && "bottom-[92%] left-1/2 [--bx:-50%]",
+            "lp-bubble pointer-events-none absolute z-10 bg-card px-3 py-1.5 font-display text-sm font-semibold text-ink shadow-clay-sm",
+            bubbleWide
+              ? "w-max max-w-[min(14rem,58vw)] rounded-2xl text-left leading-snug"
+              : "whitespace-nowrap rounded-full",
+            bubbleSide === "top" && "bottom-[92%]",
+            bubbleSide === "top" && bubbleAlign === "center" && "left-1/2 [--bx:-50%]",
+            bubbleSide === "top" && bubbleAlign === "start" && "left-[12%]",
+            bubbleSide === "top" && bubbleAlign === "end" && "right-[12%]",
             bubbleSide === "left" && "right-[78%] top-[8%]",
             bubbleSide === "right" && "left-[78%] top-[8%]",
             talking ? "lp-bubble-on" : "",

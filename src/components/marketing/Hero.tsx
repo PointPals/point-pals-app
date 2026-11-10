@@ -6,7 +6,7 @@ import { playFanfare } from "@/lib/feedback";
 import { gsap, MOTION_OK, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
 import { GlassJar, JAR_MOUTH, jarSlots } from "./GlassJar";
-import { PAL_BY_ID, toneIndex } from "./palette";
+import { MARBLE_TONES, PAL_BY_ID, toneIndex } from "./palette";
 import { Eyebrow, PrimaryCta, TappablePal, secondaryCtaClass } from "./ui";
 
 const CAP = 60;
@@ -20,8 +20,12 @@ type HeroPal = {
   layer: "back" | "front";
   depth: number;
   bob: number;
-  bubble: string;
+  /** What earned the marble — the bubble cycles through these, one per tap,
+   *  the way a parent would log it in the app. */
+  reasons: string[];
   side?: "top" | "left" | "right";
+  /** Top bubbles on Pals near a screen edge grow inward instead of centring. */
+  align?: "center" | "start" | "end";
 };
 
 const HERO_PALS: HeroPal[] = [
@@ -31,7 +35,13 @@ const HERO_PALS: HeroPal[] = [
     layer: "back",
     depth: 0.5,
     bob: 5.2,
-    bubble: "Kindness!",
+    reasons: [
+      "Showed empathy and shared their toy",
+      "Comforted a friend who was sad",
+      "Helped their sister tidy up",
+      "Said thank you without a reminder",
+    ],
+    align: "start",
   },
   {
     id: "ridge",
@@ -39,7 +49,13 @@ const HERO_PALS: HeroPal[] = [
     layer: "back",
     depth: 0.6,
     bob: 4.6,
-    bubble: "Be brave!",
+    reasons: [
+      "Tried a new food at dinner",
+      "Went to swimming, even though nervous",
+      "Said sorry first after an argument",
+      "Asked for help when it got hard",
+    ],
+    align: "end",
   },
   {
     id: "pip",
@@ -47,7 +63,13 @@ const HERO_PALS: HeroPal[] = [
     layer: "back",
     depth: 1.2,
     bob: 3.8,
-    bubble: "Why? How?",
+    reasons: [
+      "Finished their reading for the night",
+      "Asked great questions at the museum",
+      "Practised their spelling words",
+      "Worked out a tricky puzzle",
+    ],
+    side: "left",
   },
   {
     id: "marlow",
@@ -55,7 +77,13 @@ const HERO_PALS: HeroPal[] = [
     layer: "front",
     depth: -0.3,
     bob: 6,
-    bubble: "Together!",
+    reasons: [
+      "Set the table for dinner",
+      "Took turns fairly in a game",
+      "Helped cook the family meal",
+      "Packed up the toys together",
+    ],
+    align: "start",
   },
   {
     id: "fern",
@@ -63,7 +91,12 @@ const HERO_PALS: HeroPal[] = [
     layer: "front",
     depth: -0.5,
     bob: 4.2,
-    bubble: "Little steps!",
+    reasons: [
+      "Made their bed",
+      "Brushed teeth without being asked",
+      "Packed their school bag",
+      "Put their clothes in the wash",
+    ],
   },
   {
     id: "coda",
@@ -71,7 +104,13 @@ const HERO_PALS: HeroPal[] = [
     layer: "front",
     depth: -0.2,
     bob: 5.6,
-    bubble: "Breathe…",
+    reasons: [
+      "Took deep breaths instead of shouting",
+      "Calmed down and talked it through",
+      "Waited patiently for their turn",
+      "Turned off the screen when asked",
+    ],
+    align: "end",
   },
 ];
 
@@ -83,6 +122,9 @@ export function Hero() {
   const [phase, setPhase] = useState<"filling" | "full" | "emptying">("filling");
   const dropped = useRef<number | null>(null);
   const timers = useRef<number[]>([]);
+  // Taps per Pal, so each tap shows that Pal's next reason.
+  const [taps, setTaps] = useState<Record<string, number>>({});
+  const [announce, setAnnounce] = useState("");
 
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
 
@@ -103,6 +145,14 @@ export function Hero() {
   }, [count]);
 
   const drop = (palId: string) => {
+    const pal = HERO_PALS.find((p) => p.id === palId);
+    const n = (taps[palId] ?? 0) + 1;
+    setTaps((t) => ({ ...t, [palId]: n }));
+    if (pal) {
+      setAnnounce(
+        `${PAL_BY_ID[pal.id].name} earned a marble: ${pal.reasons[(n - 1) % pal.reasons.length]}`,
+      );
+    }
     if (phase !== "filling") return;
     const i = count;
     dropped.current = i;
@@ -248,8 +298,12 @@ export function Hero() {
             count={marblesShown}
             tones={tones}
             phase={phase}
+            taps={taps}
             onDrop={drop}
           />
+          <p className="sr-only" aria-live="polite">
+            {announce}
+          </p>
         </div>
 
         <div className="relative z-10 lg:-mt-2 lg:self-start">
@@ -296,17 +350,37 @@ export function Hero() {
   );
 }
 
+/** "+1 marble for …" with a marble in the Pal's own colour. */
+function ReasonBubble({ palId, reason }: { palId: string; reason: string }) {
+  return (
+    <span className="flex items-start gap-2">
+      <span
+        className="marble mt-[0.2rem] h-3.5 w-3.5 shrink-0"
+        style={{ "--marble": MARBLE_TONES[toneIndex(palId)].base } as CSSProperties}
+      />
+      <span>
+        <span className="block font-sans text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+          +1 marble for
+        </span>
+        {reason}
+      </span>
+    </span>
+  );
+}
+
 function HeroStage({
   jarRef,
   count,
   tones,
   phase,
+  taps,
   onDrop,
 }: {
   jarRef: React.RefObject<SVGSVGElement | null>;
   count: number;
   tones: (number | undefined)[];
   phase: "filling" | "full" | "emptying";
+  taps: Record<string, number>;
   onDrop: (id: string) => void;
 }) {
   const renderPal = (p: HeroPal) => (
@@ -324,8 +398,16 @@ function HeroStage({
           <TappablePal
             id={p.id}
             label={`Tap ${PAL_BY_ID[p.id].name} to drop a marble in the jar`}
-            bubble={p.bubble}
+            bubble={
+              <ReasonBubble
+                palId={p.id}
+                reason={p.reasons[Math.max(0, (taps[p.id] ?? 1) - 1) % p.reasons.length]}
+              />
+            }
             bubbleSide={p.side}
+            bubbleAlign={p.align}
+            bubbleWide
+            talkMs={2800}
             onTap={() => onDrop(p.id)}
             sound
           />
