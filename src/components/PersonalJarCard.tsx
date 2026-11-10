@@ -172,25 +172,25 @@ export const PersonalJarCard = memo(function PersonalJarCard({
                 / {kid.personalTarget}
               </span>
             </div>
-            {reached ? (
-              claimed ? (
-                <div className="mt-2 text-sm font-semibold text-sage-foreground flex items-center gap-1.5 justify-center">
-                  <Check className="w-4 h-4" /> Saved to {kid.name}&apos;s report
+            {/* The confirmation sits outside `reached`: the reset empties the jar at
+                once, so inside it the message never got a chance to show. */}
+            {claimed ? (
+              <div className="mt-2 text-sm font-semibold text-sage-foreground flex items-center gap-1.5 justify-center">
+                <Check className="w-4 h-4" /> Saved to {kid.name}&apos;s report
+              </div>
+            ) : reached ? (
+              <div className="mt-2 flex flex-col items-center gap-1.5">
+                <div className="text-xs font-semibold text-ink">
+                  🎉 Goal reached{kid.personalReward ? ` — ${kid.personalReward}` : "!"}
                 </div>
-              ) : (
-                <div className="mt-2 flex flex-col items-center gap-1.5">
-                  <div className="text-xs font-semibold text-ink">
-                    🎉 Goal reached{kid.personalReward ? ` — ${kid.personalReward}` : "!"}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleClaim}
-                    className="tap inline-flex min-h-10 items-center gap-1.5 rounded-full bg-cta px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" /> Reset points
-                  </button>
-                </div>
-              )
+                <button
+                  type="button"
+                  onClick={handleClaim}
+                  className="tap inline-flex min-h-10 items-center gap-1.5 rounded-full bg-cta px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Reset points
+                </button>
+              </div>
             ) : kid.personalTarget > 0 ? (
               <div className="mt-1 text-xs text-muted-foreground">
                 {remaining} point{remaining === 1 ? "" : "s"} to go · {pct}%
