@@ -13,6 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Image as RasterImage } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 import { geminiImageRequest, pickImagePart } from "../_shared/gemini-image.ts";
+import { cropAndPadToSquare } from "../_shared/icon-frame.ts";
 
 // ── Inline shared helpers ─────────────────────────────────────────────────
 const corsHeaders = {
@@ -44,7 +45,7 @@ const MONTHLY_CAP = 10;
 // NOTE: the image model can't emit real alpha — asking for "transparent" gets a
 // painted checkerboard. We ask for a plain white background instead and knock
 // it out ourselves (see makeBackgroundTransparent).
-const STYLE_PROMPT = `A single icon illustration only — no background tile, no coloured card, no sticker border, no drop shadow. Plain solid pure white (#FFFFFF) background filling the whole canvas — never a checkerboard or grey "transparency" pattern. Flat-but-dimensional custom icon style — friendly, slightly rounded, chunky illustration with soft gradients and gentle highlights, a soft warm-charcoal outline (not pure black). Soft pastel colour palette — dusty blue, buttercream yellow, sage green, blush pink, lilac, warm sand, seafoam. No text, no letters, no numbers, no watermark, no photorealism, no rendered human faces (use an object stand-in instead, e.g. a toothbrush rather than a child brushing teeth). Square canvas, generous padding, centred.`;
+const STYLE_PROMPT = `A single icon illustration only — no background tile, no coloured card, no sticker border, no drop shadow. Plain solid pure white (#FFFFFF) background filling the whole canvas — never a checkerboard or grey "transparency" pattern. Flat-but-dimensional custom icon style — friendly, slightly rounded, chunky illustration with soft gradients and gentle highlights, a soft warm-charcoal outline (not pure black). Soft pastel colour palette — dusty blue, buttercream yellow, sage green, blush pink, lilac, warm sand, seafoam. No text, no letters, no numbers, no watermark, no photorealism, no rendered human faces (use an object stand-in instead, e.g. a toothbrush rather than a child brushing teeth). Square canvas, the icon centred and filling most of it with only a small margin.`;
 
 /** Knock out the solid white background so icons sit cleanly on coloured
  * tiles: flood-fill from the canvas edges, clearing near-white pixels. White
@@ -235,12 +236,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Generate the image via Gemini, then knock the white background out so
-    // the icon sits cleanly on coloured tiles. If post-processing fails for
-    // any reason, fall back to the raw image rather than failing the request.
+    // Generate the image via Gemini, knock the white background out so the
+    // icon sits cleanly on coloured tiles, then crop away the model's empty
+    // margin so it's the same size as the built-in icons (without this,
+    // generated icons looked noticeably smaller). If post-processing fails
+    // for any reason, fall back to the raw image rather than failing.
     let imageBytes = await generateImage(prompt);
     try {
       imageBytes = await makeBackgroundTransparent(imageBytes);
+      imageBytes = cropAndPadToSquare(imageBytes);
     } catch (e) {
       console.warn("Background removal failed, using raw image:", e instanceof Error ? e.message : e);
     }
