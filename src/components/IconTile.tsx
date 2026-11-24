@@ -3,24 +3,53 @@ import { PASTEL_HEX, PASTEL_MUTED } from "@/lib/mock-data";
 import { iconUrl, isIconKey } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import { pointsLabel } from "@/lib/points-label";
+import { useIconFrame } from "@/lib/icon-frame";
 
-/** Renders a chore/behaviour icon: a registry key, image URL, or emoji. */
-export function TileIcon({ icon, className }: { icon: string; className?: string }) {
-  return isIconKey(icon) || icon.startsWith("http") || icon.startsWith("/") ? (
+/** Renders a chore/behaviour icon: a registry key, image URL, or emoji. Custom
+ *  (uploaded / AI) icons with a wide empty margin are zoomed to fill the box
+ *  like the built-in set — see useIconFrame. */
+export function TileIcon({
+  icon,
+  className,
+  shadow = true,
+  onError,
+}: {
+  icon: string;
+  className?: string;
+  shadow?: boolean;
+  onError?: () => void;
+}) {
+  const custom = !isIconKey(icon) && (icon.startsWith("http") || icon.startsWith("/"));
+  const frame = useIconFrame(custom ? icon : undefined);
+  if (!isIconKey(icon) && !custom) {
+    return (
+      <span className={cn("leading-none", className)} aria-hidden>
+        {icon}
+      </span>
+    );
+  }
+  const img = (
     <img
       src={isIconKey(icon) ? iconUrl(icon) : icon}
       alt=""
       aria-hidden
+      style={frame ?? undefined}
+      onError={onError}
       className={cn(
-        "object-contain select-none pointer-events-none drop-shadow-[0_2px_2px_rgba(60,47,38,0.15)]",
-        className,
+        "select-none pointer-events-none",
+        !frame && "object-contain",
+        shadow && "drop-shadow-[0_2px_2px_rgba(60,47,38,0.15)]",
+        !frame && className,
       )}
       draggable={false}
     />
-  ) : (
-    <span className={cn("leading-none", className)} aria-hidden>
-      {icon}
+  );
+  return frame ? (
+    <span aria-hidden className={cn("relative block overflow-hidden", className)}>
+      {img}
     </span>
+  ) : (
+    img
   );
 }
 

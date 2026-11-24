@@ -45,6 +45,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TileIcon } from "@/components/IconTile";
 
 function IconPickerGrid({
   selected,
@@ -305,11 +306,10 @@ function IconPickerGrid({
                   {brokenIcons.has(u.id) ? (
                     <Trash2 className="w-6 h-6 text-destructive" />
                   ) : (
-                    <img
-                      src={url}
-                      alt={u.label || "Custom icon"}
-                      className="w-[86%] h-[86%] object-contain pointer-events-none"
-                      draggable={false}
+                    <TileIcon
+                      icon={url}
+                      className="w-[86%] h-[86%]"
+                      shadow={false}
                       onError={() => setBrokenIcons((prev) => new Set(prev).add(u.id))}
                     />
                   )}
